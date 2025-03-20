@@ -312,6 +312,51 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     }
 
     @Override
+    public RideDetail cancelRide(Long rideDetailId) {
+        log.info("Processing cancel ride for ride detail ID: {}", rideDetailId);
+
+        RideDetail rideDetail = rideDetailRepository.findById(rideDetailId)
+                .orElseThrow(() -> {
+                    log.warn("Ride detail not found: {}", rideDetailId);
+                    return new ValidateRecordException(
+                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+                });
+
+        if (rideDetail.getStatus() != RideStatus.ACTIVE) {
+            log.warn("Ride ID: {} is not active, cannot cancel", rideDetailId);
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_NOT_ACTIVE), "message");
+        }
+
+        rideDetail.setStatus(RideStatus.CANCELLED);
+        rideDetail.setModifiedDate(DateUtil.getDate());
+        rideDetail.setModifiedUser(LoginAuthentication.getUserName());
+        rideDetail.setSyncTs(DateUtil.getDate());
+
+        List<ShareRideDetail> shareRideDetails = shareRideDetailRepository.findByRideDetailIdAndStatus(rideDetailId, "ACTIVE");
+        for (ShareRideDetail shareRideDetail : shareRideDetails) {
+            shareRideDetail.setStatus("INACTIVE");
+            shareRideDetail.setModifiedDate(DateUtil.getDate());
+            shareRideDetail.setModifiedUser(LoginAuthentication.getUserName());
+            shareRideDetail.setSyncTs(DateUtil.getDate());
+        }
+        shareRideDetailRepository.saveAll(shareRideDetails);
+
+        List<RideSegment> rideSegments = rideSegmentRepository.findByRideDetailIdAndStatusOrderBySegmentOrder(rideDetailId, RideSegmentStatus.ACTIVE);
+        for (RideSegment rideSegment : rideSegments) {
+            rideSegment.setStatus(RideSegmentStatus.INACTIVE);
+            rideSegment.setModifiedDate(DateUtil.getDate());
+            rideSegment.setModifiedUser(LoginAuthentication.getUserName());
+            rideSegment.setSyncTs(DateUtil.getDate());
+        }
+        rideSegmentRepository.saveAll(rideSegments);
+
+        RideDetail updatedRide = rideDetailRepository.save(rideDetail);
+        log.info("Ride cancelled successfully for ride detail ID: {}", rideDetailId);
+        return updatedRide;
+    }
+
+    @Override
     public RideDetailResponseResource getActiveRideByDriverProfileId(Long driverProfileId) {
         log.info("Fetching active ride for driver profile ID: {}", driverProfileId);
 

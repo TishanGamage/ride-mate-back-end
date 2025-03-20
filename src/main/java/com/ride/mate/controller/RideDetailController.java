@@ -169,6 +169,25 @@ public class RideDetailController extends MessagePropertyBase {
     }
 
     /**
+     * Cancel an active ride by updating its status to CANCELLED
+     *
+     * @param rideDetailId The ride detail ID
+     * @return ResponseEntity with success response
+     */
+    @PutMapping("/{rideDetailId}/cancel")
+    public ResponseEntity<?> cancelRide(@PathVariable Long rideDetailId) {
+        log.info("Received request to cancel ride ID: {}", rideDetailId);
+
+        RideDetail rideDetail = rideDetailService.cancelRide(rideDetailId);
+
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(rideDetail.getId());
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
      * Get active ride for a driver profile (returns the latest one)
      *
      * @param driverProfileId The driver profile ID

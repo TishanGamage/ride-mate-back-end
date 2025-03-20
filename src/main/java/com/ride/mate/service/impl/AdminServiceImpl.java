@@ -159,7 +159,7 @@ public class AdminServiceImpl extends MessagePropertyBase implements AdminServic
         driverProfileRepository.save(driverProfile);
 
         // If approved, activate the user account
-        if ("APPROVED".equalsIgnoreCase(request.getAccountStatus())) {
+        if (DriverStatus.APPROVED.name().equalsIgnoreCase(request.getAccountStatus())) {
             User user = driverProfile.getUser();
             user.setStatus(UserStatus.ACTIVE);
             user.setModifiedDate(DateUtil.getDate());

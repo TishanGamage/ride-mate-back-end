@@ -61,6 +61,14 @@ public interface RideDetailService {
     RideDetail endRide(Long rideDetailId);
 
     /**
+     * Cancel an active ride by updating its status to CANCELLED
+     *
+     * @param rideDetailId Ride detail ID
+     * @return Updated RideDetail entity
+     */
+    RideDetail cancelRide(Long rideDetailId);
+
+    /**
      * Get active ride for a driver profile
      *
      * @param driverProfileId Driver profile ID
