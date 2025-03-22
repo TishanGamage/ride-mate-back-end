@@ -7,4 +7,5 @@ import java.util.List;
 public interface UserFeedbackRepository extends JpaRepository<UserFeedback, Long> {
     List<UserFeedback> findByUserIdOrderByCreatedDateDesc(Long userId);
     List<UserFeedback> findAllByOrderByCreatedDateDesc();
+    long countByUserId(Long userId);
 }

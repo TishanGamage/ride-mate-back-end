@@ -169,4 +169,24 @@ public abstract class MessagePropertyBase {
 
     // Admin registration message property keys
     protected static final String ADMIN_REGISTRATION_NOT_ALLOWED = "admin.registration.not.allowed";
+
+    // Admin Portal message property keys
+    protected static final String ADMIN_ACCESS_DENIED = "admin.access.denied";
+    protected static final String ADMIN_USER_STATUS_UPDATED = "admin.user.status.updated";
+    protected static final String ADMIN_DRIVER_APPROVED = "admin.driver.approved";
+    protected static final String ADMIN_DRIVER_REJECTED = "admin.driver.rejected";
+    protected static final String ADMIN_REPORT_STATUS_UPDATED = "admin.report.status.updated";
+    protected static final String ADMIN_WITHDRAWAL_STATUS_UPDATED = "admin.withdrawal.status.updated";
+    protected static final String ADMIN_WITHDRAWAL_ALREADY_PROCESSED = "admin.withdrawal.already.processed";
+    protected static final String ADMIN_INVALID_STATUS = "admin.invalid.status";
+    protected static final String ADMIN_DASHBOARD_LOADED = "admin.dashboard.loaded";
+    protected static final String ADMIN_USER_DELETED = "admin.user.deleted";
+    protected static final String ADMIN_CANNOT_DELETE_SELF = "admin.cannot.delete.self";
+    protected static final String ADMIN_SETUP_SUCCESS = "admin.setup.success";
+
+    // User Report message property keys (admin-specific)
+    protected static final String USER_REPORT_ALREADY_CLOSED = "user.report.already.closed";
+
+    // Feedback response message property keys
+    protected static final String ADMIN_FEEDBACK_RESPONSE_ADDED = "admin.feedback.response.added";
 }

@@ -17,6 +17,7 @@ import lombok.Setter;
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Added willingToDrive field
+ * 3 22-03-2026    N/A          N/A          Dulan           Added identification document IDs
  */
 @Getter
 @Setter
@@ -60,7 +61,9 @@ public class UserProfileResponse {
     private Long identificationTypeId;
     private String identificationTypeName;
     private String identificationNumber;
+    private Long identificationFrontImageDocumentId;
     private String identificationFrontImageUrl;
+    private Long identificationBackImageDocumentId;
     private String identificationBackImageUrl;
 
     // Audit fields

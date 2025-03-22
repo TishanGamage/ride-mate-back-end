@@ -227,6 +227,14 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
     }
 
     @Override
+    public byte[] viewFile(Long documentId) {
+        log.info("Processing inline view for document ID: {}", documentId);
+        DocumentDetails document = documentDetailsRepository.findById(documentId)
+                .orElseThrow(() -> new ValidateRecordException(environment.getProperty(DOCUMENT_NOT_FOUND), "message"));
+        return downloadFromSupabase(document);
+    }
+
+    @Override
     public void deleteDocument(Long documentId) {
         log.info("Processing document deletion for ID: {}", documentId);
         DocumentDetails document = documentDetailsRepository.findById(documentId).orElseThrow(() -> new ValidateRecordException(environment.getProperty(DOCUMENT_NOT_FOUND), "message"));

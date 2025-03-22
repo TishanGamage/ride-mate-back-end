@@ -27,5 +27,9 @@ public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalReq
     List<WithdrawalRequest> findByDriverProfileIdAndStatus(Long driverProfileId, WithdrawalStatus status);
 
     List<WithdrawalRequest> findByStatus(WithdrawalStatus status);
+
+    List<WithdrawalRequest> findAllByOrderByCreatedDateDesc();
+
+    long countByStatus(WithdrawalStatus status);
 }
 

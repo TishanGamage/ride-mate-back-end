@@ -3,7 +3,9 @@ package com.ride.mate.controller;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.UserIdentificationDetails;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
+import com.ride.mate.resources.UserIdentificationDetailsResponseResource;
 import com.ride.mate.service.UserIdentificationDetailsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,9 @@ import java.util.Optional;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 19-03-2026    N/A          N/A          Dulan          Initial Development
+ * 2 22-03-2026    N/A          N/A          Dulan          Fixed getByUserId to return proper DTOs
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "/user-identification-details")
 @CrossOrigin(origins = "*")
@@ -42,13 +46,21 @@ public class UserIdentificationDetailsController extends MessagePropertyBase {
         }
     }
 
+    /**
+     * Get identification details by user ID
+     * Returns a list of identification detail DTOs with flat document IDs
+     *
+     * @param userId the ID of the user
+     * @return ResponseEntity with list of UserIdentificationDetailsResponseResource
+     */
     @GetMapping(value = "/get-by-user/{userId}")
     public ResponseEntity<Object> getByUserId(@PathVariable Long userId) {
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
-        List<UserIdentificationDetails> details = userIdentificationDetailsService.findByUserId(userId);
+        log.info("Received get identification details request for user ID: {}", userId);
+        List<UserIdentificationDetailsResponseResource> details = userIdentificationDetailsService.getResponseByUserId(userId);
         if (details != null && !details.isEmpty()) {
             return new ResponseEntity<>(details, HttpStatus.OK);
         } else {
+            SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
             response.setMessages(RECORD_NOT_FOUND);
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
         }

@@ -35,4 +35,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByUserRoleOrderByCreatedDateDesc(UserRole userRole);
 
     long countByStatus(com.ride.mate.enums.UserStatus status);
+
+    long countByUserRole(UserRole userRole);
+
+    List<User> findByStatusOrderByCreatedDateDesc(UserStatus status);
 }

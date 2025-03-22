@@ -156,7 +156,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         log.info("Fetching user profile for user ID: {}", userId);
 
-        UserProfile userProfile = userProfileRepository.findByUserId(userId)
+        UserProfile userProfile = userProfileRepository.findByUserIdWithDocuments(userId)
                 .orElseThrow(() -> {
                     log.warn("User profile not found for user ID: {}", userId);
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
@@ -164,8 +164,8 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         User user = userProfile.getUser();
 
-        // Fetch identification details
-        List<UserIdentificationDetails> identificationList = userIdentificationDetailsRepository.findByUserId(userId);
+        // Fetch identification details with eagerly loaded documents
+        List<UserIdentificationDetails> identificationList = userIdentificationDetailsRepository.findByUserIdWithDocuments(userId);
         UserIdentificationDetails identification = identificationList.isEmpty() ? null : identificationList.get(0);
 
         return UserProfileResponse.builder()
@@ -199,7 +199,9 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 .identificationTypeId(identification != null && identification.getIdentificationType() != null ? identification.getIdentificationType().getId() : null)
                 .identificationTypeName(identification != null && identification.getIdentificationType() != null ? identification.getIdentificationType().getName() : null)
                 .identificationNumber(identification != null ? identification.getIdentificationNumber() : null)
+                .identificationFrontImageDocumentId(identification != null && identification.getFrontImageDocument() != null ? identification.getFrontImageDocument().getId() : null)
                 .identificationFrontImageUrl(identification != null && identification.getFrontImageDocument() != null ? identification.getFrontImageDocument().getDocumentUrl() : null)
+                .identificationBackImageDocumentId(identification != null && identification.getBackImageDocument() != null ? identification.getBackImageDocument().getId() : null)
                 .identificationBackImageUrl(identification != null && identification.getBackImageDocument() != null ? identification.getBackImageDocument().getDocumentUrl() : null)
                 .createdDate(userProfile.getCreatedDate() != null ? userProfile.getCreatedDate().toString() : null)
                 .modifiedDate(userProfile.getModifiedDate() != null ? userProfile.getModifiedDate().toString() : null)

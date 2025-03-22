@@ -31,7 +31,7 @@ public interface DriverProfileRepository extends JpaRepository<DriverProfile, Lo
 
     Optional<DriverProfile> findByDriverLicenseNumber(String driverLicenseNumber);
 
-    List<DriverProfile> findByAccountStatus(String accountStatus);
+    List<DriverProfile> findByAccountStatus(DriverStatus accountStatus);
 
     boolean existsByUserId(Long userId);
 

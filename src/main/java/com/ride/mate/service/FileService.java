@@ -43,6 +43,15 @@ public interface FileService {
     byte[] downloadFile(Long documentId);
 
     /**
+     * Stream file inline from Supabase storage by document ID
+     * Used for displaying images directly in browser (img src)
+     *
+     * @param documentId Document ID
+     * @return byte array of the file content
+     */
+    byte[] viewFile(Long documentId);
+
+    /**
      * Delete document by ID (soft delete)
      *
      * @param documentId Document ID

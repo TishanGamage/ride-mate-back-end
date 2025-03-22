@@ -32,5 +32,11 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransaction> findByRideDetailId(Long rideDetailId);
 
     List<PaymentTransaction> findByUserIdAndStatus(Long userId, PaymentStatus status);
+
+    List<PaymentTransaction> findAllByOrderByCreatedDateDesc();
+
+    List<PaymentTransaction> findByStatusOrderByCreatedDateDesc(PaymentStatus status);
+
+    long countByUserId(Long userId);
 }
 

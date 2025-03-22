@@ -43,4 +43,8 @@ public interface RideDetailRepository extends JpaRepository<RideDetail, Long> {
     List<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, RideStatus status);
 
     long countByStatus(RideStatus status);
+
+    List<RideDetail> findAllByOrderByCreatedDateDesc();
+
+    List<RideDetail> findByStatusOrderByCreatedDateDesc(RideStatus status);
 }

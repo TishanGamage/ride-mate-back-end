@@ -173,7 +173,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
 
         // Map all vehicles associated with this driver profile
         List<DriverVehicleDetailsResponse> vehicleResponses = driverVehicleDetailsRepository
-                .findByDriverProfileId(driverProfile.getId())
+                .findByDriverProfileIdWithDocuments(driverProfile.getId())
                 .stream()
                 .map(this::mapVehicleToResponse)
                 .collect(Collectors.toList());

@@ -78,6 +78,30 @@ public class FileController extends MessagePropertyBase {
     }
 
     /**
+     * View file inline by document ID (for img src usage)
+     * Returns file bytes with Content-Type and inline Content-Disposition
+     *
+     * @param id Document ID
+     * @return ResponseEntity with file bytes for inline display
+     */
+    @GetMapping("/view/{id}")
+    public ResponseEntity<byte[]> viewFile(@PathVariable Long id) {
+        log.info("Received request to view file with document ID: {}", id);
+
+        DocumentDetails document = fileService.getDocumentById(id);
+        byte[] fileContent = fileService.viewFile(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                document.getFileType() != null ? document.getFileType() : "application/octet-stream"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + document.getDocumentName() + "\"");
+        headers.setContentLength(fileContent.length);
+        headers.setCacheControl("max-age=3600");
+
+        return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+    }
+
+    /**
      * Download file by document ID
      * Returns the file content as a downloadable attachment
      *

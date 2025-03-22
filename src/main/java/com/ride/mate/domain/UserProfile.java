@@ -103,7 +103,7 @@ public class UserProfile extends BaseEntity implements Serializable {
     private String profileImageUrl;
 
     public String getProfileImageUrl() {
-        return profileImageDocument.getDocumentUrl() != null ? profileImageDocument.getDocumentUrl() : null;
+        return profileImageDocument != null && profileImageDocument.getDocumentUrl() != null ? profileImageDocument.getDocumentUrl() : null;
     }
 }
 
