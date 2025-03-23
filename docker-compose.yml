@@ -23,8 +23,11 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      - REDIS_HOST=ride-mate-redis
     depends_on:
       - jenkins
+      - redis
 
   redis:
     image: redis:7-alpine

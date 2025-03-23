@@ -54,8 +54,10 @@ pipeline {
                 docker run -d \
                     --name ${CONTAINER_NAME} \
                     -p ${APP_PORT}:${APP_PORT} \
+                    --network ride-mate-backend_default \
                     --env-file ${ENV_FILE} \
                     -e SPRING_PROFILES_ACTIVE=prod \
+                    -e REDIS_HOST=ride-mate-redis \
                     ${IMAGE_NAME}
                 """
             }
