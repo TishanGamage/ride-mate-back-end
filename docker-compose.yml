@@ -26,6 +26,17 @@ services:
     depends_on:
       - jenkins
 
+  redis:
+    image: redis:7-alpine
+    container_name: ride-mate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
 volumes:
+  redis_data:
   jenkins_home:
   jenkins_plugins:

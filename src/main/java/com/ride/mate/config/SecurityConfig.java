@@ -88,7 +88,9 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/api-docs/**",
             "/error",
-            "/marketing-site/stats"
+            "/marketing-site/stats",
+            "/ws/**",
+            "/ws"
     };
 }
 
