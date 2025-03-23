@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RideMate — Live Location Test Console</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #06080f;
+            --bg-secondary: #0c1120;
+            --bg-card: #111827;
+            --bg-input: #0a0f1a;
+            --border: #1e293b;
+            --border-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: #3b82f620;
+            --accent-green: #10b981;
+            --accent-green-glow: #10b98120;
+            --accent-orange: #f59e0b;
+            --accent-orange-glow: #f59e0b20;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-purple-glow: #8b5cf620;
+            --accent-cyan: #06b6d4;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --shadow-glow-blue: 0 0 20px #3b82f615, 0 0 60px #3b82f608;
+            --shadow-glow-green: 0 0 20px #10b98115, 0 0 60px #10b98108;
+            --shadow-glow-orange: 0 0 20px #f59e0b15, 0 0 60px #f59e0b08;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated background grid ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, #3b82f608 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 100%, #10b98106 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 10% 100%, #f59e0b05 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app { position: relative; z-index: 1; padding: 24px 32px 48px; max-width: 1440px; margin: 0 auto; }
+
+        /* ── Header ── */
+        .header { text-align: center; margin-bottom: 32px; }
+
+        .header-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 24px #3b82f630;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f1f5f9 30%, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .header-tag .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ── Instructions Card ── */
+        .instructions-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .instructions-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-orange) 50%, transparent);
+            opacity: 0.5;
+        }
+
+        .instructions-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .step-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .step-item:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .step-num {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .step-item p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .step-item code {
+            background: #1e293b;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+        }
+
+        /* ── Main Layout ── */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        /* ── Panel Cards ── */
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .panel-card:hover { border-color: var(--border-hover); }
+
+        .panel-card.driver { box-shadow: var(--shadow-glow-green); }
+        .panel-card.driver:hover { box-shadow: 0 0 30px #10b98118, 0 0 80px #10b98108; }
+        .panel-card.passenger { box-shadow: var(--shadow-glow-orange); }
+        .panel-card.passenger:hover { box-shadow: 0 0 30px #f59e0b18, 0 0 80px #f59e0b08; }
+
+        .panel-header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-icon {
+            width: 40px; height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .driver .panel-icon { background: #10b98118; }
+        .passenger .panel-icon { background: #f59e0b18; }
+
+        .panel-title { font-size: 16px; font-weight: 700; }
+        .driver .panel-title { color: var(--accent-green); }
+        .passenger .panel-title { color: var(--accent-orange); }
+
+        .panel-subtitle { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+
+        /* Status Pill */
+        .status-pill {
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .status-pill .indicator {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .status-pill.disconnected { background: #ef444415; color: #fca5a5; border: 1px solid #ef444425; }
+        .status-pill.disconnected .indicator { background: #ef4444; }
+
+        .status-pill.connected { background: #10b98115; color: #6ee7b7; border: 1px solid #10b98125; }
+        .status-pill.connected .indicator { background: #10b981; box-shadow: 0 0 8px #10b981; animation: pulse-dot 2s ease-in-out infinite; }
+
+        .status-pill.connecting { background: #f59e0b15; color: #fcd34d; border: 1px solid #f59e0b25; }
+        .status-pill.connecting .indicator { background: #f59e0b; animation: pulse-dot 0.8s ease-in-out infinite; }
+
+        /* Panel Body */
+        .panel-body { padding: 20px 24px; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 14px; }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .form-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px var(--accent-blue-glow); }
+        .form-input::placeholder { color: var(--text-muted); font-family: 'Inter', sans-serif; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 11px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; filter: grayscale(0.5); }
+
+        .btn-connect-ws { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; box-shadow: 0 2px 12px #3b82f630; }
+        .btn-connect-ws:hover:not(:disabled) { box-shadow: 0 4px 20px #3b82f640; }
+
+        .btn-disconnect-ws { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; box-shadow: 0 2px 12px #ef444420; }
+
+        .btn-send-loc { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 2px 12px #10b98130; }
+        .btn-send-loc:hover:not(:disabled) { box-shadow: 0 4px 20px #10b98140; }
+
+        .btn-auto { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; box-shadow: 0 2px 12px #06b6d430; }
+        .btn-auto.active { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 2px 12px #ef444430; }
+
+        .btn-subscribe-ws { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; box-shadow: 0 2px 12px #f59e0b30; }
+        .btn-subscribe-ws:hover:not(:disabled) { box-shadow: 0 4px 20px #f59e0b40; }
+
+        .btn-rest-test { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; box-shadow: 0 2px 12px #8b5cf630; }
+        .btn-rest-test:hover:not(:disabled) { box-shadow: 0 4px 20px #8b5cf640; }
+
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 18px 0;
+            position: relative;
+        }
+
+        .divider::after {
+            content: attr(data-label);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            padding: 0 12px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* Log Console */
+        .console-wrapper { margin-top: 16px; }
+
+        .console-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+
+        .console-header span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .console-header .clear-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            width: auto;
+            margin: 0;
+        }
+
+        .console-header .clear-btn:hover { border-color: var(--text-muted); color: var(--text-secondary); }
+
+        .console-area {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+            padding: 12px 14px;
+            height: 240px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .console-area::-webkit-scrollbar { width: 6px; }
+        .console-area::-webkit-scrollbar-track { background: transparent; }
+        .console-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .log-line { display: flex; gap: 10px; padding: 2px 0; }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .log-prefix {
+            flex-shrink: 0;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .log-msg { word-break: break-all; }
+
+        .log-line.info .log-prefix { color: var(--accent-blue); }
+        .log-line.info .log-msg { color: var(--text-secondary); }
+
+        .log-line.success .log-prefix { color: var(--accent-green); }
+        .log-line.success .log-msg { color: #6ee7b7; }
+
+        .log-line.error .log-prefix { color: var(--accent-red); }
+        .log-line.error .log-msg { color: #fca5a5; }
+
+        .log-line.data .log-prefix { color: var(--accent-orange); }
+        .log-line.data .log-msg { color: #fcd34d; }
+
+        .log-line.receive .log-prefix { color: var(--accent-purple); }
+        .log-line.receive .log-msg { color: #c4b5fd; }
+
+        /* Animate new log entries */
+        @keyframes log-slide {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-line { animation: log-slide 0.2s ease-out; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .app { padding: 16px; }
+            .main-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps-grid .step-item:last-child { grid-column: span 2; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- ── Header ── -->
+    <div class="header">
+        <div class="header-brand">
+            <div class="logo-icon">🚗</div>
+            <h1>RideMate Live Console</h1>
+        </div>
+        <br>
+        <div class="header-tag">
+            <span class="dot"></span>
+            STOMP WebSocket + Redis &middot; Real-Time Location Test
+        </div>
+    </div>
+
+    <!-- ── Instructions ── -->
+    <div class="instructions-card">
+        <h3>⚡ Quick Start</h3>
+        <div class="steps-grid">
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <p>Login via Postman<br><code>POST /auth/login</code></p>
+            </div>
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <p>Paste <code>accessToken</code><br>in both panels</p>
+            </div>
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <p>Click <strong>Connect</strong><br>on both sides</p>
+            </div>
+            <div class="step-item">
+                <div class="step-num">4</div>
+                <p>Passenger subscribes<br>to ride <code>42</code></p>
+            </div>
+            <div class="step-item">
+                <div class="step-num">5</div>
+                <p>Driver sends location<br>→ appears instantly!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panels ── -->
+    <div class="main-grid">
+
+        <!-- ===== DRIVER ===== -->
+        <div class="panel-card driver">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <div class="panel-icon">🚙</div>
+                    <div>
+                        <div class="panel-title">Driver</div>
+                        <div class="panel-subtitle">Location Publisher</div>
+                    </div>
+                </div>
+                <div id="driverStatus" class="status-pill disconnected">
+                    <span class="indicator"></span> Offline
+                </div>
+            </div>
+
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="form-label">JWT Access Token</label>
+                    <input type="text" class="form-input" id="driverToken" placeholder="eyJhbGciOiJIUzI1NiIs...">
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-connect-ws" id="driverConnectBtn" onclick="driverConnect()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        Connect
+                    </button>
+                    <button class="btn btn-disconnect-ws" id="driverDisconnectBtn" onclick="driverDisconnect()" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        Disconnect
+                    </button>
+                </div>
+
+                <div class="divider" data-label="Send Location"></div>
+
+                <div class="form-group">
+                    <label class="form-label">Ride ID</label>
+                    <input type="number" class="form-input" id="driverRideId" value="42">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="text" class="form-input" id="driverLat" value="6.9271">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="text" class="form-input" id="driverLng" value="79.8612">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Bearing °</label>
+                        <input type="text" class="form-input" id="driverBearing" value="45.0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Interval (ms)</label>
+                        <input type="number" class="form-input" id="autoInterval" value="2000">
+                    </div>
+                </div>
+
+                <button class="btn btn-send-loc" id="sendBtn" onclick="sendLocation()" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>
+                    Send Location Once
+                </button>
+                <button class="btn btn-auto" id="autoBtn" onclick="toggleAutoSend()" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span id="autoLabel">Start Auto-Send</span>
+                </button>
+
+                <div class="console-wrapper">
+                    <div class="console-header">
+                        <span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            Console
+                        </span>
+                        <button class="clear-btn" onclick="clearLog('driverLog')">Clear</button>
+                    </div>
+                    <div class="console-area" id="driverLog"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PASSENGER ===== -->
+        <div class="panel-card passenger">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <div class="panel-icon">👤</div>
+                    <div>
+                        <div class="panel-title">Passenger</div>
+                        <div class="panel-subtitle">Location Subscriber</div>
+                    </div>
+                </div>
+                <div id="passengerStatus" class="status-pill disconnected">
+                    <span class="indicator"></span> Offline
+                </div>
+            </div>
+
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="form-label">JWT Access Token</label>
+                    <input type="text" class="form-input" id="passengerToken" placeholder="eyJhbGciOiJIUzI1NiIs...">
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-connect-ws" id="passengerConnectBtn" onclick="passengerConnect()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        Connect
+                    </button>
+                    <button class="btn btn-disconnect-ws" id="passengerDisconnectBtn" onclick="passengerDisconnect()" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        Disconnect
+                    </button>
+                </div>
+
+                <div class="divider" data-label="Subscribe"></div>
+
+                <div class="form-group">
+                    <label class="form-label">Ride ID to Subscribe</label>
+                    <input type="number" class="form-input" id="passengerRideId" value="42">
+                </div>
+
+                <button class="btn btn-subscribe-ws" id="subBtn" onclick="subscribeTopic()" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Subscribe to Location Updates
+                </button>
+
+                <div class="divider" data-label="REST API"></div>
+
+                <div class="form-group">
+                    <label class="form-label">Ride Detail ID</label>
+                    <input type="number" class="form-input" id="restRideId" value="42">
+                </div>
+                <button class="btn btn-rest-test" onclick="restGetLocation()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg>
+                    GET Cached Location (REST)
+                </button>
+
+                <div class="console-wrapper">
+                    <div class="console-header">
+                        <span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            Console
+                        </span>
+                        <button class="clear-btn" onclick="clearLog('passengerLog')">Clear</button>
+                    </div>
+                    <div class="console-area" id="passengerLog"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const BASE_URL = 'http://localhost:8080/ride-mate';
+    const WS_URL   = BASE_URL + '/ws';
+
+    let driverClient = null;
+    let passengerClient = null;
+    let passengerSub = null;
+    let autoSendInterval = null;
+    let autoMoving = false;
+
+    const PREFIXES = { info: 'INFO', success: '  OK', error: ' ERR', data: 'DATA', receive: ' <<' };
+
+    // ─── DRIVER ──────────────────────────────────────────
+    function driverConnect() {
+        const token = document.getElementById('driverToken').value.trim();
+        setStatus('driverStatus', 'connecting', 'Connecting…');
+        dLog('info', 'Opening SockJS → ' + WS_URL);
+
+        const socket = new SockJS(WS_URL);
+        driverClient = Stomp.over(socket);
+        driverClient.debug = null;
+
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        driverClient.connect(headers,
+            function (frame) {
+                setStatus('driverStatus', 'connected', 'Online');
+                dLog('success', 'STOMP connected');
+                toggle('driverConnectBtn', true);
+                toggle('driverDisconnectBtn', false);
+                toggle('sendBtn', false);
+                toggle('autoBtn', false);
+            },
+            function (error) {
+                setStatus('driverStatus', 'disconnected', 'Failed');
+                dLog('error', String(error));
+                driverClient = null;
+            }
+        );
+    }
+
+    function driverDisconnect() {
+        if (autoMoving) toggleAutoSend();
+        if (driverClient) driverClient.disconnect();
+        driverClient = null;
+        setStatus('driverStatus', 'disconnected', 'Offline');
+        dLog('info', 'Disconnected');
+        toggle('driverConnectBtn', false);
+        toggle('driverDisconnectBtn', true);
+        toggle('sendBtn', true);
+        toggle('autoBtn', true);
+    }
+
+    function sendLocation() {
+        if (!driverClient || !driverClient.connected) return dLog('error', 'Not connected');
+        const rideId  = val('driverRideId');
+        const lat     = parseFloat(val('driverLat'));
+        const lng     = parseFloat(val('driverLng'));
+        const bearing = parseFloat(val('driverBearing'));
+        const ts      = Date.now();
+        const dest    = '/app/ride/' + rideId + '/location';
+        const payload = { rideId: parseInt(rideId), latitude: lat, longitude: lng, bearing, timestamp: ts };
+
+        driverClient.send(dest, {}, JSON.stringify(payload));
+        dLog('success', '→ ' + dest);
+        dLog('data', JSON.stringify(payload));
+    }
+
+    function toggleAutoSend() {
+        const btn = document.getElementById('autoBtn');
+        const label = document.getElementById('autoLabel');
+        if (!autoMoving) {
+            autoMoving = true;
+            btn.classList.add('active');
+            label.textContent = 'Stop Auto-Send';
+            const ms = parseInt(val('autoInterval')) || 2000;
+            autoSendInterval = setInterval(() => {
+                document.getElementById('driverLat').value     = (parseFloat(val('driverLat'))     + 0.0001 * (Math.random() - 0.3)).toFixed(6);
+                document.getElementById('driverLng').value     = (parseFloat(val('driverLng'))     + 0.0002 * (Math.random() - 0.3)).toFixed(6);
+                document.getElementById('driverBearing').value = (parseFloat(val('driverBearing')) + (Math.random() * 10 - 5)).toFixed(1);
+                sendLocation();
+            }, ms);
+            dLog('info', 'Auto-send started (' + ms + 'ms)');
+        } else {
+            autoMoving = false;
+            clearInterval(autoSendInterval);
+            autoSendInterval = null;
+            btn.classList.remove('active');
+            label.textContent = 'Start Auto-Send';
+            dLog('info', 'Auto-send stopped');
+        }
+    }
+
+    // ─── PASSENGER ───────────────────────────────────────
+    function passengerConnect() {
+        const token = document.getElementById('passengerToken').value.trim();
+        setStatus('passengerStatus', 'connecting', 'Connecting…');
+        pLog('info', 'Opening SockJS → ' + WS_URL);
+
+        const socket = new SockJS(WS_URL);
+        passengerClient = Stomp.over(socket);
+        passengerClient.debug = null;
+
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        passengerClient.connect(headers,
+            function (frame) {
+                setStatus('passengerStatus', 'connected', 'Online');
+                pLog('success', 'STOMP connected');
+                toggle('passengerConnectBtn', true);
+                toggle('passengerDisconnectBtn', false);
+                toggle('subBtn', false);
+            },
+            function (error) {
+                setStatus('passengerStatus', 'disconnected', 'Failed');
+                pLog('error', String(error));
+                passengerClient = null;
+            }
+        );
+    }
+
+    function passengerDisconnect() {
+        if (passengerClient) passengerClient.disconnect();
+        passengerClient = null;
+        passengerSub = null;
+        setStatus('passengerStatus', 'disconnected', 'Offline');
+        pLog('info', 'Disconnected');
+        toggle('passengerConnectBtn', false);
+        toggle('passengerDisconnectBtn', true);
+        toggle('subBtn', true);
+    }
+
+    function subscribeTopic() {
+        if (!passengerClient || !passengerClient.connected) return pLog('error', 'Not connected');
+        const rideId = val('passengerRideId');
+        const topic  = '/topic/ride/' + rideId + '/location';
+
+        if (passengerSub) { passengerSub.unsubscribe(); pLog('info', 'Unsubscribed previous'); }
+
+        passengerSub = passengerClient.subscribe(topic, function (message) {
+            const data = JSON.parse(message.body);
+            pLog('receive', '← Live update received');
+            pLog('data', JSON.stringify(data));
+        });
+        pLog('success', '📡 Subscribed → ' + topic);
+    }
+
+    async function restGetLocation() {
+        const rideId = val('restRideId');
+        const url = BASE_URL + '/ride-details/' + rideId + '/driver-location';
+        pLog('info', 'GET ' + url);
+        try {
+            const token = document.getElementById('passengerToken').value.trim();
+            const h = { 'Content-Type': 'application/json' };
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            const res  = await fetch(url, { headers: h });
+            const data = await res.json();
+            pLog(res.ok ? 'success' : 'error', res.status + ' ' + res.statusText);
+            pLog('data', JSON.stringify(data));
+        } catch (e) { pLog('error', 'Fetch failed: ' + e.message); }
+    }
+
+    // ─── HELPERS ─────────────────────────────────────────
+    function val(id) { return document.getElementById(id).value; }
+    function toggle(id, disabled) { document.getElementById(id).disabled = disabled; }
+
+    function setStatus(id, cls, text) {
+        const el = document.getElementById(id);
+        el.className = 'status-pill ' + cls;
+        el.innerHTML = '<span class="indicator"></span> ' + text;
+    }
+
+    function dLog(type, msg) { appendLog('driverLog', type, msg); }
+    function pLog(type, msg) { appendLog('passengerLog', type, msg); }
+
+    function appendLog(id, type, msg) {
+        const area = document.getElementById(id);
+        const time = new Date().toLocaleTimeString('en-GB');
+        const div  = document.createElement('div');
+        div.className = 'log-line ' + type;
+        div.innerHTML =
+            '<span class="log-time">' + time + '</span>' +
+            '<span class="log-prefix">' + (PREFIXES[type] || type.toUpperCase()) + '</span>' +
+            '<span class="log-msg">' + escapeHtml(msg) + '</span>';
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function clearLog(id) { document.getElementById(id).innerHTML = ''; }
+
+    function escapeHtml(s) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(s));
+        return d.innerHTML;
+    }
+</script>
+</body>
+</html>
+
