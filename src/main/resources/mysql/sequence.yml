@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: TishanD
+      changes:
+        - createTable:
+            tableName: sequence
+            columns:
+              - column:
+                  name: next_val
+                  type: bigint
+  - changeSet:
+      id: 2
+      author: TishanD
+      changes:
+        - insert:
+            tableName: sequence
+            columns:
+              - column:
+                  name: next_val
+                  value: 1
