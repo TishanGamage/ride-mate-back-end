@@ -1,0 +1,68 @@
+databaseChangeLog:
+                    nullable: false
+                  constraints:
+                  type: bigint
+                  name: version
+              - column:
+                    nullable: true
+                  constraints:
+                  type: timestamp
+                  name: modified_date
+              - column:
+                    nullable: true
+                  constraints:
+                  type: varchar(30)
+                  name: modified_user
+              - column:
+                    nullable: false
+                  constraints:
+                  type: timestamp
+                  name: created_date
+              - column:
+                    nullable: false
+                  constraints:
+                  type: varchar(30)
+                  name: created_user
+              - column:
+                    nullable: false
+                  constraints:
+                  type: varchar(50)
+                  name: user_status
+              - column:
+                    nullable: true
+                  constraints:
+                  type: varchar(20)
+                  name: phone_number
+              - column:
+                    nullable: false
+                  constraints:
+                  type: varchar(255)
+                  name: password
+              - column:
+                    unique: true
+                    nullable: false
+                  constraints:
+                  type: varchar(100)
+                  name: email
+              - column:
+                    unique: true
+                    nullable: false
+                  constraints:
+                  type: varchar(70)
+                  name: username
+              - column:
+                    primaryKey: true
+                    nullable: false
+                  constraints:
+                  autoIncrement: true
+                  type: bigint
+                  name: id
+              - column:
+            columns:
+            tableName: user
+        - createTable:
+      changes:
+      author: TishanD
+      id: 1
+  - changeSet:
+
