@@ -8,7 +8,7 @@
         <version>4.0.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>org.ride.mate</groupId>
+    <groupId>com.ride.mate</groupId>
     <artifactId>ride-mate-back-end</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ride-mate-back-end</name>
