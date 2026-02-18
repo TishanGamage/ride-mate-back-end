@@ -1,5 +1,6 @@
 databaseChangeLog:
   - changeSet:
+      id: 1
       author: Tishan
       changes:
         - createTable:
@@ -8,7 +9,9 @@ databaseChangeLog:
               - column:
                   name: id
                   type: BIGINT
+                  autoIncrement: true
                   constraints:
+                    primaryKey: true
                     nullable: false
               - column:
                   name: email
@@ -56,7 +59,7 @@ databaseChangeLog:
                   name: modified_user
                   type: VARCHAR(100)
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: sync_ts
                   type: TIMESTAMP
