@@ -25,4 +25,5 @@ public abstract class MessagePropertyBase {
     protected static final String VERIFICATION_CODE_EXPIRED = "verification.code-expired";
     protected static final String VERIFICATION_MAX_ATTEMPTS_EXCEEDED = "verification.max-attempts-exceeded";
     protected static final String VERIFICATION_INVALID_CODE = "verification.invalid-code";
+    protected static final String VERIFICATION_SUCCESS = "verification.success";
 }

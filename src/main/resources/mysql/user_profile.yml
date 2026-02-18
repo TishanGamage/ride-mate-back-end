@@ -1,0 +1,218 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: user_profile
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: date_of_birth
+                  type: DATE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: gender
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: profile_picture_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: address_line1
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: address_line2
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: city
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: state
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: postal_code
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: country
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_driver
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_rider
+                  type: VARCHAR(3)
+                  defaultValue: "YES"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: driver_license_number
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: driver_license_expiry
+                  type: DATE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: driver_license_verified
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: true
+              - column:
+                  name: account_status
+                  type: VARCHAR(20)
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_verified
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_verified
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating_as_driver
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.0
+                  constraints:
+                    nullable: true
+              - column:
+                  name: rating_as_rider
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.0
+                  constraints:
+                    nullable: true
+              - column:
+                  name: total_rides_as_driver
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_rides_as_rider
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_login_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_user_profile_email
+            tableName: user_profile
+            columns:
+              - column:
+                  name: email
+        - createIndex:
+            indexName: idx_user_profile_phone
+            tableName: user_profile
+            columns:
+              - column:
+                  name: phone_number
+        - createIndex:
+            indexName: idx_user_profile_account_status
+            tableName: user_profile
+            columns:
+              - column:
+                  name: account_status
+        - createIndex:
+            indexName: idx_user_profile_created_date
+            tableName: user_profile
+            columns:
+              - column:
+                  name: created_date
+
