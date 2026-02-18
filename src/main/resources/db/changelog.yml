@@ -11,3 +11,5 @@ databaseChangeLog:
       file: "mysql/ride.yml"
   - include:
       file: "mysql/cost.yml"
+  - include:
+      file: "mysql/verification_codes.yml"
