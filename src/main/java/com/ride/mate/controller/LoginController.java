@@ -1,5 +1,6 @@
 package com.ride.mate.controller;
 
+import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.resources.SendVerificationCodeRequest;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.resources.VerifyCodeRequest;
@@ -45,14 +46,15 @@ public class LoginController {
      */
     @PostMapping(value = "/send-verification-code")
     public ResponseEntity<?> sendVerificationCode(@Valid @RequestBody SendVerificationCodeRequest request) {
-        try {
-            String message = verificationCodeService.sendVerificationCode(request);
-            SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource(message, "Verification code sent successfully");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Failed to send verification code", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+            VerificationCode verificationCode = verificationCodeService.sendVerificationCode(request);
+            if(verificationCode != null) {
+                SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification code sent successfully",verificationCode.getCode());
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            else{
+                SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Failed to send verification code");
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
     }
 
     /**
@@ -64,19 +66,8 @@ public class LoginController {
      */
     @PostMapping(value = "/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest request) {
-        try {
-            boolean isValid = verificationCodeService.verifyCode(request);
-
-            if (isValid) {
-                SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification successful", "Code verified successfully");
-                return new ResponseEntity<>(response, HttpStatus.OK);
-            } else {
-                SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification failed", "Invalid or expired verification code");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification error", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        verificationCodeService.verifyCode(request);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification successful", "Code verified successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

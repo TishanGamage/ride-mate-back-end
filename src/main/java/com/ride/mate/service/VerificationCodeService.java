@@ -1,5 +1,6 @@
 package com.ride.mate.service;
 
+import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.resources.SendVerificationCodeRequest;
 import com.ride.mate.resources.VerifyCodeRequest;
 
@@ -23,14 +24,14 @@ public interface VerificationCodeService {
      * @param request the send verification code request
      * @return success message
      */
-    String sendVerificationCode(SendVerificationCodeRequest request);
+    VerificationCode sendVerificationCode(SendVerificationCodeRequest request);
 
     /**
      * Verifies the code entered by the user
      *
      * @param request the verification code request
-     * @return true if code is valid, false otherwise
+     * @throws com.ride.mate.exception.ValidateRecordException if validation fails
      */
-    boolean verifyCode(VerifyCodeRequest request);
+    void verifyCode(VerifyCodeRequest request);
 }
 
