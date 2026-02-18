@@ -1,10 +1,16 @@
 package com.ride.mate.domain;
 
+import com.ride.mate.core.BaseEntity;
+import com.ride.mate.enums.YesNo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 /**
@@ -19,33 +25,32 @@ import java.time.LocalDateTime;
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "verification_codes")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class VerificationCode {
+public class VerificationCode extends BaseEntity implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
+    @Column(name = "email")
     private String email;
 
-    @Column(nullable = false, length = 6)
+    @Column(name = "code")
     private String code;
 
-    @Column(nullable = false)
+    @Column(name = "expiry_time")
     private LocalDateTime expiryTime;
 
-    @Column(nullable = false)
-    private LocalDateTime createdDate;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "verified")
+    private YesNo verified;
 
-    @Column(nullable = false)
-    private Boolean verified = false;
+    @Column(name = "attempt_count")
+    private Long attemptCount;
 
-    @Column(nullable = false)
-    private Integer attemptCount = 0;
+    @Column(name = "created_user")
+    private String createdUser;
+
+    @Column(name = "created_date")
+    private Timestamp createdDate;
 }
 
