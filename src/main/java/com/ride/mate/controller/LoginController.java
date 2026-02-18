@@ -6,7 +6,6 @@ import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.resources.VerifyCodeRequest;
 import com.ride.mate.service.VerificationCodeService;
 import jakarta.validation.Valid;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +28,9 @@ import org.springframework.web.bind.annotation.*;
 public class LoginController {
 
     private final VerificationCodeService verificationCodeService;
-    private final Environment environment;
 
-    public LoginController(VerificationCodeService verificationCodeService,
-                          Environment environment) {
+    public LoginController(VerificationCodeService verificationCodeService) {
         this.verificationCodeService = verificationCodeService;
-        this.environment = environment;
     }
 
     /**
@@ -66,8 +62,11 @@ public class LoginController {
      */
     @PostMapping(value = "/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest request) {
-        verificationCodeService.verifyCode(request);
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification successful", "Code verified successfully");
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        SuccessAndErrorDetailsResource response = verificationCodeService.verifyCode(request);
+        if (response != null && response.isValid()) {
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 }
