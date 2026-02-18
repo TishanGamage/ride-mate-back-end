@@ -8,9 +8,7 @@ databaseChangeLog:
               - column:
                   name: id
                   type: BIGINT
-                  autoIncrement: true
                   constraints:
-                    primaryKey: true
                     nullable: false
               - column:
                   name: email
@@ -35,13 +33,12 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: verified
-                  type: BOOLEAN
-                  defaultValueBoolean: false
+                  type: VARCHAR(6)
                   constraints:
                     nullable: false
               - column:
                   name: attempt_count
-                  type: INT
+                  type: BIGINT
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false

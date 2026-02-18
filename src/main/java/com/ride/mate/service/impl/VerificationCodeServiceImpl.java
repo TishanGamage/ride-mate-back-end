@@ -1,11 +1,13 @@
 package com.ride.mate.service.impl;
 
 import com.ride.mate.domain.VerificationCode;
+import com.ride.mate.enums.YesNo;
 import com.ride.mate.repository.VerificationCodeRepository;
 import com.ride.mate.resources.SendVerificationCodeRequest;
 import com.ride.mate.resources.VerifyCodeRequest;
 import com.ride.mate.service.VerificationCodeService;
-import jakarta.transaction.Transactional;
+import com.ride.mate.util.DateUtil;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -27,9 +29,10 @@ import java.util.Random;
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  */
 @Service
+@Transactional(rollbackFor = Exception.class)
 public class VerificationCodeServiceImpl implements VerificationCodeService {
 
-    private static final int CODE_EXPIRY_MINUTES = 10;
+    private static final int CODE_EXPIRY_MINUTES = 5;
     private static final int MAX_ATTEMPTS = 3;
 
     private final VerificationCodeRepository verificationCodeRepository;
@@ -42,7 +45,6 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     }
 
     @Override
-    @Transactional
     public String sendVerificationCode(SendVerificationCodeRequest request) {
         String email = request.getEmail();
 
@@ -56,10 +58,10 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         VerificationCode verificationCode = new VerificationCode();
         verificationCode.setEmail(email);
         verificationCode.setCode(code);
-        verificationCode.setCreatedDate(LocalDateTime.now());
+        verificationCode.setCreatedDate(DateUtil.getDate());
         verificationCode.setExpiryTime(LocalDateTime.now().plusMinutes(CODE_EXPIRY_MINUTES));
-        verificationCode.setVerified(false);
-        verificationCode.setAttemptCount(0);
+        verificationCode.setVerified(YesNo.NO);
+        verificationCode.setAttemptCount(0L);
 
         verificationCodeRepository.save(verificationCode);
 
@@ -84,7 +86,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         VerificationCode verificationCode = optionalVerificationCode.get();
 
         // Check if already verified
-        if (verificationCode.getVerified()) {
+        if (verificationCode.getVerified().equals(YesNo.YES)) {
             return false;
         }
 
@@ -103,7 +105,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
 
         // Verify code
         if (verificationCode.getCode().equals(code)) {
-            verificationCode.setVerified(true);
+            verificationCode.setVerified(YesNo.YES);
             verificationCodeRepository.save(verificationCode);
             return true;
         } else {
