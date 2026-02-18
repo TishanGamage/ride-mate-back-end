@@ -17,6 +17,7 @@ public abstract class MessagePropertyBase {
     // Field names for validation
     protected static final String VERIFICATION_CODE = "verificationCode";
     protected static final String CODE = "code";
+    protected static final String SYSTEM = "SYSTEM";
 
     // Verification message property keys
     protected static final String VERIFICATION_CODE_NOT_FOUND = "verification.code-not-found";
