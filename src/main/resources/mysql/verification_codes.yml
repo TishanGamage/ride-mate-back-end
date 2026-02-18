@@ -65,6 +65,12 @@ databaseChangeLog:
                   type: TIMESTAMP
                   constraints:
                     nullable: false
+              - column:
+                  name: version
+                  type: bigint
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
         - createIndex:
             indexName: idx_verification_codes_email
             tableName: verification_codes

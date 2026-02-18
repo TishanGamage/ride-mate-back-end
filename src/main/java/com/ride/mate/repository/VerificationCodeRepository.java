@@ -2,6 +2,7 @@ package com.ride.mate.repository;
 
 import com.ride.mate.domain.VerificationCode;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -26,8 +27,7 @@ public interface VerificationCodeRepository extends JpaRepository<VerificationCo
 
     Optional<VerificationCode> findByEmailAndCode(String email, String code);
 
-    void deleteByExpiryTimeBefore(LocalDateTime dateTime);
-
+    @Modifying
     void deleteByEmail(String email);
 }
 
