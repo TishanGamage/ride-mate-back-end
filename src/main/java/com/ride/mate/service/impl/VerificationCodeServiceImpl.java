@@ -1,5 +1,6 @@
 package com.ride.mate.service.impl;
 
+import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
@@ -32,7 +33,7 @@ import java.util.Random;
  */
 @Service
 @Transactional(rollbackFor = Exception.class)
-public class VerificationCodeServiceImpl implements VerificationCodeService {
+public class VerificationCodeServiceImpl extends MessagePropertyBase implements VerificationCodeService {
 
     private static final int CODE_EXPIRY_MINUTES = 5;
     private static final int MAX_ATTEMPTS = 3;
@@ -68,7 +69,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         verificationCode.setVerified(YesNo.NO);
         verificationCode.setAttemptCount(0L);
         verificationCode.setCreatedDate(DateUtil.getDate());
-        verificationCode.setCreatedUser("SYSTEM");
+        verificationCode.setCreatedUser(SYSTEM);
         verificationCode.setSyncTs(DateUtil.getDate());
 
         verificationCodeRepository.save(verificationCode);
@@ -85,27 +86,27 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         String code = request.getCode();
         Optional<VerificationCode> optionalVerificationCode = verificationCodeRepository.findByEmail(email);
         if (optionalVerificationCode.isEmpty()) {
-            throw new ValidateRecordException(environment.getProperty("verification.code-not-found"), "verificationCode");
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_CODE_NOT_FOUND), VERIFICATION_CODE);
         }
         VerificationCode verificationCode = optionalVerificationCode.get();
         // Check if already verified
         if (verificationCode.getVerified().equals(YesNo.YES)) {
-            throw new ValidateRecordException(environment.getProperty("verification.already-verified"), "verificationCode");
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_ALREADY_VERIFIED), VERIFICATION_CODE);
         }
         // Check if code has expired
         if (LocalDateTime.now().isAfter(verificationCode.getExpiryTime())) {
-            throw new ValidateRecordException(environment.getProperty("verification.code-expired"), "verificationCode");
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_CODE_EXPIRED), VERIFICATION_CODE);
         }
         // Check if max attempts exceeded
         if (verificationCode.getAttemptCount() >= MAX_ATTEMPTS) {
-            throw new ValidateRecordException(environment.getProperty("verification.max-attempts-exceeded"), "verificationCode");
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_MAX_ATTEMPTS_EXCEEDED), VERIFICATION_CODE);
         }
         // Increment attempt count
         verificationCode.setAttemptCount(verificationCode.getAttemptCount() + 1);
         // Verify code
         if (!verificationCode.getCode().equals(code)) {
             verificationCodeRepository.save(verificationCode);
-            throw new ValidateRecordException(environment.getProperty("verification.invalid-code"), "code");
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_INVALID_CODE), CODE);
         }
         // Code is valid - mark as verified
         verificationCode.setVerified(YesNo.YES);
