@@ -52,5 +52,11 @@ public class VerificationCode extends BaseEntity implements Serializable {
 
     @Column(name = "created_date")
     private Timestamp createdDate;
+
+    @Column(name = "modified_user")
+    private String modifiedUser;
+
+    @Column(name = "modified_date")
+    private Timestamp modifiedDate;
 }
 
