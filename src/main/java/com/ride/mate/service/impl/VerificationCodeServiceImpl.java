@@ -2,11 +2,13 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.enums.YesNo;
+import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.VerificationCodeRepository;
 import com.ride.mate.resources.SendVerificationCodeRequest;
 import com.ride.mate.resources.VerifyCodeRequest;
 import com.ride.mate.service.VerificationCodeService;
 import com.ride.mate.util.DateUtil;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -37,15 +39,18 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
 
     private final VerificationCodeRepository verificationCodeRepository;
     private final JavaMailSender mailSender;
+    private final Environment environment;
 
     public VerificationCodeServiceImpl(VerificationCodeRepository verificationCodeRepository,
-                                      JavaMailSender mailSender) {
+                                      JavaMailSender mailSender,
+                                      Environment environment) {
         this.verificationCodeRepository = verificationCodeRepository;
         this.mailSender = mailSender;
+        this.environment = environment;
     }
 
     @Override
-    public String sendVerificationCode(SendVerificationCodeRequest request) {
+    public VerificationCode sendVerificationCode(SendVerificationCodeRequest request) {
         String email = request.getEmail();
 
         // Delete any existing verification code for this email
@@ -58,60 +63,56 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         VerificationCode verificationCode = new VerificationCode();
         verificationCode.setEmail(email);
         verificationCode.setCode(code);
-        verificationCode.setCreatedDate(DateUtil.getDate());
+
         verificationCode.setExpiryTime(LocalDateTime.now().plusMinutes(CODE_EXPIRY_MINUTES));
         verificationCode.setVerified(YesNo.NO);
         verificationCode.setAttemptCount(0L);
+        verificationCode.setCreatedDate(DateUtil.getDate());
+        verificationCode.setCreatedUser("SYSTEM");
+        verificationCode.setSyncTs(DateUtil.getDate());
 
         verificationCodeRepository.save(verificationCode);
 
         // Send email with verification code
         sendEmail(email, code);
 
-        return "Verification code sent successfully to " + email;
+        return verificationCode;
     }
 
     @Override
-    @Transactional
-    public boolean verifyCode(VerifyCodeRequest request) {
+    public void verifyCode(VerifyCodeRequest request) {
         String email = request.getEmail();
         String code = request.getCode();
-
         Optional<VerificationCode> optionalVerificationCode = verificationCodeRepository.findByEmail(email);
-
         if (optionalVerificationCode.isEmpty()) {
-            return false;
+            throw new ValidateRecordException(environment.getProperty("verification.code-not-found"), "verificationCode");
         }
-
         VerificationCode verificationCode = optionalVerificationCode.get();
-
         // Check if already verified
         if (verificationCode.getVerified().equals(YesNo.YES)) {
-            return false;
+            throw new ValidateRecordException(environment.getProperty("verification.already-verified"), "verificationCode");
         }
-
         // Check if code has expired
         if (LocalDateTime.now().isAfter(verificationCode.getExpiryTime())) {
-            return false;
+            throw new ValidateRecordException(environment.getProperty("verification.code-expired"), "verificationCode");
         }
-
         // Check if max attempts exceeded
         if (verificationCode.getAttemptCount() >= MAX_ATTEMPTS) {
-            return false;
+            throw new ValidateRecordException(environment.getProperty("verification.max-attempts-exceeded"), "verificationCode");
         }
-
         // Increment attempt count
         verificationCode.setAttemptCount(verificationCode.getAttemptCount() + 1);
-
         // Verify code
-        if (verificationCode.getCode().equals(code)) {
-            verificationCode.setVerified(YesNo.YES);
+        if (!verificationCode.getCode().equals(code)) {
             verificationCodeRepository.save(verificationCode);
-            return true;
-        } else {
-            verificationCodeRepository.save(verificationCode);
-            return false;
+            throw new ValidateRecordException(environment.getProperty("verification.invalid-code"), "code");
         }
+        // Code is valid - mark as verified
+        verificationCode.setVerified(YesNo.YES);
+        verificationCode.setModifiedDate(DateUtil.getDate());
+        verificationCode.setModifiedUser("SYSTEM");
+        verificationCode.setSyncTs(DateUtil.getDate());
+        verificationCodeRepository.save(verificationCode);
     }
 
     /**
@@ -139,7 +140,6 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
                 "This code will expire in " + CODE_EXPIRY_MINUTES + " minutes.\n\n" +
                 "If you did not request this code, please ignore this email.\n\n" +
                 "Best regards,\nRideMate ");
-
         mailSender.send(message);
     }
 }
