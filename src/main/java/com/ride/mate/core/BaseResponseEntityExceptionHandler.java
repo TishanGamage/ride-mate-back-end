@@ -78,20 +78,20 @@ public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionH
         }
     }
 
-    @ExceptionHandler({ ValidateRecordException.class })
-    public ResponseEntity<?> validateRecordException(ValidateRecordException ex, WebRequest request) {
+    @ExceptionHandler({ValidateRecordException.class})
+    public ResponseEntity<Object> validateRecordException(ValidateRecordException ex, WebRequest request) {
         try {
             ValidateResource typeValidation = new ValidateResource();
-            Class<? extends ValidateResource> validationDetailClass = typeValidation.getClass();
+            Class validationDetailClass = typeValidation.getClass();
             Field sField = validationDetailClass.getDeclaredField(ex.getField());
             sField.setAccessible(true);
             sField.set(typeValidation, ex.getMessage());
             return new ResponseEntity<>(typeValidation, HttpStatus.UNPROCESSABLE_ENTITY);
         } catch (Exception e) {
-            SuccessAndErrorDetailsResource successAndErrorDetailsDto = new SuccessAndErrorDetailsResource();
-            successAndErrorDetailsDto.setMessages(environment.getProperty("common.internal-server-error"));
-            successAndErrorDetailsDto.setDetails(e.getMessage());
-            return new ResponseEntity<>(successAndErrorDetailsDto, HttpStatus.INTERNAL_SERVER_ERROR);
+            SuccessAndErrorDetailsResource errorDetails = new SuccessAndErrorDetailsResource();
+            errorDetails.setMessages("ERROR");
+            errorDetails.setDetails(e.getMessage());
+            return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

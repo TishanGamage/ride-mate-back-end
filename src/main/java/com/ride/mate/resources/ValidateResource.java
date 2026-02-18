@@ -1,6 +1,8 @@
 package com.ride.mate.resources;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 
 /**
@@ -16,6 +18,7 @@ import lombok.Data;
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ValidateResource {
 
     @JsonProperty("email")

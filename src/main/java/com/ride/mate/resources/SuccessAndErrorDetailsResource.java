@@ -1,8 +1,9 @@
 package com.ride.mate.resources;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Success and Error Details Resource
@@ -16,7 +17,8 @@ import lombok.NoArgsConstructor;
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SuccessAndErrorDetailsResource {
@@ -24,6 +26,7 @@ public class SuccessAndErrorDetailsResource {
     private String messages;
     private String details;
     private String code;
+    private boolean isValid;
 
     public SuccessAndErrorDetailsResource(String messages) {
         this.messages = messages;
@@ -33,5 +36,12 @@ public class SuccessAndErrorDetailsResource {
         this.messages = messages;
         this.details = details;
     }
+
+    public SuccessAndErrorDetailsResource(String messages, boolean isValid) {
+        this.messages = messages;
+        this.isValid = isValid;
+    }
+
+
 }
 
