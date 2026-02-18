@@ -59,7 +59,7 @@ public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionH
                     field.setAccessible(true);
                     field.set(resource, error.getDefaultMessage());
                 }
-                return new ResponseEntity<>(resource, HttpStatus.UNPROCESSABLE_CONTENT);
+                return new ResponseEntity<>(resource, HttpStatus.UNPROCESSABLE_ENTITY);
             } else {
                 SuccessAndErrorDetailsResource errorDetails = new SuccessAndErrorDetailsResource();
                 StringBuilder errorMessage = new StringBuilder();
@@ -68,7 +68,7 @@ public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionH
                 }
                 errorDetails.setMessages("Validation Failed");
                 errorDetails.setDetails(errorMessage.toString());
-                return new ResponseEntity<>(errorDetails, HttpStatus.UNPROCESSABLE_CONTENT);
+                return new ResponseEntity<>(errorDetails, HttpStatus.UNPROCESSABLE_ENTITY);
             }
         } catch (Exception e) {
             SuccessAndErrorDetailsResource errorDetails = new SuccessAndErrorDetailsResource();
@@ -86,7 +86,7 @@ public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionH
             Field sField = validationDetailClass.getDeclaredField(ex.getField());
             sField.setAccessible(true);
             sField.set(typeValidation, ex.getMessage());
-            return new ResponseEntity<>(typeValidation, HttpStatus.UNPROCESSABLE_CONTENT);
+            return new ResponseEntity<>(typeValidation, HttpStatus.UNPROCESSABLE_ENTITY);
         } catch (Exception e) {
             SuccessAndErrorDetailsResource successAndErrorDetailsDto = new SuccessAndErrorDetailsResource();
             successAndErrorDetailsDto.setMessages(environment.getProperty("common.internal-server-error"));
