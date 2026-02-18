@@ -69,7 +69,7 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         verificationCode.setVerified(YesNo.NO);
         verificationCode.setAttemptCount(0L);
         verificationCode.setCreatedDate(DateUtil.getDate());
-        verificationCode.setCreatedUser("SYSTEM");
+        verificationCode.setCreatedUser(SYSTEM);
         verificationCode.setSyncTs(DateUtil.getDate());
 
         verificationCodeRepository.save(verificationCode);
