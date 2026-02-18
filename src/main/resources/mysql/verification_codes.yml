@@ -27,11 +27,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: created_date
-                  type: TIMESTAMP
-                  constraints:
-                    nullable: false
-              - column:
                   name: verified
                   type: VARCHAR(6)
                   constraints:
@@ -40,6 +35,31 @@ databaseChangeLog:
                   name: attempt_count
                   type: BIGINT
                   defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
         - createIndex:
