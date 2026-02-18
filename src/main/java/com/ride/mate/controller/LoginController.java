@@ -53,7 +53,7 @@ public class LoginController {
             }
             else{
                 SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Failed to send verification code");
-                return new ResponseEntity<>(response, HttpStatus.UNPROCESSABLE_CONTENT);
+                return new ResponseEntity<>(response, HttpStatus.UNPROCESSABLE_ENTITY);
             }
     }
 

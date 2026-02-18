@@ -1,15 +1,5 @@
 databaseChangeLog:
-#  - include:
-#      file: "mysql/user.yml"
-#  - include:
-#      file: "mysql/user_profile.yml"
-#  - include:
-#      file: "mysql/vehicle_categories.yml"
-#  - include:
-#      file: "mysql/vehicle.yml"
-#  - include:
-#      file: "mysql/ride.yml"
-#  - include:
-#      file: "mysql/cost.yml"
   - include:
-      file: "mysql/verification_codes.yml"
+      file: classpath:/mysql/sequence.yml
+  - include:
+      file: classpath:/mysql/verification_codes.yml
