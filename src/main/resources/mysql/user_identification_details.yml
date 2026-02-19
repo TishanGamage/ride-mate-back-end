@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Tishan
       changes:
         - createTable:
-            tableName: user_profile
+            tableName: user_identification_details
             columns:
               - column:
                   name: id
@@ -14,102 +14,80 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: email
-                  type: VARCHAR(255)
+                  name: user_profile_id
+                  type: BIGINT
                   constraints:
                     nullable: false
-                    unique: true
+                    foreignKeyName: fk_user_identification_user_profile
+                    references: user_profile(id)
+                    deleteCascade: true
               - column:
-                  name: password
-                  type: VARCHAR(255)
+                  name: identification_type_id
+                  type: BIGINT
                   constraints:
                     nullable: false
+                    foreignKeyName: fk_user_identification_type
+                    references: identification_type(id)
               - column:
-                  name: first_name
+                  name: identification_number
                   type: VARCHAR(100)
                   constraints:
                     nullable: false
               - column:
-                  name: last_name
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: phone_number
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: false
-                    unique: true
-              - column:
-                  name: date_of_birth
+                  name: issue_date
                   type: DATE
                   constraints:
                     nullable: true
               - column:
-                  name: gender
-                  type: VARCHAR(10)
+                  name: expiry_date
+                  type: DATE
                   constraints:
                     nullable: true
               - column:
-                  name: profile_picture_url
+                  name: issuing_country
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: issuing_authority
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: front_image_url
                   type: VARCHAR(500)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line1
-                  type: VARCHAR(255)
+                  name: back_image_url
+                  type: VARCHAR(500)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line2
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: address_line3
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: address_line4
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: city
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: state
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: postal_code
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: country
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: account_status
-                  type: VARCHAR(20)
+                  name: is_verified
+                  type: VARCHAR(10)
                   constraints:
                     nullable: false
               - column:
-                  name: email_verified
-                  type: VARCHAR(5)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: last_login_date
+                  name: verified_date
                   type: TIMESTAMP
                   constraints:
                     nullable: true
+              - column:
+                  name: verified_by
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: verification_notes
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -141,3 +119,8 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+
+        - addUniqueConstraint:
+            tableName: user_identification_details
+            columnNames: user_profile_id, identification_type_id, identification_number
+            constraintName: uk_user_identification_unique

@@ -1,0 +1,366 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: make_code
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: make_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: country_of_origin
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_active
+                  type: VARCHAR(3)
+                  defaultValue: "YES"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_order
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            indexName: idx_vehicle_make_code
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "TOYOTA"
+              - column:
+                  name: make_name
+                  value: "Toyota"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 1
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "MERCEDES_BENZ"
+              - column:
+                  name: make_name
+                  value: "Mercedes-Benz"
+              - column:
+                  name: country_of_origin
+                  value: "Germany"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 2
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "BMW"
+              - column:
+                  name: make_name
+                  value: "BMW"
+              - column:
+                  name: country_of_origin
+                  value: "Germany"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 3
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "HONDA"
+              - column:
+                  name: make_name
+                  value: "Honda"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 4
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "NISSAN"
+              - column:
+                  name: make_name
+                  value: "Nissan"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 5
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "HYUNDAI"
+              - column:
+                  name: make_name
+                  value: "Hyundai"
+              - column:
+                  name: country_of_origin
+                  value: "South Korea"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 6
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "KIA"
+              - column:
+                  name: make_name
+                  value: "Kia"
+              - column:
+                  name: country_of_origin
+                  value: "South Korea"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 7
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "SUZUKI"
+              - column:
+                  name: make_name
+                  value: "Suzuki"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 8
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "MAZDA"
+              - column:
+                  name: make_name
+                  value: "Mazda"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 9
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_make
+            columns:
+              - column:
+                  name: make_code
+                  value: "MITSUBISHI"
+              - column:
+                  name: make_name
+                  value: "Mitsubishi"
+              - column:
+                  name: country_of_origin
+                  value: "Japan"
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 10
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
