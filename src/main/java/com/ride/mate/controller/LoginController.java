@@ -47,7 +47,7 @@ public class LoginController {
                 SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Verification code sent successfully",verificationCode.getCode());
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }
-            else{
+            else {
                 SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource("Failed to send verification code");
                 return new ResponseEntity<>(response, HttpStatus.UNPROCESSABLE_ENTITY);
             }
@@ -63,7 +63,7 @@ public class LoginController {
     @PostMapping(value = "/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest request) {
         SuccessAndErrorDetailsResource response = verificationCodeService.verifyCode(request);
-        if (response != null && response.isValid()) {
+        if (response != null && response.getIsValid()) {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
