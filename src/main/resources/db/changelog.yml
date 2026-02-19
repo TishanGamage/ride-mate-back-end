@@ -2,4 +2,18 @@ databaseChangeLog:
   - include:
       file: classpath:/mysql/sequence.yml
   - include:
+      file: classpath:/mysql/identification_type.yml
+  - include:
+      file: classpath:/mysql/vehicle_type.yml
+  - include:
+      file: classpath:/mysql/vehicle_make.yml
+  - include:
+      file: classpath:/mysql/user_profile.yml
+  - include:
+      file: classpath:/mysql/user_identification_details.yml
+  - include:
       file: classpath:/mysql/verification_codes.yml
+  - include:
+      file: classpath:/mysql/driver_profile.yml
+  - include:
+      file: classpath:/mysql/driver_vehicle_details.yml
