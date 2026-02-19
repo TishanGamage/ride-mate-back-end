@@ -14,10 +14,16 @@ import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.FileCopyUtils;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
@@ -94,20 +100,20 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         String code = request.getCode();
         Optional<VerificationCode> optionalVerificationCode = verificationCodeRepository.findByEmail(email);
         if (optionalVerificationCode.isEmpty()) {
-            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_NOT_FOUND), false);
+            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_NOT_FOUND), Boolean.FALSE);
         }
         VerificationCode verificationCode = optionalVerificationCode.get();
         // Check if already verified
         if (verificationCode.getVerified().equals(YesNo.YES)) {
-            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_ALREADY_VERIFIED), false);
+            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_ALREADY_VERIFIED), Boolean.FALSE);
         }
         // Check if code has expired
         if (LocalDateTime.now().isAfter(verificationCode.getExpiryTime())) {
-            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_EXPIRED), false);
+            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_EXPIRED), Boolean.FALSE);
         }
         // Check if max attempts exceeded
         if (verificationCode.getAttemptCount() >= MAX_ATTEMPTS) {
-            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_MAX_ATTEMPTS_EXCEEDED), false);
+            return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_MAX_ATTEMPTS_EXCEEDED), Boolean.FALSE);
         }
         // Increment attempt count
         verificationCode.setAttemptCount(verificationCode.getAttemptCount() + 1);
@@ -146,26 +152,50 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
      */
     private void sendEmail(String toEmail, String code) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(toEmail);
-            message.setSubject("Your Verification Code - RideMate");
-            message.setText("Your verification code is: " + code + "\n\n" +
-                    "This code will expire in " + CODE_EXPIRY_MINUTES + " minutes.\n\n" +
-                    "If you did not request this code, please ignore this email.\n\n" +
-                    "Best regards,\nRideMate ");
-            mailSender.send(message);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject("Your RideMate Verification Code");
+
+            // Load HTML template from file
+            String htmlContent = loadEmailTemplate();
+
+            // Replace placeholders with actual values
+            htmlContent = htmlContent.replace("{{VERIFICATION_CODE}}", code);
+            htmlContent = htmlContent.replace("{{EXPIRY_MINUTES}}", String.valueOf(CODE_EXPIRY_MINUTES));
+
+            helper.setText(htmlContent, true);
+
+            // Add inline logo image
+            ClassPathResource logoResource = new ClassPathResource("assets/ride-mate-logo-dark.png");
+            helper.addInline("logo", logoResource);
+
+            mailSender.send(mimeMessage);
+
             log.info("Verification code email sent successfully to: {}", toEmail);
+
         } catch (Exception e) {
-            // Log the error but don't fail the request - useful for development
             log.error("Failed to send email to: {}. Error: {}", toEmail, e.getMessage());
             log.warn("==========================================================");
             log.warn("EMAIL SENDING FAILED - DEVELOPMENT MODE");
             log.warn("Verification code for {}: {}", toEmail, code);
             log.warn("Code expires in {} minutes", CODE_EXPIRY_MINUTES);
             log.warn("==========================================================");
-            // In production, you might want to throw an exception here
-            // For development, we'll continue so you can test with the logged code
         }
     }
-}
 
+    /**
+     * Loads the email template from resources
+     *
+     * @return HTML template as string
+     * @throws IOException if template file cannot be read
+     */
+    private String loadEmailTemplate() throws IOException {
+        ClassPathResource resource = new ClassPathResource("templates/verification-email.html");
+        try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+            return FileCopyUtils.copyToString(reader);
+        }
+    }
+
+}
