@@ -1,0 +1,266 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type_code
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: type_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: base_fare
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: per_km_rate
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: min_seats
+                  type: INT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: max_seats
+                  type: INT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_active
+                  type: VARCHAR(3)
+                  defaultValue: "YES"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_order
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            indexName: idx_vehicle_type_code
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: type_code
+
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - insert:
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: type_code
+                  value: "CAR"
+              - column:
+                  name: type_name
+                  value: "Car"
+              - column:
+                  name: description
+                  value: "Standard passenger car"
+              - column:
+                  name: base_fare
+                  valueNumeric: 50.00
+              - column:
+                  name: per_km_rate
+                  valueNumeric: 25.00
+              - column:
+                  name: min_seats
+                  valueNumeric: 2
+              - column:
+                  name: max_seats
+                  valueNumeric: 5
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 1
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: type_code
+                  value: "VAN"
+              - column:
+                  name: type_name
+                  value: "Van"
+              - column:
+                  name: description
+                  value: "Large passenger van"
+              - column:
+                  name: base_fare
+                  valueNumeric: 100.00
+              - column:
+                  name: per_km_rate
+                  valueNumeric: 40.00
+              - column:
+                  name: min_seats
+                  valueNumeric: 6
+              - column:
+                  name: max_seats
+                  valueNumeric: 15
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 2
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: type_code
+                  value: "BIKE"
+              - column:
+                  name: type_name
+                  value: "Bike"
+              - column:
+                  name: description
+                  value: "Motorcycle or scooter"
+              - column:
+                  name: base_fare
+                  valueNumeric: 30.00
+              - column:
+                  name: per_km_rate
+                  valueNumeric: 15.00
+              - column:
+                  name: min_seats
+                  valueNumeric: 1
+              - column:
+                  name: max_seats
+                  valueNumeric: 2
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 3
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
+        - insert:
+            tableName: vehicle_type
+            columns:
+              - column:
+                  name: type_code
+                  value: "SUV"
+              - column:
+                  name: type_name
+                  value: "SUV"
+              - column:
+                  name: description
+                  value: "Sport Utility Vehicle"
+              - column:
+                  name: base_fare
+                  valueNumeric: 75.00
+              - column:
+                  name: per_km_rate
+                  valueNumeric: 35.00
+              - column:
+                  name: min_seats
+                  valueNumeric: 4
+              - column:
+                  name: max_seats
+                  valueNumeric: 7
+              - column:
+                  name: is_active
+                  value: "YES"
+              - column:
+                  name: display_order
+                  valueNumeric: 4
+              - column:
+                  name: created_date
+                  valueComputed: "CURRENT_TIMESTAMP"
+              - column:
+                  name: created_user
+                  value: "SYSTEM"
+              - column:
+                  name: sync_ts
+                  valueComputed: "CURRENT_TIMESTAMP"
+
