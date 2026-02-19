@@ -1,0 +1,199 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: driver_profile_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_driver_vehicle_driver_profile
+                    references: driver_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: vehicle_type_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_driver_vehicle_type
+                    references: vehicle_type(id)
+              - column:
+                  name: vehicle_make_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_driver_vehicle_make
+                    references: vehicle_make(id)
+              - column:
+                  name: registration_number
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: model
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: year
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: color
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: seats
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vehicle_image_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: registration_certificate_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: insurance_number
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: insurance_provider
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: insurance_expiry
+                  type: DATE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: insurance_document_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_verified
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: verified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: verified_by
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_primary
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: VARCHAR(3)
+                  defaultValue: "YES"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: "PENDING_VERIFICATION"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rejection_reason
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+        - createIndex:
+            indexName: idx_driver_vehicle_driver_id
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: driver_profile_id
+
+        - createIndex:
+            indexName: idx_driver_vehicle_type_id
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: vehicle_type_id
+
+        - createIndex:
+            indexName: idx_driver_vehicle_make_id
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: vehicle_make_id
+
+        - createIndex:
+            indexName: idx_driver_vehicle_registration
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: registration_number
+
+        - createIndex:
+            indexName: idx_driver_vehicle_status
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: status
+

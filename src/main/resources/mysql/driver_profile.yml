@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Tishan
       changes:
         - createTable:
-            tableName: user_profile
+            tableName: driver_profile
             columns:
               - column:
                   name: id
@@ -14,99 +14,78 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: email
-                  type: VARCHAR(255)
+                  name: user_profile_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_driver_profile_user_profile
+                    references: user_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: driver_license_number
+                  type: VARCHAR(50)
                   constraints:
                     nullable: false
                     unique: true
               - column:
-                  name: password
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: first_name
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: last_name
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: phone_number
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: false
-                    unique: true
-              - column:
-                  name: date_of_birth
+                  name: driver_license_expiry
                   type: DATE
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
-                  name: gender
-                  type: VARCHAR(10)
+                  name: driver_license_verified
+                  type: VARCHAR(3)
+                  defaultValue: "NO"
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
-                  name: profile_picture_url
+                  name: driver_license_front_url
                   type: VARCHAR(500)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line1
-                  type: VARCHAR(255)
+                  name: driver_license_back_url
+                  type: VARCHAR(500)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line2
-                  type: VARCHAR(255)
+                  name: rating_as_driver
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.0
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
-                  name: address_line3
-                  type: VARCHAR(255)
+                  name: total_rides_as_driver
+                  type: BIGINT
+                  defaultValueNumeric: 0
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
-                  name: address_line4
-                  type: VARCHAR(255)
+                  name: total_earnings
+                  type: DECIMAL(10,2)
+                  defaultValueNumeric: 0.0
                   constraints:
-                    nullable: true
-              - column:
-                  name: city
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: state
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: postal_code
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: country
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: account_status
                   type: VARCHAR(20)
+                  defaultValue: "PENDING_VERIFICATION"
                   constraints:
                     nullable: false
               - column:
-                  name: email_verified
-                  type: VARCHAR(5)
+                  name: background_check_status
+                  type: VARCHAR(20)
+                  defaultValue: "PENDING"
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
-                  name: last_login_date
+                  name: background_check_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: approved_date
                   type: TIMESTAMP
                   constraints:
                     nullable: true
