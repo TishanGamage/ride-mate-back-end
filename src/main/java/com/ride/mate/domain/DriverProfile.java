@@ -23,6 +23,7 @@ import java.util.Set;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 22-02-2026    N/A          N/A          Tishan          Updated to reference User entity
  */
 @Getter
 @Setter
@@ -30,8 +31,9 @@ import java.util.Set;
 @Table(name = "driver_profile")
 public class DriverProfile extends BaseEntity implements Serializable {
 
-    @Column(name = "user_profile_id", nullable = false, unique = true)
-    private Long userProfileId;
+    @OneToOne
+    @JoinColumn(name = "user_profile_id", nullable = false, unique = true)
+    private User user;
 
     @Column(name = "driver_license_number", nullable = false, unique = true, length = 50)
     private String driverLicenseNumber;
@@ -50,22 +52,16 @@ public class DriverProfile extends BaseEntity implements Serializable {
     private String driverLicenseBackUrl;
 
     @Column(name = "rating_as_driver", nullable = false, precision = 3, scale = 2)
-    private BigDecimal ratingAsDriver;
+    private BigDecimal ratingAsDriver = BigDecimal.ZERO;
 
     @Column(name = "total_rides_as_driver", nullable = false)
-    private Long totalRidesAsDriver;
+    private Long totalRidesAsDriver = 0L;
 
     @Column(name = "total_earnings", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalEarnings;
+    private BigDecimal totalEarnings = BigDecimal.ZERO;
 
     @Column(name = "account_status", nullable = false, length = 20)
     private String accountStatus;
-
-    @Column(name = "background_check_status", length = 20)
-    private String backgroundCheckStatus;
-
-    @Column(name = "background_check_date")
-    private Timestamp backgroundCheckDate;
 
     @Column(name = "approved_date")
     private Timestamp approvedDate;
@@ -83,7 +79,7 @@ public class DriverProfile extends BaseEntity implements Serializable {
     private Timestamp modifiedDate;
 
     // Relationships
-    @OneToMany(mappedBy = "driverProfileId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "driverProfile", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<DriverVehicleDetails> vehicles;
 }
 

@@ -27,21 +27,18 @@ import java.sql.Timestamp;
 @Table(name = "vehicle_make")
 public class VehicleMake extends BaseEntity implements Serializable {
 
-    @Column(name = "make_code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, unique = true, length = 50)
     private String makeCode;
 
-    @Column(name = "make_name", nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String makeName;
 
     @Column(name = "country_of_origin", length = 100)
     private String countryOfOrigin;
 
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "is_active", nullable = false, length = 3)
-    private YesNo isActive;
-
-    @Column(name = "display_order", nullable = false)
-    private Integer displayOrder;
+    @Column(name = "status", nullable = false, length = 3)
+    private YesNo status;
 
     @Column(name = "created_user", nullable = false, length = 100)
     private String createdUser;

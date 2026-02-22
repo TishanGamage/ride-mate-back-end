@@ -1,5 +1,6 @@
 package com.ride.mate.repository;
 
+import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,16 +18,15 @@ import java.util.Optional;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 22-02-2026    N/A          N/A          Tishan          Updated for User-based schema
  */
 @Repository
 public interface UserProfileRepository extends JpaRepository<UserProfile, Long> {
 
-    Optional<UserProfile> findByEmail(String email);
+    Optional<UserProfile> findByUser(User user);
 
-    Optional<UserProfile> findByPhoneNumber(String phoneNumber);
+    Optional<UserProfile> findByUserId(Long userId);
 
-    boolean existsByEmail(String email);
-
-    boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByUserId(Long userId);
 }
 
