@@ -28,10 +28,10 @@ import java.sql.Timestamp;
 @Table(name = "vehicle_type")
 public class VehicleType extends BaseEntity implements Serializable {
 
-    @Column(name = "type_code", nullable = false, unique = true, length = 20)
+    @Column(name = "code", nullable = false, unique = true, length = 20)
     private String typeCode;
 
-    @Column(name = "type_name", nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String typeName;
 
     @Column(name = "description", length = 255)
@@ -50,11 +50,8 @@ public class VehicleType extends BaseEntity implements Serializable {
     private Integer maxSeats;
 
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "is_active", nullable = false, length = 3)
-    private YesNo isActive;
-
-    @Column(name = "display_order", nullable = false)
-    private Integer displayOrder;
+    @Column(name = "status", nullable = false, length = 3)
+    private YesNo status;
 
     @Column(name = "created_user", nullable = false, length = 100)
     private String createdUser;
