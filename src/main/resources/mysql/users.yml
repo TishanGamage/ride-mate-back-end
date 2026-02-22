@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Tishan
       changes:
         - createTable:
-            tableName: verification_codes
+            tableName: user
             columns:
               - column:
                   name: id
@@ -18,27 +18,38 @@ databaseChangeLog:
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
+                    unique: true
               - column:
-                  name: code
-                  type: VARCHAR(6)
+                  name: phone_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: VARCHAR(255)
                   constraints:
                     nullable: false
               - column:
-                  name: expiry_time
+                  name: user_role
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_verified
+                  type: VARCHAR(5)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_login_date
                   type: TIMESTAMP
                   constraints:
-                    nullable: false
-              - column:
-                  name: verified
-                  type: VARCHAR(6)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: attempt_count
-                  type: BIGINT
-                  defaultValueNumeric: 0
-                  constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -66,7 +77,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: version
-                  type: bigint
-                  defaultValue: 0
+                  type: BIGINT
+                  defaultValueNumeric: 0
                   constraints:
                     nullable: false

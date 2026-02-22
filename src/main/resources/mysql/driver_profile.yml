@@ -14,13 +14,13 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: user_profile_id
+                  name: user_id
                   type: BIGINT
                   constraints:
                     nullable: false
                     unique: true
-                    foreignKeyName: fk_driver_profile_user_profile
-                    references: user_profile(id)
+                    foreignKeyName: fk_driver_user
+                    references: user(id)
                     deleteCascade: true
               - column:
                   name: driver_license_number
@@ -36,7 +36,6 @@ databaseChangeLog:
               - column:
                   name: driver_license_verified
                   type: VARCHAR(3)
-                  defaultValue: "NO"
                   constraints:
                     nullable: false
               - column:
@@ -70,20 +69,13 @@ databaseChangeLog:
               - column:
                   name: account_status
                   type: VARCHAR(20)
-                  defaultValue: "PENDING_VERIFICATION"
                   constraints:
                     nullable: false
               - column:
-                  name: background_check_status
-                  type: VARCHAR(20)
-                  defaultValue: "PENDING"
+                  name: approved_by
+                  type: VARCHAR(100)
                   constraints:
-                    nullable: true
-              - column:
-                  name: background_check_date
-                  type: TIMESTAMP
-                  constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: approved_date
                   type: TIMESTAMP

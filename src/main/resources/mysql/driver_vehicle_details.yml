@@ -94,7 +94,6 @@ databaseChangeLog:
               - column:
                   name: is_verified
                   type: VARCHAR(3)
-                  defaultValue: "NO"
                   constraints:
                     nullable: false
               - column:
@@ -110,19 +109,16 @@ databaseChangeLog:
               - column:
                   name: is_primary
                   type: VARCHAR(3)
-                  defaultValue: "NO"
                   constraints:
                     nullable: false
               - column:
-                  name: is_active
+                  name: statuc
                   type: VARCHAR(3)
-                  defaultValue: "YES"
                   constraints:
                     nullable: false
               - column:
                   name: status
                   type: VARCHAR(20)
-                  defaultValue: "PENDING_VERIFICATION"
                   constraints:
                     nullable: false
               - column:
@@ -161,39 +157,3 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
-
-        - createIndex:
-            indexName: idx_driver_vehicle_driver_id
-            tableName: driver_vehicle_details
-            columns:
-              - column:
-                  name: driver_profile_id
-
-        - createIndex:
-            indexName: idx_driver_vehicle_type_id
-            tableName: driver_vehicle_details
-            columns:
-              - column:
-                  name: vehicle_type_id
-
-        - createIndex:
-            indexName: idx_driver_vehicle_make_id
-            tableName: driver_vehicle_details
-            columns:
-              - column:
-                  name: vehicle_make_id
-
-        - createIndex:
-            indexName: idx_driver_vehicle_registration
-            tableName: driver_vehicle_details
-            columns:
-              - column:
-                  name: registration_number
-
-        - createIndex:
-            indexName: idx_driver_vehicle_status
-            tableName: driver_vehicle_details
-            columns:
-              - column:
-                  name: status
-
