@@ -32,8 +32,7 @@ import java.util.Set;
 public class DriverProfile extends BaseEntity implements Serializable {
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true,
-            foreignKey = @ForeignKey(name = "fk_driver_user"))
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "driver_license_number", nullable = false, unique = true, length = 50)
