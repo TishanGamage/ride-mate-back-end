@@ -32,7 +32,8 @@ import java.util.Set;
 public class DriverProfile extends BaseEntity implements Serializable {
 
     @OneToOne
-    @JoinColumn(name = "user_profile_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false, unique = true,
+            foreignKey = @ForeignKey(name = "fk_driver_user"))
     private User user;
 
     @Column(name = "driver_license_number", nullable = false, unique = true, length = 50)
@@ -62,6 +63,9 @@ public class DriverProfile extends BaseEntity implements Serializable {
 
     @Column(name = "account_status", nullable = false, length = 20)
     private String accountStatus;
+
+    @Column(name = "approved_by", nullable = false, length = 100)
+    private String approvedBy;
 
     @Column(name = "approved_date")
     private Timestamp approvedDate;

@@ -41,9 +41,6 @@ public class UserProfile extends BaseEntity implements Serializable {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
-    @Column(name = "nic_passport", length = 100)
-    private String nicPassport;
-
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
@@ -53,11 +50,17 @@ public class UserProfile extends BaseEntity implements Serializable {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "address_line1", length = 255)
+    @Column(name = "address_line_1", length = 255)
     private String addressLine1;
 
-    @Column(name = "address_line2", length = 255)
+    @Column(name = "address_line_2", length = 255)
     private String addressLine2;
+
+    @Column(name = "address_line_3", length = 255)
+    private String addressLine3;
+
+    @Column(name = "address_line_4", length = 255)
+    private String addressLine4;
 
     @Column(name = "city", length = 100)
     private String city;
