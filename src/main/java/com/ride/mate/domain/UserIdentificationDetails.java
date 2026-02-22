@@ -59,7 +59,7 @@ public class UserIdentificationDetails extends BaseEntity implements Serializabl
     private String backImageUrl;
 
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "is_verified", nullable = false, length = 3)
+    @Column(name = "is_verified", nullable = false, length = 10)
     private YesNo isVerified;
 
     @Column(name = "verified_date")
