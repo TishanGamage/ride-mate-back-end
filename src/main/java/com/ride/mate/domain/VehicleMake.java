@@ -1,7 +1,6 @@
 package com.ride.mate.domain;
 
 import com.ride.mate.core.BaseEntity;
-import com.ride.mate.enums.YesNo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,17 +27,16 @@ import java.sql.Timestamp;
 public class VehicleMake extends BaseEntity implements Serializable {
 
     @Column(name = "code", nullable = false, unique = true, length = 50)
-    private String makeCode;
+    private String code;
 
     @Column(name = "name", nullable = false, length = 100)
-    private String makeName;
+    private String name;
 
     @Column(name = "country_of_origin", length = 100)
     private String countryOfOrigin;
 
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 3)
-    private YesNo status;
+    @Column(name = "status", nullable = false, length = 10)
+    private String status;
 
     @Column(name = "created_user", nullable = false, length = 100)
     private String createdUser;

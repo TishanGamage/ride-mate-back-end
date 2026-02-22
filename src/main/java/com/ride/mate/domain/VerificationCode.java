@@ -3,10 +3,7 @@ package com.ride.mate.domain;
 import com.ride.mate.core.BaseEntity;
 import com.ride.mate.enums.YesNo;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
@@ -31,32 +28,32 @@ import java.time.LocalDateTime;
 @Table(name = "verification_codes")
 public class VerificationCode extends BaseEntity implements Serializable {
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, length = 255)
     private String email;
 
-    @Column(name = "code")
+    @Column(name = "code", nullable = false, length = 6)
     private String code;
 
-    @Column(name = "expiry_time")
+    @Column(name = "expiry_time", nullable = false)
     private LocalDateTime expiryTime;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "verified")
     private YesNo verified;
 
-    @Column(name = "attempt_count")
-    private Long attemptCount;
+    @Column(name = "attempt_count", nullable = false)
+    private Long attemptCount = 0L;
 
-    @Column(name = "created_user")
-    private String createdUser;
-
-    @Column(name = "created_date")
+    @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;
 
-    @Column(name = "modified_user")
-    private String modifiedUser;
+    @Column(name = "created_user", nullable = false, length = 100)
+    private String createdUser;
 
     @Column(name = "modified_date")
     private Timestamp modifiedDate;
+
+    @Column(name = "modified_user", length = 100)
+    private String modifiedUser;
 }
 

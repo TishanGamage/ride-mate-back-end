@@ -40,8 +40,8 @@ public class User extends BaseEntity implements Serializable {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
-    private UserRole role;
+    @Column(name = "user_role", nullable = false, length = 20)
+    private UserRole userRole;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
