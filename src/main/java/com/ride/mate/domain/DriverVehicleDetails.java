@@ -21,6 +21,7 @@ import java.time.LocalDate;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 22-02-2026    N/A          N/A          Tishan          Updated to properly reference DriverProfile
  */
 @Getter
 @Setter
@@ -28,17 +29,16 @@ import java.time.LocalDate;
 @Table(name = "driver_vehicle_details")
 public class DriverVehicleDetails extends BaseEntity implements Serializable {
 
-    @Column(name = "driver_profile_id", nullable = false)
-    private Long driverProfileId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_profile_id", nullable = false)
+    private DriverProfile driverProfile;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_type_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_driver_vehicle_type"))
+    @JoinColumn(name = "vehicle_type_id", nullable = false)
     private VehicleType vehicleType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_make_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_driver_vehicle_make"))
+    @JoinColumn(name = "vehicle_make_id", nullable = false)
     private VehicleMake vehicleMake;
 
     @Column(name = "registration_number", nullable = false, unique = true, length = 50)

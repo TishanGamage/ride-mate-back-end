@@ -1,7 +1,8 @@
 package com.ride.mate.repository;
 
+import com.ride.mate.domain.IdentificationType;
+import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserIdentificationDetails;
-import com.ride.mate.enums.YesNo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,16 +20,23 @@ import java.util.Optional;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 22-02-2026    N/A          N/A          Tishan          Updated for User-based schema
  */
 @Repository
 public interface UserIdentificationDetailsRepository extends JpaRepository<UserIdentificationDetails, Long> {
 
-    List<UserIdentificationDetails> findByUserProfileId(Long userProfileId);
+    List<UserIdentificationDetails> findByUser(User user);
 
-    Optional<UserIdentificationDetails> findByUserProfileIdAndIsPrimary(Long userProfileId, YesNo isPrimary);
+    List<UserIdentificationDetails> findByUserId(Long userId);
+
+    Optional<UserIdentificationDetails> findByUserAndIdentificationType(User user, IdentificationType identificationType);
+
+    Optional<UserIdentificationDetails> findByUserIdAndIdentificationTypeId(Long userId, Long identificationTypeId);
 
     Optional<UserIdentificationDetails> findByIdentificationNumber(String identificationNumber);
 
-    List<UserIdentificationDetails> findByUserProfileIdAndStatus(Long userProfileId, String status);
+    List<UserIdentificationDetails> findByUserIdAndStatus(Long userId, String status);
+
+    boolean existsByUserIdAndIdentificationTypeId(Long userId, Long identificationTypeId);
 }
 

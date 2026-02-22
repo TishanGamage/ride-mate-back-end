@@ -37,11 +37,8 @@ public class IdentificationType extends BaseEntity implements Serializable {
     private String description;
 
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "is_active", nullable = false, length = 3)
-    private YesNo isActive;
-
-    @Column(name = "display_order", nullable = false)
-    private Integer displayOrder;
+    @Column(name = "status", nullable = false, length = 3)
+    private YesNo status;
 
     @Column(name = "created_user", nullable = false, length = 100)
     private String createdUser;
