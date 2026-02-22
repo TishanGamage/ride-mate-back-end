@@ -14,32 +14,29 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: email
-                  type: VARCHAR(255)
+                  name: user_id
+                  type: BIGINT
                   constraints:
                     nullable: false
                     unique: true
-              - column:
-                  name: password
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: false
+                    foreignKeyName: fk_user_profiles_user
+                    references: user(id)
+                    deleteCascade: true
               - column:
                   name: first_name
                   type: VARCHAR(100)
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: last_name
                   type: VARCHAR(100)
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
-                  name: phone_number
-                  type: VARCHAR(20)
+                  name: profile_image_url
+                  type: VARCHAR(500)
                   constraints:
-                    nullable: false
-                    unique: true
+                    nullable: true
               - column:
                   name: date_of_birth
                   type: DATE
@@ -51,27 +48,27 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
-                  name: profile_picture_url
-                  type: VARCHAR(500)
+                  name: bio
+                  type: TEXT
                   constraints:
                     nullable: true
               - column:
-                  name: address_line1
+                  name: address_line_1
                   type: VARCHAR(255)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line2
+                  name: address_line_2
                   type: VARCHAR(255)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line3
+                  name: address_line_3
                   type: VARCHAR(255)
                   constraints:
                     nullable: true
               - column:
-                  name: address_line4
+                  name: address_line_4
                   type: VARCHAR(255)
                   constraints:
                     nullable: true
@@ -96,20 +93,10 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
-                  name: account_status
-                  type: VARCHAR(20)
+                  name: preferred_language
+                  type: VARCHAR(10)
                   constraints:
                     nullable: false
-              - column:
-                  name: email_verified
-                  type: VARCHAR(5)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: last_login_date
-                  type: TIMESTAMP
-                  constraints:
-                    nullable: true
               - column:
                   name: created_date
                   type: TIMESTAMP
