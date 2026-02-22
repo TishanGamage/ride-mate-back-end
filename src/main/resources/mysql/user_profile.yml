@@ -98,6 +98,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: user_profile_completed
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
                   name: created_date
                   type: TIMESTAMP
                   constraints:
