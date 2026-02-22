@@ -14,12 +14,12 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: user_profile_id
+                  name: user_id
                   type: BIGINT
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_user_identification_user_profile
-                    references: user_profile(id)
+                    foreignKeyName: fk_user_identification_user
+                    references: user(id)
                     deleteCascade: true
               - column:
                   name: identification_type_id
@@ -119,8 +119,3 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
-
-        - addUniqueConstraint:
-            tableName: user_identification_details
-            columnNames: user_profile_id, identification_type_id, identification_number
-            constraintName: uk_user_identification_unique
