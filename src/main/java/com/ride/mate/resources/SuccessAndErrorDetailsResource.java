@@ -25,6 +25,7 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SuccessAndErrorDetailsResource {
 
+    private Long id;
     private String messages;
     private String details;
     private String code;
@@ -44,6 +45,9 @@ public class SuccessAndErrorDetailsResource {
         this.isValid = isValid;
     }
 
-
+    public SuccessAndErrorDetailsResource(Long id, String messages) {
+        this.id = id;
+        this.messages = messages;
+    }
 }
 
