@@ -112,7 +112,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: statuc
+                  name: status
                   type: VARCHAR(3)
                   constraints:
                     nullable: false
