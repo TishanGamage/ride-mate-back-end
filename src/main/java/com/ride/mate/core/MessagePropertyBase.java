@@ -26,6 +26,9 @@ public abstract class MessagePropertyBase {
     protected static final String VERIFICATION_MAX_ATTEMPTS_EXCEEDED = "verification.max-attempts-exceeded";
     protected static final String VERIFICATION_INVALID_CODE = "verification.invalid-code";
     protected static final String VERIFICATION_SUCCESS = "verification.success";
+    protected static final String RECORD_CREATED = "record.created";
+    protected static final String EMAIL_ALREADY_EXISTS = "email.already.exists";
+    protected static final String PHONE_NUMBER_ALREADY_EXISTS = "phone.number.already.exists";
 
     //common message property keys
     public static final String RECORD_NOT_FOUND = "Record is not found !";
