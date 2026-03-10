@@ -1,8 +1,11 @@
 package com.ride.mate.service.impl;
 
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.User;
 import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.enums.YesNo;
+import com.ride.mate.exception.ValidateRecordException;
+import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.VerificationCodeRepository;
 import com.ride.mate.resources.SendVerificationCodeRequest;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
@@ -51,16 +54,18 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
     private final VerificationCodeRepository verificationCodeRepository;
     private final JavaMailSender mailSender;
     private final Environment environment;
+    private final UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public VerificationCodeServiceImpl(VerificationCodeRepository verificationCodeRepository,
-                                      JavaMailSender mailSender,
-                                      Environment environment) {
+                                       JavaMailSender mailSender,
+                                       Environment environment, UserRepository userRepository) {
         this.verificationCodeRepository = verificationCodeRepository;
         this.mailSender = mailSender;
         this.environment = environment;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -129,6 +134,10 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         // Code is valid - mark as verified
         verificationCode.setVerified(YesNo.YES);
         verificationCodeRepository.saveAndFlush(verificationCode);
+
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message"));
+        user.setEmailVerified(YesNo.YES);
+        userRepository.saveAndFlush(user);
         return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_SUCCESS),true);
     }
 

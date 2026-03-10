@@ -45,11 +45,13 @@ public class DriverProfile extends BaseEntity implements Serializable {
     @Column(name = "driver_license_verified", nullable = false, length = 3)
     private YesNo driverLicenseVerified;
 
-    @Column(name = "driver_license_front_url", length = 500)
-    private String driverLicenseFrontUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_license_front_document_id")
+    private DocumentDetails driverLicenseFrontDocument;
 
-    @Column(name = "driver_license_back_url", length = 500)
-    private String driverLicenseBackUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_license_back_document_id")
+    private DocumentDetails driverLicenseBackDocument;
 
     @Column(name = "rating_as_driver", nullable = false, precision = 3, scale = 2)
     private BigDecimal ratingAsDriver = BigDecimal.ZERO;

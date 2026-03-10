@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Tishan
       changes:
         - createTable:
-            tableName: emergency_contacts
+            tableName: document_details
             columns:
               - column:
                   name: id
@@ -14,64 +14,36 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: user_id
+                  name: document_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: document_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_size
                   type: BIGINT
                   constraints:
-                    nullable: false
-                    foreignKeyName: fk_emergency_contacts_user
-                    references: user(id)
-                    deleteCascade: true
+                    nullable: true
               - column:
-                  name: contact_name
-                  type: VARCHAR(200)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: contact_phone
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: relationship
+                  name: file_type
                   type: VARCHAR(50)
                   constraints:
                     nullable: true
               - column:
-                  name: is_default
-                  type: VARCHAR(3)
-                  defaultValue: "NO"
+                  name: upload_date
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
               - column:
-                  name: email
-                  type: VARCHAR(255)
+                  name: status
+                  type: VARCHAR(20)
                   constraints:
-                    nullable: true
-              - column:
-                  name: address_line_1
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: address_line_2
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: address_line_3
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: address_line_4
-                  type: VARCHAR(255)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: notes
-                  type: TEXT
-                  constraints:
-                    nullable: true
+                    nullable: false
+                    defaultValue: "ACTIVE"
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -100,6 +72,6 @@ databaseChangeLog:
               - column:
                   name: version
                   type: BIGINT
-                  defaultValueNumeric: 0
+                  defaultValue: "0"
                   constraints:
                     nullable: false

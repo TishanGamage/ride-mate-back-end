@@ -21,6 +21,7 @@ import java.time.LocalDate;
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 22-02-2026    N/A          N/A          Tishan          Updated to reference User table
+ * 3 02-03-2026    N/A          N/A          Tishan          Added NIC document references
  */
 @Getter
 @Setter
@@ -32,14 +33,9 @@ public class UserProfile extends BaseEntity implements Serializable {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "first_name", length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", length = 100)
-    private String lastName;
-
-    @Column(name = "profile_image_url", length = 500)
-    private String profileImageUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_image_document_id")
+    private DocumentDetails profileImageDocument;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -79,6 +75,7 @@ public class UserProfile extends BaseEntity implements Serializable {
 
     @Column(name = "user_profile_completed", nullable = false, length = 20)
     private String userProfileCompleted;
+
 
     @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;

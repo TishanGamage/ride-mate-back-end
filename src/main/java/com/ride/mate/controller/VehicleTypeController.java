@@ -1,9 +1,13 @@
 package com.ride.mate.controller;
 
+import com.ride.mate.core.LoginAuthentication;
+import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.IdentificationType;
 import com.ride.mate.domain.VehicleType;
+import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.VehicleTypeService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,8 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-
-import static com.ride.mate.core.MessagePropertyBase.RECORD_NOT_FOUND;
 
 /**
  * VehicleType Controller
@@ -23,10 +25,11 @@ import static com.ride.mate.core.MessagePropertyBase.RECORD_NOT_FOUND;
  * 1 25-02-2026    N/A          N/A          Iruni          Initial Development
  */
 
+@Slf4j
 @RestController
 @RequestMapping(value = "/vehicle-type")
 @CrossOrigin(origins = "*")
-public class VehicleTypeController {
+public class VehicleTypeController extends MessagePropertyBase {
     @Autowired
     private VehicleTypeService vehicleTypeService;
 
@@ -39,6 +42,10 @@ public class VehicleTypeController {
     @GetMapping(value = "/get-identification-type/id/{id}")
     public ResponseEntity<Object> getVehicleTypeById(
             @PathVariable(value = "id", required = true) Long id) {
+        String userName = LoginAuthentication.getUserName();
+        if(userName == null || userName.isEmpty()) {
+            throw new ValidateRecordException("User not found","message");
+        }
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         Optional<VehicleType> vehicleType = vehicleTypeService.findById(id);
         if (vehicleType.isPresent()) {

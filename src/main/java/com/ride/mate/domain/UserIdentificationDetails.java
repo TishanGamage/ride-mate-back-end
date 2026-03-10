@@ -52,11 +52,13 @@ public class UserIdentificationDetails extends BaseEntity implements Serializabl
     @Column(name = "issuing_authority", length = 255)
     private String issuingAuthority;
 
-    @Column(name = "front_image_url", length = 500)
-    private String frontImageUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "front_image_document_id")
+    private DocumentDetails frontImageDocument;
 
-    @Column(name = "back_image_url", length = 500)
-    private String backImageUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "back_image_document_id")
+    private DocumentDetails backImageDocument;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "is_verified", nullable = false, length = 10)

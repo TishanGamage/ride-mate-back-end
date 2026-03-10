@@ -8,6 +8,8 @@ databaseChangeLog:
   - include:
       file: classpath:/mysql/vehicle_make.yml
   - include:
+      file: classpath:/mysql/document_details.yml
+  - include:
       file: classpath:/mysql/users.yml
   - include:
       file: classpath:/mysql/user_profile.yml

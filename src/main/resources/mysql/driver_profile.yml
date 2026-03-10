@@ -39,15 +39,19 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: driver_license_front_url
-                  type: VARCHAR(500)
+                  name: driver_license_front_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_driver_profile_license_front_document
+                    references: document_details(id)
               - column:
-                  name: driver_license_back_url
-                  type: VARCHAR(500)
+                  name: driver_license_back_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_driver_profile_license_back_document
+                    references: document_details(id)
               - column:
                   name: rating_as_driver
                   type: DECIMAL(3,2)

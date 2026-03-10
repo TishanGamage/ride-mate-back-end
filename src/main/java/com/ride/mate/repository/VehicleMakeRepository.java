@@ -21,6 +21,6 @@ import java.util.Optional;
 @Repository
 public interface VehicleMakeRepository extends JpaRepository<VehicleMake, Long> {
 
-    Optional<VehicleMake> findByMakeCode(String makeCode);
+    Optional<VehicleMake> findByCode(String makeCode);
 }
 

@@ -14,17 +14,25 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
+                  name: first_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
                   name: email
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
-                    unique: true
               - column:
                   name: phone_number
                   type: VARCHAR(20)
                   constraints:
                     nullable: false
-                    unique: true
               - column:
                   name: password_hash
                   type: VARCHAR(255)

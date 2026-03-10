@@ -10,6 +10,6 @@ package com.ride.mate.enums;
  */
 public enum UserStatus {
     ACTIVE,
-    SUSPENDED
+    INACTIVE
 }
 
