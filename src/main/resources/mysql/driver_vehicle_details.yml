@@ -62,15 +62,19 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: vehicle_image_url
-                  type: VARCHAR(500)
+                  name: vehicle_image_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_driver_vehicle_vehicle_image_document
+                    references: document_details(id)
               - column:
-                  name: registration_certificate_url
-                  type: VARCHAR(500)
+                  name: registration_certificate_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_driver_vehicle_registration_document
+                    references: document_details(id)
               - column:
                   name: insurance_number
                   type: VARCHAR(100)
@@ -87,10 +91,12 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
-                  name: insurance_document_url
-                  type: VARCHAR(500)
+                  name: insurance_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_driver_vehicle_insurance_document
+                    references: document_details(id)
               - column:
                   name: is_verified
                   type: VARCHAR(3)
@@ -108,11 +114,6 @@ databaseChangeLog:
                     nullable: true
               - column:
                   name: is_primary
-                  type: VARCHAR(3)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: status
                   type: VARCHAR(3)
                   constraints:
                     nullable: false

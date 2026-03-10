@@ -24,12 +24,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class VerifyCodeRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    private Long userId;
+
+    @NotBlank(message = "{email.required}")
+    @Email(message = "{email.invalid}")
     private String email;
 
-    @NotBlank(message = "Verification code is required")
-    @Pattern(regexp = "^[0-9]{6}$", message = "Verification code must be 6 digits")
+    @NotBlank(message = "{verification.code.required}")
+    @Pattern(regexp = "^[0-9]{6}$", message = "{verification.code.pattern}")
     private String code;
 }
 

@@ -29,4 +29,7 @@ public class ValidateResource {
 
     @JsonProperty("verificationCode")
     private String verificationCode;
+
+    @JsonProperty("message")
+    private String message;
 }

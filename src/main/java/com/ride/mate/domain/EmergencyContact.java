@@ -47,8 +47,17 @@ public class EmergencyContact extends BaseEntity implements Serializable {
     @Column(name = "email", length = 255)
     private String email;
 
-    @Column(name = "address", length = 500)
-    private String address;
+    @Column(name = "address_line_1", length = 255)
+    private String addressLine1;
+
+    @Column(name = "address_line_2", length = 255)
+    private String addressLine2;
+
+    @Column(name = "address_line_3", length = 255)
+    private String addressLine3;
+
+    @Column(name = "address_line_4", length = 255)
+    private String addressLine4;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;

@@ -18,8 +18,9 @@ This document provides a complete overview of all database tables based on the L
 | 7 | vehicle_make | Lookup table for vehicle manufacturers | Reference |
 | 8 | driver_profile | Driver-specific information | Core |
 | 9 | driver_vehicle_details | Driver vehicle information | Core |
-| 10 | verification_codes | Email verification codes | Transient |
-| 11 | common_seq | Sequence generator | System |
+| 10 | document_details | User uploaded documents with URLs | Core |
+| 11 | verification_codes | Email verification codes | Transient |
+| 12 | common_seq | Sequence generator | System |
 
 ---
 
@@ -305,7 +306,38 @@ This document provides a complete overview of all database tables based on the L
 
 ---
 
-### 10. **verification_codes**
+### 10. **document_details**
+**Purpose**: Standalone document storage table for uploaded files. Other tables reference documents by storing the document_details.id (e.g., user_profile.nic_front_image_document_id)
+
+| Column | Type | Nullable | Constraints | Description |
+|--------|------|----------|-------------|-------------|
+| id | BIGINT | NO | PK, Auto Increment | Primary key (used as document reference) |
+| document_name | VARCHAR(255) | NO | | Document name |
+| document_url | VARCHAR(500) | NO | | Document storage URL |
+| file_size | BIGINT | YES | | File size in bytes |
+| file_type | VARCHAR(50) | YES | | File MIME type (e.g., image/png) |
+| upload_date | TIMESTAMP | NO | | Document upload timestamp |
+| status | VARCHAR(20) | NO | Default: "ACTIVE" | Document status (ACTIVE/DELETED) |
+| created_date | TIMESTAMP | NO | | Record creation timestamp |
+| created_user | VARCHAR(100) | NO | | User who created the record |
+| modified_date | TIMESTAMP | YES | | Last modification timestamp |
+| modified_user | VARCHAR(100) | YES | | User who modified the record |
+| sync_ts | TIMESTAMP | NO | | Synchronization timestamp |
+| version | BIGINT | NO | Default: 0 | Optimistic locking version |
+
+**Indexes:**
+- `idx_document_details_status` on `status`
+
+**Usage Pattern:**
+- Other tables store the `document_details.id` as a foreign key reference
+- Example: `user_profile.nic_front_image_document_id` → `document_details.id`
+- This allows multiple tables to reference documents without duplicating storage
+
+**Note:** This table does NOT have a user_id field. The relationship is established by other tables storing the document ID.
+
+---
+
+### 11. **verification_codes**
 **Purpose**: Stores email verification codes for user registration/authentication
 
 | Column | Type | Nullable | Constraints | Description |
@@ -329,7 +361,7 @@ This document provides a complete overview of all database tables based on the L
 
 ---
 
-### 11. **common_seq**
+### 12. **common_seq**
 **Purpose**: Sequence generator table for generating unique IDs
 
 | Column | Type | Nullable | Constraints | Description |
@@ -472,16 +504,17 @@ Based on `db/changelog.yml`, tables are created in this order:
 6. `user_profile` - User profile data
 7. `emergency_contacts` - User emergency contacts
 8. `user_identification_details` - User ID documents
-9. `verification_codes` - Email verification
-10. `driver_profile` - Driver information
-11. `driver_vehicle_details` - Driver vehicles
+9. `document_details` - Uploaded documents
+10. `verification_codes` - Email verification
+11. `driver_profile` - Driver information
+12. `driver_vehicle_details` - Driver vehicles
 
 ---
 
-**Document Last Updated:** February 22, 2026  
-**Database Schema Version:** 1.0  
-**Total Tables:** 11  
+**Document Last Updated:** March 2, 2026  
+**Database Schema Version:** 1.1  
+**Total Tables:** 12  
 **Reference Tables:** 3 (identification_type, vehicle_type, vehicle_make)  
-**Core Tables:** 7 (user, user_profile, emergency_contacts, user_identification_details, driver_profile, driver_vehicle_details, verification_codes)  
+**Core Tables:** 8 (user, user_profile, emergency_contacts, user_identification_details, document_details, driver_profile, driver_vehicle_details, verification_codes)  
 **System Tables:** 1 (common_seq)
 
