@@ -22,7 +22,6 @@ import java.util.Optional;
 @Repository
 public interface IdentificationTypeRepository extends JpaRepository<IdentificationType, Long> {
 
-    Optional<IdentificationType> findByTypeCode(String typeCode);
     List<IdentificationType> findByStatus(String status);
 }
 

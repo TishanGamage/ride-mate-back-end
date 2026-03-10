@@ -1,5 +1,6 @@
 package com.ride.mate.controller;
 
+import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.IdentificationType;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.IdentificationTypeService;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-import static com.ride.mate.core.MessagePropertyBase.*;
 
 /**
  * Identification Controller
@@ -25,7 +25,7 @@ import static com.ride.mate.core.MessagePropertyBase.*;
 @RestController
 @RequestMapping(value = "/identification-type")
 @CrossOrigin(origins = "*")
-public class IdentificationTypeController {
+public class IdentificationTypeController extends MessagePropertyBase {
 
 
     @Autowired
@@ -44,8 +44,7 @@ public class IdentificationTypeController {
         Optional<IdentificationType> identificationType = identificationTypeService.findById(id);
         if (identificationType.isPresent()) {
             return new ResponseEntity<>(identificationType.get(), HttpStatus.OK);
-        }
-        else {
+        } else {
             response.setMessages(RECORD_NOT_FOUND);
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
         }

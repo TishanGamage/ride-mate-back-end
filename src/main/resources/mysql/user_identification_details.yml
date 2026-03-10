@@ -54,15 +54,19 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
-                  name: front_image_url
-                  type: VARCHAR(500)
+                  name: front_image_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_user_identification_front_document
+                    references: document_details(id)
               - column:
-                  name: back_image_url
-                  type: VARCHAR(500)
+                  name: back_image_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
+                    foreignKeyName: fk_user_identification_back_document
+                    references: document_details(id)
               - column:
                   name: is_verified
                   type: VARCHAR(10)

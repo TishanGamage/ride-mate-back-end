@@ -56,11 +56,13 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     @Column(name = "seats", nullable = false)
     private Integer seats;
 
-    @Column(name = "vehicle_image_url", length = 500)
-    private String vehicleImageUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_image_document_id")
+    private DocumentDetails vehicleImageDocument;
 
-    @Column(name = "registration_certificate_url", length = 500)
-    private String registrationCertificateUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_certificate_document_id")
+    private DocumentDetails registrationCertificateDocument;
 
     @Column(name = "insurance_number", length = 100)
     private String insuranceNumber;
@@ -71,8 +73,9 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     @Column(name = "insurance_expiry")
     private LocalDate insuranceExpiry;
 
-    @Column(name = "insurance_document_url", length = 500)
-    private String insuranceDocumentUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "insurance_document_id")
+    private DocumentDetails insuranceDocument;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "is_verified", nullable = false, length = 3)

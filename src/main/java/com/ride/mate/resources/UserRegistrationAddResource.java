@@ -28,6 +28,12 @@ public class UserRegistrationAddResource {
     @Email(message = "{email.invalid}")
     private String email;
 
+    @NotBlank(message = "{invalid.value}")
+    private String firstName;
+
+    @NotBlank(message = "{invalid.value}")
+    private String lastName;
+
     @NotBlank(message = "{can.not.be.blank}")
     @Pattern(regexp = "^[0-9]{10,20}$", message = "{invalid.value}")
     private String phoneNumber;

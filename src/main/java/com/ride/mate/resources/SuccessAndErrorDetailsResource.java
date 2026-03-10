@@ -30,6 +30,7 @@ public class SuccessAndErrorDetailsResource {
     private String details;
     private String code;
     private Boolean isValid = null;
+    private String url;
 
     public SuccessAndErrorDetailsResource(String messages) {
         this.messages = messages;

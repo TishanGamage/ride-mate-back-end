@@ -7,24 +7,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Send Verification Code Request Resource
- * Request object for sending verification code
- *
- * @author Tishan
- * @version 1.0.0
- * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
+ * 1 28-02-2026    N/A          N/A          Iruni          Initial Development
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SendVerificationCodeRequest {
+public class LoginRequest {
 
-    @NotBlank(message = "{email.required}")
+    @NotBlank(message = "{can.not.be.blank}")
+    private String password;
+
+    @NotBlank(message = "{can.not.be.blank}")
     @Email(message = "{email.invalid}")
     private String email;
-}
 
+}

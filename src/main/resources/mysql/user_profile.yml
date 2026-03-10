@@ -21,22 +21,13 @@ databaseChangeLog:
                     unique: true
                     foreignKeyName: fk_user_profiles_user
                     references: user(id)
-                    deleteCascade: true
               - column:
-                  name: first_name
-                  type: VARCHAR(100)
+                  name: profile_image_document_id
+                  type: BIGINT
                   constraints:
                     nullable: true
-              - column:
-                  name: last_name
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: profile_image_url
-                  type: VARCHAR(500)
-                  constraints:
-                    nullable: true
+                    foreignKeyName: fk_user_profile_profile_image_document
+                    references: document_details(id)
               - column:
                   name: date_of_birth
                   type: DATE
@@ -96,12 +87,12 @@ databaseChangeLog:
                   name: preferred_language
                   type: VARCHAR(10)
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: user_profile_completed
                   type: VARCHAR(20)
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -133,3 +124,4 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+
