@@ -127,6 +127,7 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
                 .userName(user.getFirstName())
                 .email(user.getEmail())
                 .role(user.getUserRole().name())
+                .emailVerified(user.getEmailVerified().toString())
                 .build();
 
         log.info("User logged in successfully with ID: {} for email: {}", user.getId(), user.getEmail());

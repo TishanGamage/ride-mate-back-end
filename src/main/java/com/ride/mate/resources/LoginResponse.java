@@ -37,5 +37,6 @@ public class LoginResponse {
     private String userName;
     private String email;
     private String role;
+    private String emailVerified;
 }
 
