@@ -99,9 +99,12 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
             throw new ValidateRecordException(environment.getProperty(LOGIN_ACCOUNT_SUSPENDED), "message");
         }
 
-        // Validate email verification
+        // Validate email verification - if not verified, send verification code
         if (user.getEmailVerified() == YesNo.NO) {
             log.warn("Login failed: Email not verified for email - {}", request.getEmail());
+            SendVerificationCodeRequest verificationRequest = new SendVerificationCodeRequest();
+            verificationRequest.setEmail(request.getEmail());
+            verificationCodeService.sendVerificationCode(verificationRequest);
             throw new ValidateRecordException(environment.getProperty(LOGIN_EMAIL_NOT_VERIFIED), "message");
         }
 

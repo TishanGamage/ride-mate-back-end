@@ -91,7 +91,7 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         user.setStatus(UserStatus.ACTIVE);
         user.setEmailVerified(YesNo.NO);
         user.setCreatedDate(DateUtil.getDate());
-        user.setCreatedUser(LoginAuthentication.getUserName());
+        user.setCreatedUser(request.getFirstName() + " " + request.getLastName());
         user.setSyncTs(DateUtil.getDate());
 
         // Save user to database
