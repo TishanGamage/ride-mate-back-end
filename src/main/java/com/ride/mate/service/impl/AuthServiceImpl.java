@@ -130,6 +130,7 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
                 .userName(user.getFirstName())
                 .email(user.getEmail())
                 .role(user.getUserRole().name())
+                .emailVerified(user.getEmailVerified().toString())
                 .build();
 
         log.info("User logged in successfully with ID: {} for email: {}", user.getId(), user.getEmail());
@@ -172,11 +173,8 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
 
         User user = optionalUser.get();
 
-        // Build user's full name
-        String userName = buildUserFullName(user);
-
         // Generate new access token
-        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getUserRole().name(), userName);
+        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getUserRole().name(), user.getFirstName());
 
         // Build response with new access token (keep same refresh token)
         LoginResponse response = LoginResponse.builder()
@@ -194,23 +192,6 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
 
         log.info("Token refreshed successfully for user: {}", email);
         return response;
-    }
-
-    /**
-     * Build user's full name from firstName and lastName
-     *
-     * @param user User entity
-     * @return full name or email if names are not available
-     */
-    private String buildUserFullName(User user) {
-        if (user.getFirstName() != null && user.getLastName() != null) {
-            return user.getFirstName() + " " + user.getLastName();
-        } else if (user.getFirstName() != null) {
-            return user.getFirstName();
-        } else if (user.getLastName() != null) {
-            return user.getLastName();
-        }
-        return user.getEmail(); // Fallback to email if no name is set
     }
 }
 
