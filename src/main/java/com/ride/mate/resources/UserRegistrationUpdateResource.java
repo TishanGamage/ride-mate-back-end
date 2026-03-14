@@ -1,6 +1,7 @@
 package com.ride.mate.resources;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.ride.mate.domain.EmergencyContact;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
