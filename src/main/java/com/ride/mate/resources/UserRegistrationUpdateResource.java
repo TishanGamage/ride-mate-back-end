@@ -18,4 +18,7 @@ public class UserRegistrationUpdateResource extends UserRegistrationAddResource 
     @Valid
     private UserIdentificationDetailsRequestResource userIdentificationDetails;
 
+    @Valid
+    private UserEmergencyContactDetailsRequestResource  emergencyContactDetailsRequestResource;
+
 }

@@ -143,7 +143,7 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         }
 
         //Handle emergency contact details if provided
-        if(request.getEmergencyContactDetails() != null) {
+        if(request.getEmergencyContactDetailsRequestResource() != null) {
             setEmergencyContactDetails(updatedUser, request);
         }
 
@@ -214,8 +214,8 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
     }
 
     private void setEmergencyContactDetails(User user, UserRegistrationUpdateResource request) {
-        if(request.getEmergencyContactDetails() != null) {
-            UserEmergencyContactDetailsRequestResource contactRequest = request.getEmergencyContactDetails();
+        if(request.getEmergencyContactDetailsRequestResource() != null) {
+            UserEmergencyContactDetailsRequestResource contactRequest = request.getEmergencyContactDetailsRequestResource();
 
             // Find existing emergency contact for this user or create new one
             EmergencyContact contact = emergencyContactRepository
