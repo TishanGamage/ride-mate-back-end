@@ -1,6 +1,7 @@
 package com.ride.mate.resources;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.ride.mate.domain.EmergencyContact;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,5 +17,8 @@ public class UserRegistrationUpdateResource extends UserRegistrationAddResource 
 
     @Valid
     private UserIdentificationDetailsRequestResource userIdentificationDetails;
+
+    @Valid
+    private UserEmergencyContactDetailsRequestResource  emergencyContactDetailsRequestResource;
 
 }
