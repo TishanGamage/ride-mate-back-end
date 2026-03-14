@@ -2,15 +2,14 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.EmergencyContact;
 import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserIdentificationDetails;
 import com.ride.mate.enums.UserStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
-import com.ride.mate.repository.DocumentDetailsRepository;
-import com.ride.mate.repository.IdentificationTypeRepository;
-import com.ride.mate.repository.UserIdentificationDetailsRepository;
-import com.ride.mate.repository.UserRepository;
+import com.ride.mate.repository.*;
+import com.ride.mate.resources.UserEmergencyContactDetailsRequestResource;
 import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
 import com.ride.mate.resources.UserRegistrationAddResource;
 import com.ride.mate.resources.UserRegistrationUpdateResource;
@@ -48,19 +47,22 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
     private final UserIdentificationDetailsRepository userIdentificationDetailsRepository;
     private final IdentificationTypeRepository identificationTypeRepository;
     private final DocumentDetailsRepository documentDetailsRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
+
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
     public UserServiceImpl(UserRepository userRepository,
                            UserIdentificationDetailsRepository userIdentificationDetailsRepository,
                            IdentificationTypeRepository identificationTypeRepository,
-                           DocumentDetailsRepository documentDetailsRepository,
+                           DocumentDetailsRepository documentDetailsRepository, EmergencyContactRepository emergencyContactRepository,
                            PasswordEncoder passwordEncoder,
                            Environment environment) {
         this.userRepository = userRepository;
         this.userIdentificationDetailsRepository = userIdentificationDetailsRepository;
         this.identificationTypeRepository = identificationTypeRepository;
         this.documentDetailsRepository = documentDetailsRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -140,6 +142,11 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
             setUserIdentificationDetails(updatedUser, request);
         }
 
+        //Handle emergency contact details if provided
+        if(request.getEmergencyContactDetails() != null) {
+            setEmergencyContactDetails(updatedUser, request);
+        }
+
         return updatedUser;
     }
 
@@ -205,5 +212,58 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
             log.info("User identification details saved for user ID: {}", user.getId());
         }
     }
+
+    private void setEmergencyContactDetails(User user, UserRegistrationUpdateResource request) {
+        if(request.getEmergencyContactDetails() != null) {
+            UserEmergencyContactDetailsRequestResource contactRequest = request.getEmergencyContactDetails();
+
+            // Find existing emergency contact for this user or create new one
+            EmergencyContact contact = emergencyContactRepository
+                    .findByUserIdAndIsDefault(user.getId(), YesNo.valueOf(contactRequest.getIsDefault()))
+                    .orElse(new EmergencyContact());
+
+            // Set User relationship
+            contact.setUser(user);
+
+            // Map all fields from request resource
+            contact.setContactName(contactRequest.getContactName());
+            contact.setContactPhone(contactRequest.getContactPhone());
+            contact.setRelationship(contactRequest.getRelationship());
+            contact.setIsDefault(YesNo.valueOf(contactRequest.getIsDefault()));
+
+            if (contactRequest.getEmail() != null) {
+                contact.setEmail(contactRequest.getEmail());
+            }
+            if (contactRequest.getAddressLine1() != null) {
+                contact.setAddressLine1(contactRequest.getAddressLine1());
+            }
+            if (contactRequest.getAddressLine2() != null) {
+                contact.setAddressLine2(contactRequest.getAddressLine2());
+            }
+            if (contactRequest.getAddressLine3() != null) {
+                contact.setAddressLine3(contactRequest.getAddressLine3());
+            }
+            if (contactRequest.getAddressLine4() != null) {
+                contact.setAddressLine4(contactRequest.getAddressLine4());
+            }
+            if (contactRequest.getNotes() != null) {
+                contact.setNotes(contactRequest.getNotes());
+            }
+
+            // Set audit fields
+            if(contact.getId() == null) {
+                contact.setCreatedUser(LoginAuthentication.getUserName());
+                contact.setCreatedDate(DateUtil.getDate());
+            } else {
+                contact.setModifiedUser(LoginAuthentication.getUserName());
+                contact.setModifiedDate(DateUtil.getDate());
+            }
+
+            // Save the emergency contact
+            emergencyContactRepository.save(contact);
+            log.info("Emergency contact saved for user ID: {}", user.getId());
+        }
+    }
+
 }
 
