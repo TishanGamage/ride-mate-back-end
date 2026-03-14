@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
       id: 1
-      author: Tishan
+      author: Iruni
       changes:
         - createTable:
-            tableName: driver_profile
+            tableName: shared_ride_detail
             columns:
               - column:
                   name: id
@@ -14,77 +14,39 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: ride_detail__id
+                  name: ride_detail_id
                   type: BIGINT
                   constraints:
                     nullable: false
                     unique: true
-                    foreignKeyName: fk_driver_user
-                    references: user(id)
+                    foreignKeyName: fk_share_ride_detail_driver_profile
+                    references: ride_detail(id)
                     deleteCascade: true
               - column:
-                  name: driver_license_number
-                  type: VARCHAR(50)
-                  constraints:
-                    nullable: false
-                    unique: true
-              - column:
-                  name: driver_license_expiry
-                  type: DATE
-                  constraints:
-                    nullable: false
-              - column:
-                  name: driver_license_verified
-                  type: VARCHAR(3)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: driver_license_front_document_id
+                  name: request_id
                   type: BIGINT
                   constraints:
-                    nullable: true
-                    foreignKeyName: fk_driver_profile_license_front_document
-                    references: document_details(id)
+                    nullable: false
               - column:
-                  name: driver_license_back_document_id
+                  name: user_id
                   type: BIGINT
                   constraints:
-                    nullable: true
-                    foreignKeyName: fk_driver_profile_license_back_document
-                    references: document_details(id)
+                    nullable: false
               - column:
-                  name: rating_as_driver
-                  type: DECIMAL(3,2)
-                  defaultValueNumeric: 0.0
+                  name: passenger_cost
+                  type: decimal(25,2)
                   constraints:
                     nullable: false
               - column:
-                  name: total_rides_as_driver
-                  type: BIGINT
-                  defaultValueNumeric: 0
+                  name: passenger_ride_distance
+                  type: decimal(25,2)
                   constraints:
                     nullable: false
               - column:
-                  name: total_earnings
-                  type: DECIMAL(10,2)
-                  defaultValueNumeric: 0.0
-                  constraints:
-                    nullable: false
-              - column:
-                  name: account_status
+                  name: status
                   type: VARCHAR(20)
                   constraints:
                     nullable: false
-              - column:
-                  name: approved_by
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: approved_date
-                  type: TIMESTAMP
-                  constraints:
-                    nullable: true
               - column:
                   name: created_date
                   type: TIMESTAMP
