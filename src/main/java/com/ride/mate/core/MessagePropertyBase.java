@@ -39,6 +39,9 @@ public abstract class MessagePropertyBase {
     protected static final String RECORD_NOT_FOUND = "record.not.found";
     protected static final String RECORD_VERSION_MISMATCH = "record.version.mismatch";
 
+    // User Profile message property keys
+    protected static final String USER_PROFILE_ALREADY_EXISTS = "user.profile.already.exists";
+
     // Identification message property keys
     protected static final String IDENTIFICATION_TYPE_NOT_FOUND = "identification.type.not.found";
 
