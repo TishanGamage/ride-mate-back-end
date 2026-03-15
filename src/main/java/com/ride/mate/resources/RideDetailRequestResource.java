@@ -47,10 +47,5 @@ public class RideDetailRequestResource {
     private String tripRoute;
 
     @NotBlank(message = "{can.not.be.blank}")
-    private String gender;
-
-    private String alertTime;
-
-    @NotBlank(message = "{can.not.be.blank}")
     private String status;
 }
