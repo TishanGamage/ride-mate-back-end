@@ -42,6 +42,9 @@ public abstract class MessagePropertyBase {
     // Identification message property keys
     protected static final String IDENTIFICATION_TYPE_NOT_FOUND = "identification.type.not.found";
 
+    // Driver Profile message property keys
+    protected static final String DRIVER_PROFILE_NOT_FOUND = "driver.profile.not.found";
+
     // Login message property keys
     protected static final String LOGIN_USER_NOT_FOUND = "login.user-not-found";
     protected static final String LOGIN_INVALID_CREDENTIALS = "login.invalid-credentials";
