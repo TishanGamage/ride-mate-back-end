@@ -23,54 +23,44 @@ databaseChangeLog:
                     deleteCascade: true
               - column:
                   name: start_location_longitude
-                  type: DECIMAL(10, 7)
+                  type: DECIMAL(10,7)
                   constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: end_location_longitude
-                  type: DECIMAL(10, 7)
+                  type: DECIMAL(10,7)
                   constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: start_city
                   type: VARCHAR(100)
                   constraints:
-                   nullable: true
+                    nullable: true
               - column:
                   name: available_seats
                   type: BIGINT
                   constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: start_time
                   type: TIMESTAMP
                   constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: total_ride_distance
                   type: DECIMAL(10,2)
                   constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: trip_route
                   type: CLOB
                   constraints:
-                   nullable: true
-              - column:
-                  name: gender
-                  type: VARCHAR(100)
-                  constraints:
-                   nullable: true
-              - column:
-                  name: alert_time
-                  type: TIMESTAMP
-                  constraints:
-                   nullable: true
+                    nullable: false
               - column:
                   name: status
                   type: VARCHAR(100)
                   constraints:
-                   nullable: true
+                    nullable: true
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -102,10 +92,3 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
-
-
-
-
-
-
-
