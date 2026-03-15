@@ -99,6 +99,7 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         return verificationCode;
     }
 
+
     @Override
     public SuccessAndErrorDetailsResource verifyCode(VerifyCodeRequest request) {
         String email = request.getEmail();
