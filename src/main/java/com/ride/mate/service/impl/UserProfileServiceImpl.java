@@ -81,7 +81,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         // Validate profile does not already exist for user
         if (userProfileRepository.existsByUserId(request.getUserId())) {
             log.warn("User profile creation failed: Profile already exists for user ID - {}", request.getUserId());
-            throw new ValidateRecordException(environment.getProperty(USER_PROFILE_ALREADY_EXISTS), "message");
+            throw new ValidateRecordException(environment.getProperty(USER_PROFILE_ALREADY_EXISTS), "errorMessage");
         }
 
         // Create new user profile entity
@@ -159,7 +159,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         // Check optimistic locking version
         if (!userProfile.getVersion().equals(request.getVersion())) {
-            throw new ValidateRecordException(environment.getProperty(RECORD_VERSION_MISMATCH), "message");
+            throw new ValidateRecordException(environment.getProperty(RECORD_VERSION_MISMATCH), "errorMessage");
         }
 
         // Update optional profile image document
@@ -241,7 +241,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         // Set IdentificationType relationship
         identificationTypeRepository.findById(detailsRequest.getIdentificationTypeId())
                 .ifPresentOrElse(details::setIdentificationType, () -> {
-                    throw new ValidateRecordException(environment.getProperty(IDENTIFICATION_TYPE_NOT_FOUND), "message");
+                    throw new ValidateRecordException(environment.getProperty(IDENTIFICATION_TYPE_NOT_FOUND), "errorMessage");
                 });
 
         // Map all fields from request resource to domain entity
@@ -253,7 +253,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             details.setExpiryDate(expiryDate);
         } else {
             log.warn("Validation failed: Expiry date must be a future date - {}", detailsRequest.getExpiryDate());
-            throw new ValidateRecordException(environment.getProperty(EXPIRY_DATE_MUST_BE_FUTURE), "message");
+            throw new ValidateRecordException(environment.getProperty(EXPIRY_DATE_MUST_BE_FUTURE), "errorMessage");
         }
 
         details.setIssuingCountry(detailsRequest.getIssuingCountry());
