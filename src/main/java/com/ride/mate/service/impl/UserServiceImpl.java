@@ -90,7 +90,7 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         user.setPhoneNumber(request.getPhoneNumber());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(request.getUserRole());
-        user.setStatus(UserStatus.ACTIVE);
+        user.setStatus(UserStatus.PENDING);
         user.setEmailVerified(YesNo.NO);
         user.setCreatedDate(DateUtil.getDate());
         user.setCreatedUser(LoginAuthentication.getUserName());
