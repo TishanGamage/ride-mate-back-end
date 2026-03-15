@@ -3,6 +3,7 @@ package com.ride.mate.service.impl;
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.EmergencyContact;
+import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserIdentificationDetails;
 import com.ride.mate.domain.UserProfile;
 import com.ride.mate.enums.YesNo;
@@ -71,7 +72,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         log.info("Processing user profile creation for user ID: {}", request.getUserId());
 
         // Validate user exists
-        var user = userRepository.findById(request.getUserId())
+        User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> {
                     log.warn("User profile creation failed: User not found - {}", request.getUserId());
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
@@ -227,7 +228,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         return updatedProfile;
     }
 
-    private void setUserIdentificationDetails(com.ride.mate.domain.User user, UserIdentificationDetailsRequestResource detailsRequest) {
+    private void setUserIdentificationDetails(User user, UserIdentificationDetailsRequestResource detailsRequest) {
 
         // Find or create UserIdentificationDetails
         UserIdentificationDetails details = userIdentificationDetailsRepository
@@ -286,7 +287,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         log.info("User identification details saved for user ID: {}", user.getId());
     }
 
-    private void setEmergencyContactDetails(com.ride.mate.domain.User user, UserEmergencyContactDetailsRequestResource contactRequest) {
+    private void setEmergencyContactDetails(User user, UserEmergencyContactDetailsRequestResource contactRequest) {
 
         // Find existing emergency contact for this user or create new one
         EmergencyContact contact = emergencyContactRepository
