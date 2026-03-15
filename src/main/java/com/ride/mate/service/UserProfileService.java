@@ -34,7 +34,7 @@ public interface UserProfileService {
      * @param request user profile update request
      * @return the updated UserProfile entity
      */
-    UserProfile updateUserProfile(UserProfileUpdateResource request);
+    UserProfile updateUserProfile(UserProfileUpdateResource request,Long id);
 
     /**
      * Retrieve a user profile by user ID

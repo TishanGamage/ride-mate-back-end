@@ -146,14 +146,11 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
     @Override
-    public UserProfile updateUserProfile(UserProfileUpdateResource request) {
-
-        log.info("Processing user profile update for profile ID: {}", request.getId());
+    public UserProfile updateUserProfile(UserProfileUpdateResource request,Long id) {
 
         // Find existing profile
-        UserProfile userProfile = userProfileRepository.findById(request.getId())
+        UserProfile userProfile = userProfileRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.warn("User profile update failed: Profile not found - {}", request.getId());
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
                 });
 
