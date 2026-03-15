@@ -99,15 +99,6 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             userProfile.setDateOfBirth(DateUtil.stringToLocalDate(request.getDateOfBirth()));
         }
         userProfile.setGender(request.getGender());
-        userProfile.setBio(request.getBio());
-        userProfile.setAddressLine1(request.getAddressLine1());
-        userProfile.setAddressLine2(request.getAddressLine2());
-        userProfile.setAddressLine3(request.getAddressLine3());
-        userProfile.setAddressLine4(request.getAddressLine4());
-        userProfile.setCity(request.getCity());
-        userProfile.setState(request.getState());
-        userProfile.setPostalCode(request.getPostalCode());
-        userProfile.setCountry(request.getCountry());
         userProfile.setPreferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "EN");
         userProfile.setUserProfileCompleted("NO");
 
