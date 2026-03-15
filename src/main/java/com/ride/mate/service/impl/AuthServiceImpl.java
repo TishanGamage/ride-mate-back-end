@@ -82,7 +82,7 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
         if (optionalUser.isEmpty()) {
             log.warn("Login failed: User not found for email - {}", request.getEmail());
-            throw new ValidateRecordException(environment.getProperty(LOGIN_USER_NOT_FOUND), "message");
+            throw new ValidateRecordException(environment.getProperty(LOGIN_USER_NOT_FOUND), "errorMessage");
         }
 
         User user = optionalUser.get();
@@ -90,19 +90,19 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         // Validate password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             log.warn("Login failed: Invalid credentials for email - {}", request.getEmail());
-            throw new ValidateRecordException(environment.getProperty(LOGIN_INVALID_CREDENTIALS), "message");
+            throw new ValidateRecordException(environment.getProperty(LOGIN_INVALID_CREDENTIALS), "errorMessage");
         }
 
         // Validate account status
         if (user.getStatus().equals(UserStatus.INACTIVE)) {
             log.warn("Login failed: Account suspended for email - {}", request.getEmail());
-            throw new ValidateRecordException(environment.getProperty(LOGIN_ACCOUNT_SUSPENDED), "message");
+            throw new ValidateRecordException(environment.getProperty(LOGIN_ACCOUNT_SUSPENDED), "errorMessage");
         }
 
         // Validate email verification
         if (user.getEmailVerified() == YesNo.NO) {
             log.warn("Login failed: Email not verified for email - {}", request.getEmail());
-            throw new ValidateRecordException(environment.getProperty(LOGIN_EMAIL_NOT_VERIFIED), "message");
+            throw new ValidateRecordException(environment.getProperty(LOGIN_EMAIL_NOT_VERIFIED), "errorMessage");
         }
 
         // Update last login date
@@ -143,19 +143,19 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         // Validate refresh token
         if (!jwtUtil.validateToken(refreshToken)) {
             log.warn("Token refresh failed: Invalid refresh token");
-            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_INVALID), "message");
+            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_INVALID), "errorMessage");
         }
 
         // Validate that it's a refresh token
         if (!jwtUtil.isRefreshToken(refreshToken)) {
             log.warn("Token refresh failed: Token is not a refresh token");
-            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_INVALID), "message");
+            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_INVALID), "errorMessage");
         }
 
         // Check if token is expired
         if (jwtUtil.isTokenExpired(refreshToken)) {
             log.warn("Token refresh failed: Refresh token expired");
-            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_EXPIRED), "message");
+            throw new ValidateRecordException(environment.getProperty(JWT_REFRESH_TOKEN_EXPIRED), "errorMessage");
         }
 
         // Extract user info from refresh token
@@ -165,7 +165,7 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
             log.warn("Token refresh failed: User not found for email - {}", email);
-            throw new ValidateRecordException(environment.getProperty(JWT_USER_NOT_FOUND), "message");
+            throw new ValidateRecordException(environment.getProperty(JWT_USER_NOT_FOUND), "errorMessage");
         }
 
         User user = optionalUser.get();

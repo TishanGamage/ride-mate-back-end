@@ -64,12 +64,12 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
         // Validate file
         if (file.isEmpty()) {
             log.warn("Upload failed: File is empty");
-            throw new ValidateRecordException(environment.getProperty(FILE_EMPTY), "message");
+            throw new ValidateRecordException(environment.getProperty(FILE_EMPTY), "errorMessage");
         }
 
         if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
             log.warn("Upload failed: File name is empty");
-            throw new ValidateRecordException(environment.getProperty(FILE_NAME_EMPTY), "message");
+            throw new ValidateRecordException(environment.getProperty(FILE_NAME_EMPTY), "errorMessage");
         }
 
         // Create document details entity with placeholder URL
@@ -132,16 +132,16 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
             } else {
                 log.error("Failed to upload file to Supabase. Status: {}", response.getStatusCode());
                 throw new ValidateRecordException(
-                        environment.getProperty(SUPABASE_UPLOAD_FAILED), "message");
+                        environment.getProperty(SUPABASE_UPLOAD_FAILED), "errorMessage");
             }
         } catch (IOException e) {
             log.error("Failed to read file bytes: {}", e.getMessage());
             throw new ValidateRecordException(
-                    environment.getProperty(FILE_READ_ERROR), "message");
+                    environment.getProperty(FILE_READ_ERROR), "errorMessage");
         } catch (RestClientException e) {
             log.error("Supabase API error: {}", e.getMessage());
             throw new ValidateRecordException(
-                    environment.getProperty(SUPABASE_UPLOAD_FAILED), "message");
+                    environment.getProperty(SUPABASE_UPLOAD_FAILED), "errorMessage");
         }
     }
 
@@ -215,11 +215,11 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
                 return response.getBody();
             } else {
                 log.error("Failed to download file from Supabase. Status: {}", response.getStatusCode());
-                throw new ValidateRecordException(environment.getProperty(SUPABASE_DOWNLOAD_FAILED), "message");
+                throw new ValidateRecordException(environment.getProperty(SUPABASE_DOWNLOAD_FAILED), "errorMessage");
             }
         } catch (RestClientException e) {
             log.error("Supabase API error during download: {}", e.getMessage());
-            throw new ValidateRecordException(environment.getProperty(SUPABASE_DOWNLOAD_FAILED), "message");
+            throw new ValidateRecordException(environment.getProperty(SUPABASE_DOWNLOAD_FAILED), "errorMessage");
         }
     }
 

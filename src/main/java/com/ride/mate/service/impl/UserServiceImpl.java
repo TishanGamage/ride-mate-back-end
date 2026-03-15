@@ -56,12 +56,12 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         // Validate if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("Registration failed: Email already exists - {}", request.getEmail());
-            throw new ValidateRecordException(environment.getProperty(EMAIL_ALREADY_EXISTS),"message");
+            throw new ValidateRecordException(environment.getProperty(EMAIL_ALREADY_EXISTS), "errorMessage");
         }
 
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             log.warn("Registration failed: Phone number already exists - {}", request.getPhoneNumber());
-            throw new ValidateRecordException(environment.getProperty(PHONE_NUMBER_ALREADY_EXISTS),"message");
+            throw new ValidateRecordException(environment.getProperty(PHONE_NUMBER_ALREADY_EXISTS), "errorMessage");
         }
 
         // Create new user entity
@@ -90,20 +90,20 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         User user = userRepository.findById(request.getId()).orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message"));
 
         if(request.getVersion() != null && !user.getVersion().equals(ConversionUtil.stringToLong(request.getVersion()))) {
-            throw new ValidateRecordException(environment.getProperty(RECORD_VERSION_MISMATCH), "message");
+            throw new ValidateRecordException(environment.getProperty(RECORD_VERSION_MISMATCH), "errorMessage");
         }
 
         if(request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 log.warn("Update failed: Email already exists - {}", request.getEmail());
-                throw new ValidateRecordException(environment.getProperty(EMAIL_ALREADY_EXISTS),"message");
+                throw new ValidateRecordException(environment.getProperty(EMAIL_ALREADY_EXISTS), "errorMessage");
             }
             user.setEmail(request.getEmail());
         }
         if(request.getPhoneNumber() != null && !request.getPhoneNumber().equals(user.getPhoneNumber())) {
             if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
                 log.warn("Update failed: Phone number already exists - {}", request.getPhoneNumber());
-                throw new ValidateRecordException(environment.getProperty(PHONE_NUMBER_ALREADY_EXISTS),"message");
+                throw new ValidateRecordException(environment.getProperty(PHONE_NUMBER_ALREADY_EXISTS), "errorMessage");
             }
             user.setPhoneNumber(request.getPhoneNumber());
         }
