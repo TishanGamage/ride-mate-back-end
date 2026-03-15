@@ -2,7 +2,6 @@ package com.ride.mate.controller;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
-import com.ride.mate.domain.IdentificationType;
 import com.ride.mate.domain.VehicleType;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;

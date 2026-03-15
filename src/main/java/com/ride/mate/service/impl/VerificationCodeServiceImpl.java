@@ -135,7 +135,7 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         verificationCode.setVerified(YesNo.YES);
         verificationCodeRepository.saveAndFlush(verificationCode);
 
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message"));
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "errorMessage"));
         user.setEmailVerified(YesNo.YES);
         userRepository.saveAndFlush(user);
         return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_SUCCESS),true);
