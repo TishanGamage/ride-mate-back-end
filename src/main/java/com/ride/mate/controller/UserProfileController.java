@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile endpoint
+ * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId endpoint
  */
 @Slf4j
 @RestController
@@ -72,6 +73,20 @@ public class UserProfileController extends MessagePropertyBase {
         response.setId(userProfile.getId());
         response.setMessages(environment.getProperty(RECORD_UPDATED));
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Get user profile by user ID
+     * Retrieves the profile record linked to the given user
+     *
+     * @param userId the ID of the user
+     * @return ResponseEntity with the UserProfile entity
+     */
+    @GetMapping(value = "/user/{userId}")
+    public ResponseEntity<?> getUserProfileByUserId(@PathVariable Long userId) {
+        log.info("Received get user profile request for user ID: {}", userId);
+        UserProfile userProfile = userProfileService.getUserProfileByUserId(userId);
+        return new ResponseEntity<>(userProfile, HttpStatus.OK);
     }
 }
 

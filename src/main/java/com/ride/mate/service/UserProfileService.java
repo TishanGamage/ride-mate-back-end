@@ -16,6 +16,7 @@ import com.ride.mate.resources.UserProfileUpdateResource;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
+ * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  */
 public interface UserProfileService {
 
@@ -34,5 +35,13 @@ public interface UserProfileService {
      * @return the updated UserProfile entity
      */
     UserProfile updateUserProfile(UserProfileUpdateResource request);
+
+    /**
+     * Retrieve a user profile by user ID
+     *
+     * @param userId the ID of the user
+     * @return the UserProfile entity
+     */
+    UserProfile getUserProfileByUserId(Long userId);
 }
 
