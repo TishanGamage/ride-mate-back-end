@@ -76,7 +76,6 @@ public class UserProfile extends BaseEntity implements Serializable {
     @Column(name = "user_profile_completed", nullable = false, length = 20)
     private String userProfileCompleted;
 
-
     @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;
 

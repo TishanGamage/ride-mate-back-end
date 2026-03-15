@@ -1,0 +1,111 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Iruni
+      changes:
+        - createTable:
+            tableName: drivr_ride_detail
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: driver_profile_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rider_details_driver_profile
+                    references: driver_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: start_location_longitude
+                  type: DECIMAL(10, 7)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: end_location_longitude
+                  type: DECIMAL(10, 7)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: start_city
+                  type: VARCHAR(100)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: available_seats
+                  type: BIGINT
+                  constraints:
+                   nullable: true
+              - column:
+                  name: start_time
+                  type: TIMESTAMP
+                  constraints:
+                   nullable: true
+              - column:
+                  name: total_ride_distance
+                  type: DECIMAL(10,2)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: trip_route
+                  type: CLOB
+                  constraints:
+                   nullable: true
+              - column:
+                  name: gender
+                  type: VARCHAR(100)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: alert_time
+                  type: TIMESTAMP
+                  constraints:
+                   nullable: true
+              - column:
+                  name: status
+                  type: VARCHAR(100)
+                  constraints:
+                   nullable: true
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+
+
+
+
+
+

@@ -22,7 +22,7 @@ public class LoginAuthentication {
      * @return username or null if not authenticated
      */
     public static String getUserName() {
-        return USER.get();
+        return USER.get() != null ? USER.get() : "SYSTEM";
     }
 
     /**
