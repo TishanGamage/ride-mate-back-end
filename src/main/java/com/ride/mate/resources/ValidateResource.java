@@ -32,4 +32,7 @@ public class ValidateResource {
 
     @JsonProperty("message")
     private String message;
+
+    @JsonProperty("errorMessage")
+    private String errorMessage;
 }
