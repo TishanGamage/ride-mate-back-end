@@ -34,6 +34,7 @@ import java.time.LocalDate;
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added identification and emergency contact handling
  * 3 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
+ * 4 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  */
 @Slf4j
 @Service
@@ -129,6 +130,18 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         return savedProfile;
+    }
+
+    @Override
+    public UserProfile getUserProfileByUserId(Long userId) {
+
+        log.info("Fetching user profile for user ID: {}", userId);
+
+        return userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("User profile not found for user ID: {}", userId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
     }
 
     @Override
