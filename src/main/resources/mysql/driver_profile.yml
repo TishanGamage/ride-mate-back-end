@@ -14,7 +14,7 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: user_id
+                  name: ride_detail__id
                   type: BIGINT
                   constraints:
                     nullable: false

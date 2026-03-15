@@ -53,9 +53,6 @@ public class RideDetail extends BaseEntity implements Serializable {
     @Column(name = "trip_route")
     private String tripRoute;
 
-    @Column(name = "gender", length = 100)
-    private String gender;
-
     @Column(name = "alert_time")
     private Timestamp alertTime;
 
