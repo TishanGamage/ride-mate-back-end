@@ -87,5 +87,12 @@ public class UserProfile extends BaseEntity implements Serializable {
 
     @Column(name = "modified_user", length = 100)
     private String modifiedUser;
+
+    @Transient
+    private String profileUrl;
+
+    public String getProfileUrl() {
+        return profileImageDocument.getDocumentUrl();
+    }
 }
 
