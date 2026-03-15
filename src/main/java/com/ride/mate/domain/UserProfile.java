@@ -89,10 +89,10 @@ public class UserProfile extends BaseEntity implements Serializable {
     private String modifiedUser;
 
     @Transient
-    private String profileUrl;
+    private String profileImageUrl;
 
-    public String getProfileUrl() {
-        return profileImageDocument.getDocumentUrl();
+    public String getProfileImageUrl() {
+        return profileImageDocument.getDocumentUrl() != null ? profileImageDocument.getDocumentUrl() : null;
     }
 }
 
