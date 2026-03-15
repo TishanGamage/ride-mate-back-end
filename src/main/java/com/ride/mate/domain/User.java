@@ -51,7 +51,7 @@ public class User extends BaseEntity implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private UserStatus status = UserStatus.ACTIVE;
+    private UserStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "email_verified", nullable = false, length = 5)
