@@ -23,3 +23,7 @@ databaseChangeLog:
       file: classpath:/mysql/driver_profile.yml
   - include:
       file: classpath:/mysql/driver_vehicle_details.yml
+  - include:
+      file: classpath:/mysql/ride_detail.yml
+  - include:
+      file: classpath:/mysql/shared_ride_detail.yml
