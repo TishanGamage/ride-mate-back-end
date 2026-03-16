@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+
 /**
  * UserProfileAddResource
  * Request payload for creating a user profile
@@ -33,6 +34,8 @@ public class UserProfileAddResource {
 
     private String willingToDrive;
 
+    @Valid
+    private DriverProfileRequestResource driverDetails;
 
     @Valid
     private UserIdentificationDetailsRequestResource userIdentificationDetails;
