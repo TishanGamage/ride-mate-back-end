@@ -16,6 +16,7 @@ import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.resources.UserEmergencyContactDetailsRequestResource;
 import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
 import com.ride.mate.resources.UserProfileAddResource;
+import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
 import com.ride.mate.service.UserProfileService;
 import com.ride.mate.util.DateUtil;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2 15-03-2026    N/A          N/A          Tishan          Added identification and emergency contact handling
  * 3 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
  * 4 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
+ * 5 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  */
 @Slf4j
 @Service
@@ -149,15 +151,48 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
     @Override
-    public UserProfile getUserProfileByUserId(Long userId) {
+    public UserProfileResponse getUserProfileByUserId(Long userId) {
 
         log.info("Fetching user profile for user ID: {}", userId);
 
-        return userProfileRepository.findByUserId(userId)
+        UserProfile userProfile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> {
                     log.warn("User profile not found for user ID: {}", userId);
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
                 });
+
+        User user = userProfile.getUser();
+
+        return UserProfileResponse.builder()
+                .id(userProfile.getId())
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .role(user.getUserRole().name())
+                .status(user.getStatus().name())
+                .emailVerified(user.getEmailVerified().name())
+                .dateOfBirth(userProfile.getDateOfBirth() != null ? userProfile.getDateOfBirth().toString() : null)
+                .gender(userProfile.getGender())
+                .bio(userProfile.getBio())
+                .addressLine1(userProfile.getAddressLine1())
+                .addressLine2(userProfile.getAddressLine2())
+                .addressLine3(userProfile.getAddressLine3())
+                .addressLine4(userProfile.getAddressLine4())
+                .city(userProfile.getCity())
+                .state(userProfile.getState())
+                .postalCode(userProfile.getPostalCode())
+                .country(userProfile.getCountry())
+                .preferredLanguage(userProfile.getPreferredLanguage())
+                .userProfileCompleted(userProfile.getUserProfileCompleted())
+                .profileImageDocumentId(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getId() : null)
+                .profileImageUrl(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getDocumentUrl() : null)
+                .userVerificationImageDocumentId(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getId() : null)
+                .userVerificationImageUrl(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getDocumentUrl() : null)
+                .createdDate(userProfile.getCreatedDate() != null ? userProfile.getCreatedDate().toString() : null)
+                .modifiedDate(userProfile.getModifiedDate() != null ? userProfile.getModifiedDate().toString() : null)
+                .build();
     }
 
     @Override
