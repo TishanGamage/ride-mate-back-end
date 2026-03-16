@@ -125,3 +125,18 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: user_profile
+            columns:
+              - column:
+                  name: user_verification_image_document_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_user_profile_verification_image_document
+                    references: document_details(id)
+

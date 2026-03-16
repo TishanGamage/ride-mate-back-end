@@ -38,5 +38,7 @@ public interface UserIdentificationDetailsRepository extends JpaRepository<UserI
     List<UserIdentificationDetails> findByUserIdAndStatus(Long userId, String status);
 
     boolean existsByUserIdAndIdentificationTypeId(Long userId, Long identificationTypeId);
+
+    boolean existsByUserId(Long userId);
 }
 

@@ -16,6 +16,7 @@ import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.resources.UserEmergencyContactDetailsRequestResource;
 import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
 import com.ride.mate.resources.UserProfileAddResource;
+import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
 import com.ride.mate.service.UserProfileService;
 import com.ride.mate.util.DateUtil;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 2 15-03-2026    N/A          N/A          Tishan          Added identification and emergency contact handling
  * 3 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
  * 4 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
+ * 5 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  */
 @Slf4j
 @Service
@@ -108,6 +110,12 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                     .ifPresent(userProfile::setProfileImageDocument);
         }
 
+        // Set optional user verification image document
+        if (request.getUserVerificationImageDocumentId() != null) {
+            documentDetailsRepository.findById(request.getUserVerificationImageDocumentId())
+                    .ifPresent(userProfile::setUserVerificationImageDocument);
+        }
+
         // Map fields from request
         if (request.getDateOfBirth() != null) {
             userProfile.setDateOfBirth(DateUtil.stringToLocalDate(request.getDateOfBirth()));
@@ -136,19 +144,55 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             }
         }
 
+        // Evaluate and update profile completion status
+        evaluateProfileCompletion(savedProfile);
+
         return savedProfile;
     }
 
     @Override
-    public UserProfile getUserProfileByUserId(Long userId) {
+    public UserProfileResponse getUserProfileByUserId(Long userId) {
 
         log.info("Fetching user profile for user ID: {}", userId);
 
-        return userProfileRepository.findByUserId(userId)
+        UserProfile userProfile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> {
                     log.warn("User profile not found for user ID: {}", userId);
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
                 });
+
+        User user = userProfile.getUser();
+
+        return UserProfileResponse.builder()
+                .id(userProfile.getId())
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .role(user.getUserRole().name())
+                .status(user.getStatus().name())
+                .emailVerified(user.getEmailVerified().name())
+                .dateOfBirth(userProfile.getDateOfBirth() != null ? userProfile.getDateOfBirth().toString() : null)
+                .gender(userProfile.getGender())
+                .bio(userProfile.getBio())
+                .addressLine1(userProfile.getAddressLine1())
+                .addressLine2(userProfile.getAddressLine2())
+                .addressLine3(userProfile.getAddressLine3())
+                .addressLine4(userProfile.getAddressLine4())
+                .city(userProfile.getCity())
+                .state(userProfile.getState())
+                .postalCode(userProfile.getPostalCode())
+                .country(userProfile.getCountry())
+                .preferredLanguage(userProfile.getPreferredLanguage())
+                .userProfileCompleted(userProfile.getUserProfileCompleted())
+                .profileImageDocumentId(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getId() : null)
+                .profileImageUrl(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getDocumentUrl() : null)
+                .userVerificationImageDocumentId(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getId() : null)
+                .userVerificationImageUrl(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getDocumentUrl() : null)
+                .createdDate(userProfile.getCreatedDate() != null ? userProfile.getCreatedDate().toString() : null)
+                .modifiedDate(userProfile.getModifiedDate() != null ? userProfile.getModifiedDate().toString() : null)
+                .build();
     }
 
     @Override
@@ -169,6 +213,12 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getProfileImageDocumentId() != null) {
             documentDetailsRepository.findById(request.getProfileImageDocumentId())
                     .ifPresent(userProfile::setProfileImageDocument);
+        }
+
+        // Update optional user verification image document
+        if (request.getUserVerificationImageDocumentId() != null) {
+            documentDetailsRepository.findById(request.getUserVerificationImageDocumentId())
+                    .ifPresent(userProfile::setUserVerificationImageDocument);
         }
 
         // Update fields from request
@@ -227,6 +277,17 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getEmergencyContactDetails() != null) {
             setEmergencyContactDetails(userProfile.getUser(), request.getEmergencyContactDetails());
         }
+
+        // Handle driver profile details if willing to drive
+        if (request.getWillingToDrive() != null &&
+                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+            if (request.getDriverDetails() != null) {
+                setDriverProfileDetails(userProfile.getUser(), request.getDriverDetails());
+            }
+        }
+
+        // Evaluate and update profile completion status
+        evaluateProfileCompletion(updatedProfile);
 
         return updatedProfile;
     }
@@ -424,5 +485,27 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         // Save the vehicle details
         driverVehicleDetailsRepository.save(vehicle);
         log.info("Driver vehicle details saved for driver profile ID: {}", driverProfile.getId());
+    }
+
+    private void evaluateProfileCompletion(UserProfile userProfile) {
+
+        boolean profileComplete =
+                userProfile.getDateOfBirth() != null &&
+                userProfile.getGender() != null &&
+                userProfile.getProfileImageDocument() != null &&
+                userProfile.getUserVerificationImageDocument() != null &&
+                userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
+
+        String completionStatus = profileComplete ? "YES" : "NO";
+
+        // Only update if the status has changed
+        if (!completionStatus.equals(userProfile.getUserProfileCompleted())) {
+            userProfile.setUserProfileCompleted(completionStatus);
+            userProfile.setModifiedDate(DateUtil.getDate());
+            userProfile.setModifiedUser(LoginAuthentication.getUserName());
+            userProfile.setSyncTs(DateUtil.getDate());
+            userProfileRepository.save(userProfile);
+            log.info("User profile completion status updated to '{}' for profile ID: {}", completionStatus, userProfile.getId());
+        }
     }
 }
