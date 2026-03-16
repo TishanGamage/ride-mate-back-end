@@ -21,25 +21,18 @@ import lombok.Setter;
 @Setter
 public class DriverVehicleDetailsRequestResource {
 
-    @NotNull(message = "{invalid.value}")
     private Long vehicleTypeId;
 
-    @NotNull(message = "{invalid.value}")
     private Long vehicleMakeId;
 
-    @NotBlank(message = "{can.not.be.blank}")
     private String registrationNumber;
 
-    @NotBlank(message = "{can.not.be.blank}")
     private String model;
 
-    @NotNull(message = "{invalid.value}")
     private Integer year;
 
-    @NotBlank(message = "{can.not.be.blank}")
     private String color;
 
-    @NotNull(message = "{invalid.value}")
     private Integer seats;
 
     private Long vehicleImageDocumentId;
