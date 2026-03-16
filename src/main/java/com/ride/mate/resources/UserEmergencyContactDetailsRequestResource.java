@@ -32,20 +32,4 @@ public class UserEmergencyContactDetailsRequestResource {
     @NotBlank(message = "{can.not.be.blank}")
     private String relationship;
 
-    @NotBlank(message = "{can.not.be.blank}")
-    @Pattern(regexp = "^(YES|NO)$", message = "{yes.no.pattern}")
-    private String isDefault;
-
-    @Email(message = "{email.invalid}")
-    private String email;
-
-    private String addressLine1;
-
-    private String addressLine2;
-
-    private String addressLine3;
-
-    private String addressLine4;
-
-    private String notes;
 }

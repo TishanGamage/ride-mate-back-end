@@ -20,8 +20,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-
 /**
  * UserProfileServiceImpl
  * Implementation of user profile management business logic
@@ -99,16 +97,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             userProfile.setDateOfBirth(DateUtil.stringToLocalDate(request.getDateOfBirth()));
         }
         userProfile.setGender(request.getGender());
-        userProfile.setBio(request.getBio());
-        userProfile.setAddressLine1(request.getAddressLine1());
-        userProfile.setAddressLine2(request.getAddressLine2());
-        userProfile.setAddressLine3(request.getAddressLine3());
-        userProfile.setAddressLine4(request.getAddressLine4());
-        userProfile.setCity(request.getCity());
-        userProfile.setState(request.getState());
-        userProfile.setPostalCode(request.getPostalCode());
-        userProfile.setCountry(request.getCountry());
-        userProfile.setPreferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "EN");
+        userProfile.setPreferredLanguage("EN");
         userProfile.setUserProfileCompleted("NO");
 
         // Set audit fields
@@ -125,9 +114,8 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
         }
 
-        // Handle emergency contact details if provided
-        if (request.getEmergencyContactDetails() != null) {
-            setEmergencyContactDetails(user, request.getEmergencyContactDetails());
+        if(request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+
         }
 
         return savedProfile;
@@ -146,14 +134,11 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
     @Override
-    public UserProfile updateUserProfile(UserProfileUpdateResource request) {
-
-        log.info("Processing user profile update for profile ID: {}", request.getId());
+    public UserProfile updateUserProfile(UserProfileUpdateResource request,Long id) {
 
         // Find existing profile
-        UserProfile userProfile = userProfileRepository.findById(request.getId())
+        UserProfile userProfile = userProfileRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.warn("User profile update failed: Profile not found - {}", request.getId());
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
                 });
 
@@ -246,18 +231,6 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         // Map all fields from request resource to domain entity
         details.setIdentificationNumber(detailsRequest.getIdentificationNumber());
-        details.setIssueDate(DateUtil.stringToLocalDate(detailsRequest.getIssueDate()));
-
-        LocalDate expiryDate = DateUtil.stringToLocalDate(detailsRequest.getExpiryDate());
-        if (DateUtil.isFutureLocalDateTime(expiryDate)) {
-            details.setExpiryDate(expiryDate);
-        } else {
-            log.warn("Validation failed: Expiry date must be a future date - {}", detailsRequest.getExpiryDate());
-            throw new ValidateRecordException(environment.getProperty(EXPIRY_DATE_MUST_BE_FUTURE), "errorMessage");
-        }
-
-        details.setIssuingCountry(detailsRequest.getIssuingCountry());
-        details.setIssuingAuthority(detailsRequest.getIssuingAuthority());
 
         // Set document references if provided
         if (detailsRequest.getFrontImageDocumentId() != null) {
@@ -281,6 +254,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             details.setModifiedUser(LoginAuthentication.getUserName());
             details.setModifiedDate(DateUtil.getDate());
         }
+        details.setSyncTs(DateUtil.getDate());
 
         // Save the identification details
         userIdentificationDetailsRepository.save(details);
@@ -291,7 +265,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         // Find existing emergency contact for this user or create new one
         EmergencyContact contact = emergencyContactRepository
-                .findByUserIdAndIsDefault(user.getId(), YesNo.valueOf(contactRequest.getIsDefault()))
+                .findByUserIdAndIsDefault(user.getId(), YesNo.YES)
                 .orElse(new EmergencyContact());
 
         // Set User relationship
@@ -301,26 +275,6 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         contact.setContactName(contactRequest.getContactName());
         contact.setContactPhone(contactRequest.getContactPhone());
         contact.setRelationship(contactRequest.getRelationship());
-        contact.setIsDefault(YesNo.valueOf(contactRequest.getIsDefault()));
-
-        if (contactRequest.getEmail() != null) {
-            contact.setEmail(contactRequest.getEmail());
-        }
-        if (contactRequest.getAddressLine1() != null) {
-            contact.setAddressLine1(contactRequest.getAddressLine1());
-        }
-        if (contactRequest.getAddressLine2() != null) {
-            contact.setAddressLine2(contactRequest.getAddressLine2());
-        }
-        if (contactRequest.getAddressLine3() != null) {
-            contact.setAddressLine3(contactRequest.getAddressLine3());
-        }
-        if (contactRequest.getAddressLine4() != null) {
-            contact.setAddressLine4(contactRequest.getAddressLine4());
-        }
-        if (contactRequest.getNotes() != null) {
-            contact.setNotes(contactRequest.getNotes());
-        }
 
         // Set audit fields
         if (contact.getId() == null) {

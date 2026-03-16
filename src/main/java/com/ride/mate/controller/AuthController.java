@@ -134,4 +134,3 @@ public class AuthController extends MessagePropertyBase {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
-
