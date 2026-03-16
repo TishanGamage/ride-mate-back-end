@@ -250,6 +250,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             details.setModifiedUser(LoginAuthentication.getUserName());
             details.setModifiedDate(DateUtil.getDate());
         }
+        details.setSyncTs(DateUtil.getDate());
 
         // Save the identification details
         userIdentificationDetailsRepository.save(details);
