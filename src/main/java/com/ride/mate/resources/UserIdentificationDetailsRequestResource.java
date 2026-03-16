@@ -33,14 +33,6 @@ public class UserIdentificationDetailsRequestResource {
     @NotBlank(message = "{can.not.be.blank}")
     private String identificationNumber;
 
-    private String issueDate;
-
-    private String expiryDate;
-
-    private String issuingCountry;
-
-    private String issuingAuthority;
-
     private Long frontImageDocumentId;
 
     private Long backImageDocumentId;
