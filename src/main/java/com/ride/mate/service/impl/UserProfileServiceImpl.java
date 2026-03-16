@@ -142,6 +142,9 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             }
         }
 
+        // Evaluate and update profile completion status
+        evaluateProfileCompletion(savedProfile);
+
         return savedProfile;
     }
 
@@ -239,6 +242,17 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getEmergencyContactDetails() != null) {
             setEmergencyContactDetails(userProfile.getUser(), request.getEmergencyContactDetails());
         }
+
+        // Handle driver profile details if willing to drive
+        if (request.getWillingToDrive() != null &&
+                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+            if (request.getDriverDetails() != null) {
+                setDriverProfileDetails(userProfile.getUser(), request.getDriverDetails());
+            }
+        }
+
+        // Evaluate and update profile completion status
+        evaluateProfileCompletion(updatedProfile);
 
         return updatedProfile;
     }
@@ -436,5 +450,27 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         // Save the vehicle details
         driverVehicleDetailsRepository.save(vehicle);
         log.info("Driver vehicle details saved for driver profile ID: {}", driverProfile.getId());
+    }
+
+    private void evaluateProfileCompletion(UserProfile userProfile) {
+
+        boolean profileComplete =
+                userProfile.getDateOfBirth() != null &&
+                userProfile.getGender() != null &&
+                userProfile.getProfileImageDocument() != null &&
+                userProfile.getUserVerificationImageDocument() != null &&
+                userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
+
+        String completionStatus = profileComplete ? "YES" : "NO";
+
+        // Only update if the status has changed
+        if (!completionStatus.equals(userProfile.getUserProfileCompleted())) {
+            userProfile.setUserProfileCompleted(completionStatus);
+            userProfile.setModifiedDate(DateUtil.getDate());
+            userProfile.setModifiedUser(LoginAuthentication.getUserName());
+            userProfile.setSyncTs(DateUtil.getDate());
+            userProfileRepository.save(userProfile);
+            log.info("User profile completion status updated to '{}' for profile ID: {}", completionStatus, userProfile.getId());
+        }
     }
 }
