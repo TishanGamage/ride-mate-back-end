@@ -60,4 +60,5 @@ public class RideDetailController extends MessagePropertyBase {
     }
 
 
+
 }
