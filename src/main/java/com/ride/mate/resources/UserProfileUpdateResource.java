@@ -20,7 +20,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserProfileUpdateResource {
-    
+
+
     @NotNull(message = "{invalid.value}")
     private Long version;
 
