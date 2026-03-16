@@ -18,6 +18,7 @@ import lombok.Setter;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added identification and emergency contact details
+ * 3 16-03-2026    N/A          N/A          Tishan          Added user verification image document
  */
 @Getter
 @Setter
@@ -27,6 +28,8 @@ public class UserProfileAddResource {
     private Long userId;
 
     private Long profileImageDocumentId;
+
+    private Long userVerificationImageDocumentId;
 
     private String dateOfBirth;
 

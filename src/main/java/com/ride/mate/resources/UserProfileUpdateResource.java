@@ -16,6 +16,7 @@ import lombok.Setter;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
+ * 2 16-03-2026    N/A          N/A          Tishan          Added user verification image document
  */
 @Getter
 @Setter
@@ -25,6 +26,8 @@ public class UserProfileUpdateResource {
     private Long version;
 
     private Long profileImageDocumentId;
+
+    private Long userVerificationImageDocumentId;
 
     private String dateOfBirth;
 
