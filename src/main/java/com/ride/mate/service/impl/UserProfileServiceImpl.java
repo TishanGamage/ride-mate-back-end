@@ -114,6 +114,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
         }
 
+        if(request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+
+        }
+
         return savedProfile;
     }
 
@@ -250,6 +254,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             details.setModifiedUser(LoginAuthentication.getUserName());
             details.setModifiedDate(DateUtil.getDate());
         }
+        details.setSyncTs(DateUtil.getDate());
 
         // Save the identification details
         userIdentificationDetailsRepository.save(details);
