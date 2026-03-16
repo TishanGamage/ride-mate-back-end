@@ -114,11 +114,6 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
         }
 
-        // Handle emergency contact details if provided
-        if (request.getEmergencyContactDetails() != null) {
-            setEmergencyContactDetails(user, request.getEmergencyContactDetails());
-        }
-
         return savedProfile;
     }
 

@@ -35,6 +35,4 @@ public class UserProfileAddResource {
     @Valid
     private UserIdentificationDetailsRequestResource userIdentificationDetails;
 
-    @Valid
-    private UserEmergencyContactDetailsRequestResource emergencyContactDetails;
 }
