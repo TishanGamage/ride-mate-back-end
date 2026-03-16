@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Iruni
       changes:
         - createTable:
-            tableName: drivr_ride_detail
+            tableName: driver_ride_detail
             columns:
               - column:
                   name: id
