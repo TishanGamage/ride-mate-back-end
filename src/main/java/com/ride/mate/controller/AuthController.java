@@ -41,7 +41,6 @@ public class AuthController extends MessagePropertyBase {
         this.userService = userService;
         this.environment = environment;
     }
-
     /**
      * Register a new user
      * Creates a new user record and returns JWT tokens
