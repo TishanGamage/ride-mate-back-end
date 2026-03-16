@@ -1,7 +1,6 @@
 package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
-import com.ride.mate.domain.User;
 import com.ride.mate.domain.VerificationCode;
 import com.ride.mate.resources.*;
 import com.ride.mate.service.AuthService;
@@ -45,18 +44,15 @@ public class AuthController extends MessagePropertyBase {
 
     /**
      * Register a new user
-     * Creates a new user record in the User table
+     * Creates a new user record and returns JWT tokens
      *
      * @param request user registration request containing email, phone, password, and role
-     * @return ResponseEntity with user registration response
+     * @return ResponseEntity with LoginResponse containing user info and JWT tokens
      */
     @PostMapping(value = "/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationAddResource request) {
+    public ResponseEntity<LoginResponse> registerUser(@Valid @RequestBody UserRegistrationAddResource request) {
         log.info("Received user registration request for email: {}", request.getEmail());
-        User user = userService.registerUser(request);
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
-        response.setId(user.getId());
-        response.setMessages(environment.getProperty(RECORD_CREATED));
+        LoginResponse response = userService.registerUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
