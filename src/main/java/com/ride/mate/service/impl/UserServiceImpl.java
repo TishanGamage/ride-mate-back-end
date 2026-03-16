@@ -7,12 +7,15 @@ import com.ride.mate.enums.UserStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
+import com.ride.mate.resources.LoginResponse;
 import com.ride.mate.resources.UserRegistrationAddResource;
 import com.ride.mate.resources.UserRegistrationUpdateResource;
 import com.ride.mate.service.UserService;
 import com.ride.mate.util.ConversionUtil;
 import com.ride.mate.util.DateUtil;
+import com.ride.mate.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 1 26-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 02-03-2026    N/A          N/A          Tishan          Updated to use document references
  * 3 09-03-2026    N/A          N/A          Tishan          Moved loginUser to AuthService
+ * 4 16-03-2026    N/A          N/A          Tishan          registerUser now returns LoginResponse with JWT tokens
  */
 @Slf4j
 @Service
@@ -39,18 +43,24 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
     private final Environment environment;
+
+    @Value("${jwt.access-token.expiration}")
+    private long accessTokenExpiration;
 
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
+                           JwtUtil jwtUtil,
                            Environment environment) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
         this.environment = environment;
     }
 
     @Override
-    public User registerUser(UserRegistrationAddResource request) {
+    public LoginResponse registerUser(UserRegistrationAddResource request) {
 
         log.info("Processing user registration request for email: {}", request.getEmail());
         // Validate if user already exists
@@ -81,7 +91,25 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
         // Save user to database
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with ID: {} for email: {}", savedUser.getId(), savedUser.getEmail());
-        return savedUser;
+
+        // Generate JWT tokens
+        String accessToken = jwtUtil.generateAccessToken(savedUser.getId(), savedUser.getEmail(), savedUser.getUserRole().name(), savedUser.getFirstName());
+        String refreshToken = jwtUtil.generateRefreshToken(savedUser.getId(), savedUser.getEmail());
+
+        // Build and return LoginResponse with tokens
+        return LoginResponse.builder()
+                .message(environment.getProperty(RECORD_CREATED))
+                .success(true)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(accessTokenExpiration / 1000)
+                .userId(savedUser.getId())
+                .userName(savedUser.getFirstName())
+                .email(savedUser.getEmail())
+                .role(savedUser.getUserRole().name())
+                .emailVerified(savedUser.getEmailVerified().toString())
+                .build();
     }
 
     @Override
