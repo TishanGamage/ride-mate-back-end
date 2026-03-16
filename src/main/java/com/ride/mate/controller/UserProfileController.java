@@ -4,6 +4,7 @@ import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.UserProfile;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.resources.UserProfileAddResource;
+import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
 import com.ride.mate.service.UserProfileService;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile endpoint
  * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId endpoint
+ * 4 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  */
 @Slf4j
 @RestController
@@ -77,16 +79,16 @@ public class UserProfileController extends MessagePropertyBase {
 
     /**
      * Get user profile by user ID
-     * Retrieves the profile record linked to the given user
+     * Retrieves the full profile details for the given user
      *
      * @param userId the ID of the user
-     * @return ResponseEntity with the UserProfile entity
+     * @return ResponseEntity with UserProfileResponse containing full profile details
      */
     @GetMapping(value = "/user/{userId}")
-    public ResponseEntity<?> getUserProfileByUserId(@PathVariable Long userId) {
+    public ResponseEntity<UserProfileResponse> getUserProfileByUserId(@PathVariable Long userId) {
         log.info("Received get user profile request for user ID: {}", userId);
-        UserProfile userProfile = userProfileService.getUserProfileByUserId(userId);
-        return new ResponseEntity<>(userProfile, HttpStatus.OK);
+        UserProfileResponse response = userProfileService.getUserProfileByUserId(userId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
 
