@@ -27,6 +27,7 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class IdentificationTypeController extends MessagePropertyBase {
 
+
     @Autowired
     private IdentificationTypeService identificationTypeService;
 
