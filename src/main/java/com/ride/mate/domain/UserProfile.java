@@ -22,6 +22,7 @@ import java.time.LocalDate;
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 22-02-2026    N/A          N/A          Tishan          Updated to reference User table
  * 3 02-03-2026    N/A          N/A          Tishan          Added NIC document references
+ * 4 16-03-2026    N/A          N/A          Tishan          Added user verification image document reference
  */
 @Getter
 @Setter
@@ -36,6 +37,10 @@ public class UserProfile extends BaseEntity implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_image_document_id")
     private DocumentDetails profileImageDocument;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_verification_image_document_id")
+    private DocumentDetails userVerificationImageDocument;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
