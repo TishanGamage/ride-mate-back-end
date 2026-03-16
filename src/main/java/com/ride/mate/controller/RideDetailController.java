@@ -58,4 +58,6 @@ public class RideDetailController extends MessagePropertyBase {
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+
 }
