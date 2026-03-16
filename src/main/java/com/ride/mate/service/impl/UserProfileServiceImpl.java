@@ -2,6 +2,8 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.DriverProfile;
+import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.domain.EmergencyContact;
 import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserIdentificationDetails;
@@ -9,6 +11,8 @@ import com.ride.mate.domain.UserProfile;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
+import com.ride.mate.resources.DriverProfileRequestResource;
+import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.resources.UserEmergencyContactDetailsRequestResource;
 import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
 import com.ride.mate.resources.UserProfileAddResource;
@@ -46,6 +50,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     private final UserIdentificationDetailsRepository userIdentificationDetailsRepository;
     private final IdentificationTypeRepository identificationTypeRepository;
     private final EmergencyContactRepository emergencyContactRepository;
+    private final DriverProfileRepository driverProfileRepository;
+    private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
+    private final VehicleTypeRepository vehicleTypeRepository;
+    private final VehicleMakeRepository vehicleMakeRepository;
     private final Environment environment;
 
     public UserProfileServiceImpl(UserProfileRepository userProfileRepository,
@@ -54,6 +62,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                                   UserIdentificationDetailsRepository userIdentificationDetailsRepository,
                                   IdentificationTypeRepository identificationTypeRepository,
                                   EmergencyContactRepository emergencyContactRepository,
+                                  DriverProfileRepository driverProfileRepository,
+                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
+                                  VehicleTypeRepository vehicleTypeRepository,
+                                  VehicleMakeRepository vehicleMakeRepository,
                                   Environment environment) {
         this.userProfileRepository = userProfileRepository;
         this.userRepository = userRepository;
@@ -61,6 +73,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         this.userIdentificationDetailsRepository = userIdentificationDetailsRepository;
         this.identificationTypeRepository = identificationTypeRepository;
         this.emergencyContactRepository = emergencyContactRepository;
+        this.driverProfileRepository = driverProfileRepository;
+        this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
+        this.vehicleTypeRepository = vehicleTypeRepository;
+        this.vehicleMakeRepository = vehicleMakeRepository;
         this.environment = environment;
     }
 
@@ -115,7 +131,9 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         if(request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
-
+            if (request.getDriverDetails() != null) {
+                setDriverProfileDetails(user, request.getDriverDetails());
+            }
         }
 
         return savedProfile;
@@ -288,5 +306,123 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         // Save the emergency contact
         emergencyContactRepository.save(contact);
         log.info("Emergency contact saved for user ID: {}", user.getId());
+    }
+
+    private void setDriverProfileDetails(User user, DriverProfileRequestResource driverRequest) {
+
+        // Find existing driver profile or create a new one
+        DriverProfile driverProfile = driverProfileRepository.findByUserId(user.getId())
+                .orElse(new DriverProfile());
+
+        boolean isNew = driverProfile.getId() == null;
+
+        // Validate uniqueness of license number for new profile
+        if (isNew && driverProfileRepository.existsByDriverLicenseNumber(driverRequest.getDriverLicenseNumber())) {
+            log.warn("Driver profile creation failed: License number already exists - {}", driverRequest.getDriverLicenseNumber());
+            throw new ValidateRecordException(environment.getProperty(DRIVER_PROFILE_ALREADY_EXISTS), "errorMessage");
+        }
+
+        // Set User relationship
+        driverProfile.setUser(user);
+
+        // Map fields from request
+        driverProfile.setDriverLicenseNumber(driverRequest.getDriverLicenseNumber());
+        driverProfile.setDriverLicenseExpiry(DateUtil.stringToLocalDate(driverRequest.getDriverLicenseExpiry()));
+        driverProfile.setDriverLicenseVerified(YesNo.NO);
+
+        // Set license document references if provided
+        if (driverRequest.getDriverLicenseFrontDocumentId() != null) {
+            documentDetailsRepository.findById(driverRequest.getDriverLicenseFrontDocumentId())
+                    .ifPresent(driverProfile::setDriverLicenseFrontDocument);
+        }
+        if (driverRequest.getDriverLicenseBackDocumentId() != null) {
+            documentDetailsRepository.findById(driverRequest.getDriverLicenseBackDocumentId())
+                    .ifPresent(driverProfile::setDriverLicenseBackDocument);
+        }
+
+        // Set default fields for new profiles
+        if (isNew) {
+            driverProfile.setAccountStatus("PENDING");
+            driverProfile.setApprovedBy(SYSTEM);
+            driverProfile.setCreatedUser(LoginAuthentication.getUserName());
+            driverProfile.setCreatedDate(DateUtil.getDate());
+        } else {
+            driverProfile.setModifiedUser(LoginAuthentication.getUserName());
+            driverProfile.setModifiedDate(DateUtil.getDate());
+        }
+        driverProfile.setSyncTs(DateUtil.getDate());
+
+        // Save the driver profile
+        DriverProfile savedDriverProfile = driverProfileRepository.save(driverProfile);
+        log.info("Driver profile saved for user ID: {}", user.getId());
+
+        // Handle vehicle details if provided
+        if (driverRequest.getVehicleDetails() != null) {
+            setDriverVehicleDetails(savedDriverProfile, driverRequest.getVehicleDetails());
+        }
+    }
+
+    private void setDriverVehicleDetails(DriverProfile driverProfile, DriverVehicleDetailsRequestResource vehicleRequest) {
+
+        // Create new vehicle details entry
+        DriverVehicleDetails vehicle = new DriverVehicleDetails();
+
+        // Set DriverProfile relationship
+        vehicle.setDriverProfile(driverProfile);
+
+        // Resolve and set VehicleType
+        vehicleTypeRepository.findById(vehicleRequest.getVehicleTypeId())
+                .ifPresentOrElse(vehicle::setVehicleType, () -> {
+                    throw new ValidateRecordException(environment.getProperty(VEHICLE_TYPE_NOT_FOUND), "errorMessage");
+                });
+
+        // Resolve and set VehicleMake
+        vehicleMakeRepository.findById(vehicleRequest.getVehicleMakeId())
+                .ifPresentOrElse(vehicle::setVehicleMake, () -> {
+                    throw new ValidateRecordException(environment.getProperty(VEHICLE_MAKE_NOT_FOUND), "errorMessage");
+                });
+
+        // Map all fields from request
+        vehicle.setRegistrationNumber(vehicleRequest.getRegistrationNumber());
+        vehicle.setModel(vehicleRequest.getModel());
+        vehicle.setYear(vehicleRequest.getYear());
+        vehicle.setColor(vehicleRequest.getColor());
+        vehicle.setSeats(vehicleRequest.getSeats());
+
+        // Set optional document references
+        if (vehicleRequest.getVehicleImageDocumentId() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId())
+                    .ifPresent(vehicle::setVehicleImageDocument);
+        }
+        if (vehicleRequest.getRegistrationCertificateDocumentId() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getRegistrationCertificateDocumentId())
+                    .ifPresent(vehicle::setRegistrationCertificateDocument);
+        }
+        if (vehicleRequest.getInsuranceDocumentId() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId())
+                    .ifPresent(vehicle::setInsuranceDocument);
+        }
+
+        // Set optional insurance details
+        vehicle.setInsuranceNumber(vehicleRequest.getInsuranceNumber());
+        vehicle.setInsuranceProvider(vehicleRequest.getInsuranceProvider());
+        if (vehicleRequest.getInsuranceExpiry() != null) {
+            vehicle.setInsuranceExpiry(DateUtil.stringToLocalDate(vehicleRequest.getInsuranceExpiry()));
+        }
+
+        // Set default status fields
+        vehicle.setIsVerified(YesNo.NO);
+        vehicle.setIsPrimary(YesNo.YES);
+        vehicle.setIsActive(YesNo.YES);
+        vehicle.setStatus("PENDING");
+
+        // Set audit fields
+        vehicle.setCreatedUser(LoginAuthentication.getUserName());
+        vehicle.setCreatedDate(DateUtil.getDate());
+        vehicle.setSyncTs(DateUtil.getDate());
+
+        // Save the vehicle details
+        driverVehicleDetailsRepository.save(vehicle);
+        log.info("Driver vehicle details saved for driver profile ID: {}", driverProfile.getId());
     }
 }
