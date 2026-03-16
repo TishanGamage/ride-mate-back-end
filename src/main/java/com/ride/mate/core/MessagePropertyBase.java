@@ -47,6 +47,9 @@ public abstract class MessagePropertyBase {
 
     // Driver Profile message property keys
     protected static final String DRIVER_PROFILE_NOT_FOUND = "driver.profile.not.found";
+    protected static final String DRIVER_PROFILE_ALREADY_EXISTS = "driver.profile.already.exists";
+    protected static final String VEHICLE_TYPE_NOT_FOUND = "vehicle.type.not.found";
+    protected static final String VEHICLE_MAKE_NOT_FOUND = "vehicle.make.not.found";
 
     // Login message property keys
     protected static final String LOGIN_USER_NOT_FOUND = "login.user-not-found";
