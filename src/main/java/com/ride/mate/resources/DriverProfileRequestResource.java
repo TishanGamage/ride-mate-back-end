@@ -22,18 +22,14 @@ import lombok.Setter;
 @Setter
 public class DriverProfileRequestResource {
 
-    @NotBlank(message = "{can.not.be.blank}")
     private String driverLicenseNumber;
 
-    @NotBlank(message = "{can.not.be.blank}")
     private String driverLicenseExpiry;
 
     private Long driverLicenseFrontDocumentId;
 
     private Long driverLicenseBackDocumentId;
 
-    @NotNull(message = "{invalid.value}")
-    @Valid
     private DriverVehicleDetailsRequestResource vehicleDetails;
 }
 
