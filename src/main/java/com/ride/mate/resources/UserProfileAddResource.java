@@ -31,6 +31,8 @@ public class UserProfileAddResource {
 
     private String gender;
 
+    private String willingToDrive;
+
 
     @Valid
     private UserIdentificationDetailsRequestResource userIdentificationDetails;
