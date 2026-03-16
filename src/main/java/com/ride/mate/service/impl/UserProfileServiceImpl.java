@@ -108,6 +108,12 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                     .ifPresent(userProfile::setProfileImageDocument);
         }
 
+        // Set optional user verification image document
+        if (request.getUserVerificationImageDocumentId() != null) {
+            documentDetailsRepository.findById(request.getUserVerificationImageDocumentId())
+                    .ifPresent(userProfile::setUserVerificationImageDocument);
+        }
+
         // Map fields from request
         if (request.getDateOfBirth() != null) {
             userProfile.setDateOfBirth(DateUtil.stringToLocalDate(request.getDateOfBirth()));
@@ -169,6 +175,12 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getProfileImageDocumentId() != null) {
             documentDetailsRepository.findById(request.getProfileImageDocumentId())
                     .ifPresent(userProfile::setProfileImageDocument);
+        }
+
+        // Update optional user verification image document
+        if (request.getUserVerificationImageDocumentId() != null) {
+            documentDetailsRepository.findById(request.getUserVerificationImageDocumentId())
+                    .ifPresent(userProfile::setUserVerificationImageDocument);
         }
 
         // Update fields from request
