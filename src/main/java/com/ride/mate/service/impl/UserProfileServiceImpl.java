@@ -114,6 +114,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
         }
 
+        if(request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+
+        }
+
         return savedProfile;
     }
 
