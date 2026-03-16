@@ -20,7 +20,7 @@ databaseChangeLog:
                     nullable: false
                     unique: true
                     foreignKeyName: fk_share_ride_detail_driver_profile
-                    references: ride_detail(id)
+                    references: driver_ride_detail(id)
                     deleteCascade: true
               - column:
                   name: request_id
@@ -30,6 +30,16 @@ databaseChangeLog:
               - column:
                   name: user_id
                   type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passenger_start_location_longitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passenger_end_location_longitude
+                  type: DECIMAL(10,7)
                   constraints:
                     nullable: false
               - column:

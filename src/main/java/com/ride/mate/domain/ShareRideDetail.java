@@ -38,6 +38,12 @@ public class ShareRideDetail extends BaseEntity implements Serializable {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "passenger_start_location_longitude", precision = 10, scale = 7)
+    private BigDecimal startLocationLongitude = BigDecimal.ZERO;
+
+    @Column(name = "passenger_end_location_longitude", precision = 10, scale = 7)
+    private BigDecimal endLocationLongitude = BigDecimal.ZERO ;
+
     @Column(name = "passenger_cost", precision = 25, scale = 2, nullable = false)
     private BigDecimal passengerCost;
 
