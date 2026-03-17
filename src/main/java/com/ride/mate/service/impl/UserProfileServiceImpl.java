@@ -119,12 +119,14 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setSyncTs(DateUtil.getDate());
 
         // Save to database
-        UserProfile savedProfile = userProfileRepository.save(userProfile);
+        UserProfile savedProfile = userProfileRepository.saveAndFlush(userProfile);
         log.info("User profile created successfully with ID: {} for user ID: {}", savedProfile.getId(), request.getUserId());
 
         // Handle user identification details if provided
+        boolean hasIdentificationDetails = false;
         if (request.getUserIdentificationDetails() != null) {
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
+            hasIdentificationDetails = true;
         }
 
         if(request.getWillingToDrive() != null &&
@@ -135,7 +137,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         // Evaluate and update profile completion status
-        evaluateProfileCompletion(savedProfile);
+        evaluateProfileCompletion(userProfile, hasIdentificationDetails);
 
         return savedProfile;
     }
@@ -255,12 +257,14 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setSyncTs(DateUtil.getDate());
 
         // Save updated profile
-        UserProfile updatedProfile = userProfileRepository.save(userProfile);
+        UserProfile updatedProfile = userProfileRepository.saveAndFlush(userProfile);
         log.info("User profile updated successfully with ID: {}", updatedProfile.getId());
 
         // Handle user identification details if provided
+        boolean hasIdentificationDetails = userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
         if (request.getUserIdentificationDetails() != null) {
             setUserIdentificationDetails(userProfile.getUser(), request.getUserIdentificationDetails());
+            hasIdentificationDetails = true;
         }
 
         // Handle emergency contact details if provided
@@ -277,7 +281,8 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         // Evaluate and update profile completion status
-        evaluateProfileCompletion(updatedProfile);
+        // Use the in-memory userProfile object which has all associations set (updatedProfile may have lazy proxies)
+        evaluateProfileCompletion(userProfile, hasIdentificationDetails);
 
         return updatedProfile;
     }
@@ -360,14 +365,13 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
 
-    private void evaluateProfileCompletion(UserProfile userProfile) {
+    private void evaluateProfileCompletion(UserProfile userProfile, boolean hasIdentificationDetails) {
 
         boolean profileComplete =
                 userProfile.getDateOfBirth() != null &&
                 userProfile.getGender() != null &&
-                userProfile.getProfileImageDocument() != null &&
                 userProfile.getUserVerificationImageDocument() != null &&
-                userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
+                hasIdentificationDetails;
 
 
         String completionStatus = profileComplete ? "YES" : "NO";
