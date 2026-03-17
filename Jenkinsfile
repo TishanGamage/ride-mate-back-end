@@ -16,14 +16,16 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 echo "Cloning branch: ${GIT_BRANCH}"
-                git branch: "${GIT_BRANCH}", url: "${REPO_URL}"
+                git branch: "${GIT_BRANCH}",
+                    url: "${REPO_URL}",
+                    credentialsId: "github-finegrained-pat"
             }
         }
 
         stage('Build Jar') {
             steps {
                 echo "Building Spring Boot JAR"
-                sh './mvnw clean package -DskipTests'
+                sh "mvn clean package -DskipTests"
             }
         }
 
@@ -38,8 +40,8 @@ pipeline {
             steps {
                 echo "Stopping old container if exists"
                 sh """
-                docker ps -q --filter 'name=${CONTAINER_NAME}' | grep -q . && docker stop ${CONTAINER_NAME} || echo 'No container running'
-                docker ps -a -q --filter 'name=${CONTAINER_NAME}' | grep -q . && docker rm ${CONTAINER_NAME} || echo 'No container to remove'
+                docker ps -q --filter 'name=${CONTAINER_NAME}' | grep -q . && docker stop ${CONTAINER_NAME} || true
+                docker ps -a -q --filter 'name=${CONTAINER_NAME}' | grep -q . && docker rm ${CONTAINER_NAME} || true
                 """
             }
         }
