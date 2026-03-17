@@ -22,6 +22,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 /**
  * UserProfileServiceImpl
  * Implementation of user profile management business logic
@@ -324,8 +325,8 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
         details.setSyncTs(DateUtil.getDate());
 
-        // Save the identification details
-        userIdentificationDetailsRepository.save(details);
+        // Save and flush the identification details so they are visible within the same transaction
+        userIdentificationDetailsRepository.saveAndFlush(details);
         log.info("User identification details saved for user ID: {}", user.getId());
     }
 
@@ -367,6 +368,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 userProfile.getProfileImageDocument() != null &&
                 userProfile.getUserVerificationImageDocument() != null &&
                 userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
+
 
         String completionStatus = profileComplete ? "YES" : "NO";
 
