@@ -7,7 +7,7 @@ pipeline {
         IMAGE_NAME = "ride-mate-backend"
         CONTAINER_NAME = "ride-mate-backend"
         APP_PORT = "8080"
-        GIT_BRANCH = "feature/sanjaya"
+        GIT_BRANCH = "main"
         REPO_URL = "https://github.com/TishanGamage/ride-mate-back-end"
     }
 
