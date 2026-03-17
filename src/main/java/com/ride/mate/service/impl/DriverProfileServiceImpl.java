@@ -14,6 +14,8 @@ import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.VehicleMakeRepository;
 import com.ride.mate.repository.VehicleTypeRepository;
 import com.ride.mate.resources.DriverProfileRequestResource;
+import com.ride.mate.resources.DriverProfileResponse;
+import com.ride.mate.resources.DriverVehicleDetailsResponse;
 import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.service.DriverProfileService;
 import com.ride.mate.util.DateUtil;
@@ -21,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DriverProfileServiceImpl
@@ -133,6 +138,80 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         evaluateDriverProfileCompletion(driverProfile, hasVehicleDetails);
 
         return savedDriverProfile;
+    }
+
+    @Override
+    public DriverProfileResponse getDriverProfileByUserId(Long userId) {
+
+        log.info("Fetching driver profile for user ID: {}", userId);
+
+        DriverProfile driverProfile = driverProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("Driver profile not found for user ID: {}", userId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        User user = driverProfile.getUser();
+
+        // Map all vehicles associated with this driver profile
+        List<DriverVehicleDetailsResponse> vehicleResponses = driverVehicleDetailsRepository
+                .findByDriverProfileId(driverProfile.getId())
+                .stream()
+                .map(this::mapVehicleToResponse)
+                .collect(Collectors.toList());
+
+        return DriverProfileResponse.builder()
+                .id(driverProfile.getId())
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .driverLicenseNumber(driverProfile.getDriverLicenseNumber())
+                .driverLicenseExpiry(driverProfile.getDriverLicenseExpiry() != null ? driverProfile.getDriverLicenseExpiry().toString() : null)
+                .driverLicenseVerified(driverProfile.getDriverLicenseVerified() != null ? driverProfile.getDriverLicenseVerified().name() : null)
+                .driverLicenseFrontDocumentId(driverProfile.getDriverLicenseFrontDocument() != null ? driverProfile.getDriverLicenseFrontDocument().getId() : null)
+                .driverLicenseFrontDocumentUrl(driverProfile.getDriverLicenseFrontDocument() != null ? driverProfile.getDriverLicenseFrontDocument().getDocumentUrl() : null)
+                .driverLicenseBackDocumentId(driverProfile.getDriverLicenseBackDocument() != null ? driverProfile.getDriverLicenseBackDocument().getId() : null)
+                .driverLicenseBackDocumentUrl(driverProfile.getDriverLicenseBackDocument() != null ? driverProfile.getDriverLicenseBackDocument().getDocumentUrl() : null)
+                .ratingAsDriver(driverProfile.getRatingAsDriver() != null ? driverProfile.getRatingAsDriver().toPlainString() : null)
+                .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
+                .totalEarnings(driverProfile.getTotalEarnings() != null ? driverProfile.getTotalEarnings().toPlainString() : null)
+                .accountStatus(driverProfile.getAccountStatus())
+                .driverProfileCompleted(driverProfile.getDriverProfileCompleted())
+                .vehicles(vehicleResponses)
+                .createdDate(driverProfile.getCreatedDate() != null ? driverProfile.getCreatedDate().toString() : null)
+                .modifiedDate(driverProfile.getModifiedDate() != null ? driverProfile.getModifiedDate().toString() : null)
+                .build();
+    }
+
+    private DriverVehicleDetailsResponse mapVehicleToResponse(com.ride.mate.domain.DriverVehicleDetails v) {
+        return DriverVehicleDetailsResponse.builder()
+                .id(v.getId())
+                .vehicleTypeId(v.getVehicleType() != null ? v.getVehicleType().getId() : null)
+                .vehicleTypeName(v.getVehicleType() != null ? v.getVehicleType().getName() : null)
+                .vehicleMakeId(v.getVehicleMake() != null ? v.getVehicleMake().getId() : null)
+                .vehicleMakeName(v.getVehicleMake() != null ? v.getVehicleMake().getName() : null)
+                .registrationNumber(v.getRegistrationNumber())
+                .model(v.getModel())
+                .year(v.getYear())
+                .color(v.getColor())
+                .seats(v.getSeats())
+                .vehicleImageDocumentId(v.getVehicleImageDocument() != null ? v.getVehicleImageDocument().getId() : null)
+                .vehicleImageUrl(v.getVehicleImageDocument() != null ? v.getVehicleImageDocument().getDocumentUrl() : null)
+                .registrationCertificateDocumentId(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getId() : null)
+                .registrationCertificateUrl(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getDocumentUrl() : null)
+                .insuranceNumber(v.getInsuranceNumber())
+                .insuranceProvider(v.getInsuranceProvider())
+                .insuranceExpiry(v.getInsuranceExpiry() != null ? v.getInsuranceExpiry().toString() : null)
+                .insuranceDocumentId(v.getInsuranceDocument() != null ? v.getInsuranceDocument().getId() : null)
+                .insuranceDocumentUrl(v.getInsuranceDocument() != null ? v.getInsuranceDocument().getDocumentUrl() : null)
+                .isVerified(v.getIsVerified() != null ? v.getIsVerified().name() : null)
+                .isPrimary(v.getIsPrimary() != null ? v.getIsPrimary().name() : null)
+                .isActive(v.getIsActive() != null ? v.getIsActive().name() : null)
+                .status(v.getStatus())
+                .createdDate(v.getCreatedDate() != null ? v.getCreatedDate().toString() : null)
+                .modifiedDate(v.getModifiedDate() != null ? v.getModifiedDate().toString() : null)
+                .build();
     }
 
     private void saveDriverVehicleDetails(DriverProfile driverProfile, DriverVehicleDetailsRequestResource vehicleRequest) {

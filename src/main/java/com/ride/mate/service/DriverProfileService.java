@@ -2,6 +2,7 @@ package com.ride.mate.service;
 
 import com.ride.mate.domain.DriverProfile;
 import com.ride.mate.resources.DriverProfileRequestResource;
+import com.ride.mate.resources.DriverProfileResponse;
 
 /**
  * DriverProfileService
@@ -14,6 +15,7 @@ import com.ride.mate.resources.DriverProfileRequestResource;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Added getDriverProfileByUserId
  */
 public interface DriverProfileService {
 
@@ -25,5 +27,13 @@ public interface DriverProfileService {
      * @return the saved DriverProfile entity
      */
     DriverProfile saveDriverProfile(Long userId, DriverProfileRequestResource request);
+
+    /**
+     * Retrieve a driver profile by user ID
+     *
+     * @param userId the ID of the user
+     * @return DriverProfileResponse containing full driver profile details
+     */
+    DriverProfileResponse getDriverProfileByUserId(Long userId);
 }
 
