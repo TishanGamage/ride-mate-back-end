@@ -34,8 +34,14 @@ public class RideDetail extends BaseEntity implements Serializable {
     @Column(name = "start_location_longitude", precision = 10, scale = 7)
     private BigDecimal startLocationLongitude = BigDecimal.ZERO;
 
+    @Column(name = "start_location_latitude", precision = 10, scale = 7)
+    private BigDecimal startLocationLatitude = BigDecimal.ZERO;
+
     @Column(name = "end_location_longitude", precision = 10, scale = 7)
     private BigDecimal endLocationLongitude = BigDecimal.ZERO ;
+
+    @Column(name = "end_location_latitude", precision = 10, scale = 7)
+    private BigDecimal endLocationLatitude = BigDecimal.ZERO ;
 
     @Column(name = "start_city", length = 100)
     private String startCity;
