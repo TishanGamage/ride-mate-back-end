@@ -112,6 +112,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setGender(request.getGender());
         userProfile.setPreferredLanguage("EN");
         userProfile.setUserProfileCompleted("NO");
+        userProfile.setWillingToDrive(request.getWillingToDrive() != null ? request.getWillingToDrive() : YesNo.NO);
 
         // Set audit fields
         userProfile.setCreatedDate(DateUtil.getDate());
@@ -129,8 +130,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             hasIdentificationDetails = true;
         }
 
-        if(request.getWillingToDrive() != null &&
-                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+        if (YesNo.YES.equals(request.getWillingToDrive())) {
             if (request.getDriverDetails() != null) {
                 driverProfileService.saveDriverProfile(user.getId(), request.getDriverDetails());
             }
@@ -178,6 +178,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 .country(userProfile.getCountry())
                 .preferredLanguage(userProfile.getPreferredLanguage())
                 .userProfileCompleted(userProfile.getUserProfileCompleted())
+                .willingToDrive(userProfile.getWillingToDrive() != null ? userProfile.getWillingToDrive().name() : null)
                 .profileImageDocumentId(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getId() : null)
                 .profileImageUrl(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getDocumentUrl() : null)
                 .userVerificationImageDocumentId(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getId() : null)
@@ -250,6 +251,9 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getPreferredLanguage() != null) {
             userProfile.setPreferredLanguage(request.getPreferredLanguage());
         }
+        if (request.getWillingToDrive() != null) {
+            userProfile.setWillingToDrive(request.getWillingToDrive());
+        }
 
         // Update audit fields
         userProfile.setModifiedDate(DateUtil.getDate());
@@ -273,8 +277,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         // Handle driver profile details if willing to drive
-        if (request.getWillingToDrive() != null &&
-                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+        if (YesNo.YES.equals(request.getWillingToDrive())) {
             if (request.getDriverDetails() != null) {
                 driverProfileService.saveDriverProfile(userProfile.getUser().getId(), request.getDriverDetails());
             }

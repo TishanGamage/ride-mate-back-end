@@ -1,5 +1,6 @@
 package com.ride.mate.resources;
 
+import com.ride.mate.enums.YesNo;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,6 +20,7 @@ import lombok.Setter;
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 15-03-2026    N/A          N/A          Tishan          Added identification and emergency contact details
  * 3 16-03-2026    N/A          N/A          Tishan          Added user verification image document
+ * 4 17-03-2026    N/A          N/A          Tishan          Changed willingToDrive to YesNo enum
  */
 @Getter
 @Setter
@@ -35,7 +37,8 @@ public class UserProfileAddResource {
 
     private String gender;
 
-    private String willingToDrive;
+    @NotNull(message = "{invalid.value}")
+    private YesNo willingToDrive;
 
     @Valid
     private DriverProfileRequestResource driverDetails;

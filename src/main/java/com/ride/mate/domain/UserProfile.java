@@ -1,6 +1,7 @@
 package com.ride.mate.domain;
 
 import com.ride.mate.core.BaseEntity;
+import com.ride.mate.enums.YesNo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
  * 2 22-02-2026    N/A          N/A          Tishan          Updated to reference User table
  * 3 02-03-2026    N/A          N/A          Tishan          Added NIC document references
  * 4 16-03-2026    N/A          N/A          Tishan          Added user verification image document reference
+ * 5 17-03-2026    N/A          N/A          Tishan          Added willingToDrive field
  */
 @Getter
 @Setter
@@ -80,6 +82,10 @@ public class UserProfile extends BaseEntity implements Serializable {
 
     @Column(name = "user_profile_completed", nullable = false, length = 20)
     private String userProfileCompleted;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "willing_to_drive", nullable = false, length = 3)
+    private YesNo willingToDrive = YesNo.NO;
 
     @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;
