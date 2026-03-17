@@ -92,3 +92,20 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 2
+      author: Iruni
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: start_location_latitude
+                  type: decimal(10,7)
+            tableName:  driver_ride_detail
+        - addColumn:
+            columns:
+              - column:
+                  name: end_location_latitude
+                  type: decimal(10,7)
+            tableName:  driver_ride_detail
