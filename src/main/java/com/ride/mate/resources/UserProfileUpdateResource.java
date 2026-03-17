@@ -1,5 +1,6 @@
 package com.ride.mate.resources;
 
+import com.ride.mate.enums.YesNo;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -18,6 +19,7 @@ import lombok.Setter;
  * 1 15-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 16-03-2026    N/A          N/A          Tishan          Added user verification image document
  * 3 16-03-2026    N/A          N/A          Tishan          Added willingToDrive and driverDetails fields
+ * 4 17-03-2026    N/A          N/A          Tishan          Changed willingToDrive to YesNo enum
  */
 @Getter
 @Setter
@@ -55,7 +57,7 @@ public class UserProfileUpdateResource {
 
     private String preferredLanguage;
 
-    private String willingToDrive;
+    private YesNo willingToDrive;
 
     @Valid
     private DriverProfileRequestResource driverDetails;

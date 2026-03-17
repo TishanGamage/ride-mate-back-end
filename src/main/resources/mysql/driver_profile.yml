@@ -116,3 +116,17 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: driver_profile
+            columns:
+              - column:
+                  name: driver_profile_completed
+                  type: VARCHAR(3)
+                  defaultValue: 'NO'
+                  constraints:
+                    nullable: false

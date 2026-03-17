@@ -140,3 +140,16 @@ databaseChangeLog:
                     foreignKeyName: fk_user_profile_verification_image_document
                     references: document_details(id)
 
+  - changeSet:
+      id: 3
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: user_profile
+            columns:
+              - column:
+                  name: willing_to_drive
+                  type: VARCHAR(3)
+                  defaultValue: 'NO'
+                  constraints:
+                    nullable: false

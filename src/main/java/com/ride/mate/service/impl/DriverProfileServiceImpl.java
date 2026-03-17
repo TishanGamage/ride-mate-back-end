@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted evaluation
  */
 @Slf4j
 @Service
@@ -118,13 +119,18 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         driverProfile.setSyncTs(DateUtil.getDate());
 
         // Save the driver profile
-        DriverProfile savedDriverProfile = driverProfileRepository.save(driverProfile);
+        DriverProfile savedDriverProfile = driverProfileRepository.saveAndFlush(driverProfile);
         log.info("Driver profile saved successfully with ID: {} for user ID: {}", savedDriverProfile.getId(), userId);
 
         // Handle vehicle details if provided
+        boolean hasVehicleDetails = false;
         if (request.getVehicleDetails() != null) {
             saveDriverVehicleDetails(savedDriverProfile, request.getVehicleDetails());
+            hasVehicleDetails = true;
         }
+
+        // Evaluate and update driver profile completion status
+        evaluateDriverProfileCompletion(driverProfile, hasVehicleDetails);
 
         return savedDriverProfile;
     }
@@ -191,6 +197,28 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         // Save the vehicle details
         driverVehicleDetailsRepository.save(vehicle);
         log.info("Driver vehicle details saved for driver profile ID: {}", driverProfile.getId());
+    }
+
+    private void evaluateDriverProfileCompletion(DriverProfile driverProfile, boolean hasVehicleDetails) {
+
+        boolean profileComplete =
+                driverProfile.getDriverLicenseNumber() != null &&
+                driverProfile.getDriverLicenseExpiry() != null &&
+                driverProfile.getDriverLicenseFrontDocument() != null &&
+                driverProfile.getDriverLicenseBackDocument() != null &&
+                hasVehicleDetails;
+
+        String completionStatus = profileComplete ? "YES" : "NO";
+
+        // Only update if the status has changed
+        if (!completionStatus.equals(driverProfile.getDriverProfileCompleted())) {
+            driverProfile.setDriverProfileCompleted(completionStatus);
+            driverProfile.setModifiedDate(DateUtil.getDate());
+            driverProfile.setModifiedUser(LoginAuthentication.getUserName());
+            driverProfile.setSyncTs(DateUtil.getDate());
+            driverProfileRepository.save(driverProfile);
+            log.info("Driver profile completion status updated to '{}' for driver profile ID: {}", completionStatus, driverProfile.getId());
+        }
     }
 }
 
