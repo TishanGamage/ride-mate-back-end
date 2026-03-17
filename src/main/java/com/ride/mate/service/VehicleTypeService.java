@@ -1,30 +1,38 @@
 package com.ride.mate.service;
 
-import com.ride.mate.domain.IdentificationType;
 import com.ride.mate.domain.VehicleType;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * VehicleTypeService
+ * Service interface for vehicle type business logic
+ *
+ * @author Tishan
+ * @version 1.0.0
+ * @since 1.0.0
+ *
+ * # Date       Story Point    Task No      Author           Description
+ * ---------------------------------------------------------------------------
+ * 1 25-02-2026    N/A          N/A          Iruni           Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Updated to follow coding standards
+ */
 public interface VehicleTypeService {
 
     /**
-     * Get Vehicle Types passing by  id
+     * Get VehicleType by id
      *
-     * @param id -  Id
-     * @return - JSON Array of VehicleTypes related  id
-     *
+     * @param id - Vehicle Type Id
+     * @return Optional of VehicleType
      */
-
-    public Optional<VehicleType> findById(long id);
+    Optional<VehicleType> findById(long id);
 
     /**
-     * Get Vehicle Types passing by  status
+     * Get VehicleTypes by status
      *
      * @param status - status
-     * @return - JSON Array of VehicleTypes related  status
-     *
+     * @return List of VehicleType records matching the status
      */
-    public List<VehicleType> findByStatus(String status);
-
+    List<VehicleType> findByStatus(String status);
 }
