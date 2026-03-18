@@ -85,4 +85,8 @@ public abstract class MessagePropertyBase {
     // Reset password message property keys
     protected static final String RESET_PASSWORD_SUCCESS = "reset.password.success";
     protected static final String VERIFICATION_NOT_COMPLETED = "verification.not.completed";
+
+    // Role update message property keys
+    protected static final String ROLE_UPDATE_SUCCESS = "role.update.success";
+    protected static final String ROLE_INVALID = "role.invalid";
 }
