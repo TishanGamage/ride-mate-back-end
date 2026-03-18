@@ -15,6 +15,9 @@ import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
 import com.ride.mate.resources.WillingToDriveUpdateResource;
+import com.ride.mate.resources.UpdateRoleRequest;
+import com.ride.mate.resources.SuccessAndErrorDetailsResource;
+import com.ride.mate.enums.UserRole;
 import com.ride.mate.service.DriverProfileService;
 import com.ride.mate.service.UserProfileService;
 import com.ride.mate.util.DateUtil;
@@ -423,5 +426,34 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 updatedProfile.getId(), updatedProfile.getWillingToDrive());
 
         return updatedProfile;
+    }
+
+    @Override
+    public SuccessAndErrorDetailsResource updateRole(Long userId, UpdateRoleRequest request) {
+        log.info("Processing role update for user ID: {}", userId);
+
+        UserRole newRole;
+        try {
+            newRole = UserRole.valueOf(request.getRole().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Role update failed: Invalid role value - {}", request.getRole());
+            throw new ValidateRecordException(environment.getProperty(ROLE_INVALID), "errorMessage");
+        }
+
+        if (newRole != UserRole.DRIVER && newRole != UserRole.PASSENGER) {
+            log.warn("Role update failed: Role not allowed - {}", newRole);
+            throw new ValidateRecordException(environment.getProperty(ROLE_INVALID), "errorMessage");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ValidateRecordException(environment.getProperty(LOGIN_USER_NOT_FOUND), "errorMessage"));
+
+        user.setUserRole(newRole);
+        user.setModifiedDate(DateUtil.getDate());
+        user.setModifiedUser(SYSTEM);
+        userRepository.save(user);
+
+        log.info("Role updated successfully to {} for user ID: {}", newRole, userId);
+        return new SuccessAndErrorDetailsResource(environment.getProperty(ROLE_UPDATE_SUCCESS));
     }
 }
