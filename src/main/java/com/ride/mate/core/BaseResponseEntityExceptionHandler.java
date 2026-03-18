@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.lang.reflect.Field;
@@ -30,6 +31,7 @@ import java.lang.reflect.Field;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A         Tishan          Initial Development
+ * 2 18-03-2026    N/A          N/A         Tishan          Added MaxUploadSizeExceededException handler via handleException override
  */
 @RestControllerAdvice
 public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
@@ -38,6 +40,20 @@ public class BaseResponseEntityExceptionHandler extends ResponseEntityExceptionH
 
     public BaseResponseEntityExceptionHandler(Environment environment) {
         this.environment = environment;
+    }
+
+    /**
+     * Overrides the parent handler for MaxUploadSizeExceededException
+     * to return a clean 413 Payload Too Large JSON response.
+     */
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        SuccessAndErrorDetailsResource errorDetails = new SuccessAndErrorDetailsResource();
+        errorDetails.setMessages(environment.getProperty("file.size.exceeded"));
+        errorDetails.setDetails(ex.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
     @Override
