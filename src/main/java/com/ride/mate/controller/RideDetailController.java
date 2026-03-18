@@ -35,7 +35,7 @@ public class RideDetailController extends MessagePropertyBase {
     private final Environment environment;
 
     public RideDetailController(RideDetailService rideDetailService,
-                               Environment environment) {
+                                Environment environment) {
         this.rideDetailService = rideDetailService;
         this.environment = environment;
     }
@@ -58,8 +58,4 @@ public class RideDetailController extends MessagePropertyBase {
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
-
-
-
-
 }
