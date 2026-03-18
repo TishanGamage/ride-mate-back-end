@@ -1,0 +1,82 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Danushka
+      changes:
+        - createTable:
+            tableName: withdrawal_request
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: false
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sync_ts
+                  type: DATETIME
+              - column:
+                  name: driver_profile_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_withdrawal_driver_profile
+                    references: driver_profile(id)
+              - column:
+                  name: amount
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(10)
+                  defaultValue: LKR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bank_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_number
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_holder_name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: remarks
+                  type: VARCHAR(500)
+              - column:
+                  name: created_date
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: DATETIME
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+
