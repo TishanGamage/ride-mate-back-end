@@ -263,7 +263,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         vehicle.setModel(vehicleRequest.getModel());
         vehicle.setYear(vehicleRequest.getYear());
         vehicle.setColor(vehicleRequest.getColor());
-        vehicle.setSeats(vehicleRequest.getSeats());
+        vehicle.setSeats(vehicleRequest.getSeats() != null ? vehicleRequest.getSeats() : 0);
 
         // Set optional vehicle image document references (up to 4)
         if (vehicleRequest.getVehicleImageDocumentId1() != null) {
