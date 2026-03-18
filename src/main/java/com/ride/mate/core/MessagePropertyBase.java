@@ -81,4 +81,8 @@ public abstract class MessagePropertyBase {
     protected static final String SUPABASE_UPLOAD_FAILED = "supabase.upload.failed";
     protected static final String SUPABASE_DELETE_FAILED = "supabase.delete.failed";
     protected static final String SUPABASE_DOWNLOAD_FAILED = "supabase.download.failed";
+
+    // Reset password message property keys
+    protected static final String RESET_PASSWORD_SUCCESS = "reset.password.success";
+    protected static final String VERIFICATION_NOT_COMPLETED = "verification.not.completed";
 }
