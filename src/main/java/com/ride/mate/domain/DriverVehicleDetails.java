@@ -120,10 +120,6 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     @Column(name = "is_primary", nullable = false, length = 3)
     private YesNo isPrimary;
 
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "is_active", nullable = false, length = 3)
-    private YesNo isActive;
-
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 

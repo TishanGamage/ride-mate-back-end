@@ -226,7 +226,6 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                 .revenueLicenseDocumentUrl2(v.getRevenueLicenseDocument2() != null ? v.getRevenueLicenseDocument2().getDocumentUrl() : null)
                 .isVerified(v.getIsVerified() != null ? v.getIsVerified().name() : null)
                 .isPrimary(v.getIsPrimary() != null ? v.getIsPrimary().name() : null)
-                .isActive(v.getIsActive() != null ? v.getIsActive().name() : null)
                 .status(v.getStatus())
                 .createdDate(v.getCreatedDate() != null ? v.getCreatedDate().toString() : null)
                 .modifiedDate(v.getModifiedDate() != null ? v.getModifiedDate().toString() : null)
@@ -314,7 +313,6 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         // Set default status fields
         vehicle.setIsVerified(YesNo.NO);
         vehicle.setIsPrimary(YesNo.YES);
-        vehicle.setIsActive(YesNo.YES);
         vehicle.setStatus("PENDING");
 
         // Set audit fields
