@@ -13,7 +13,6 @@ import com.ride.mate.resources.PaymentInitResource;
 import com.ride.mate.service.PayHereService;
 import com.ride.mate.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -56,8 +55,6 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
     private final RestTemplate restTemplate;
     private final Environment environment;
 
-    @Value("${payhere.merchant-secret}")
-    private String merchantSecret;
 
     public PayHereServiceImpl(UserSavedCardRepository userSavedCardRepository,
                               PaymentTransactionRepository paymentTransactionRepository,
@@ -249,8 +246,7 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
      */
     private boolean isSignatureValid(PayHereNotifyResource request) {
         try {
-            String merchantSecretHash = computeMd5(merchantSecret).toUpperCase();
-            log.info("pAyhere MD5 signature verification: merchantSecretHash={}, requestMd5sig={}", merchantSecret, request.getMd5sig());
+            String merchantSecretHash = computeMd5(payHereConfig.getMerchantSecret()).toUpperCase();
             String rawSignature = payHereConfig.getMerchantId()
                     + request.getOrderId()
                     + request.getPayhereAmount()
