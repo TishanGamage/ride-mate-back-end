@@ -50,7 +50,7 @@ pipeline {
             steps {
                 echo "Running new container: ${CONTAINER_NAME}"
                 sh """
-                docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:${APP_PORT} ${IMAGE_NAME}
+                docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:${APP_PORT} --env-file .env -e SPRING_PROFILES_ACTIVE=prod ${IMAGE_NAME}
                 """
             }
         }

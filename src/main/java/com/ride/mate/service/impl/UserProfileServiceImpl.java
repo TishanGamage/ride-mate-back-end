@@ -376,6 +376,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 userProfile.getUserVerificationImageDocument() != null &&
                 hasIdentificationDetails;
 
+
         String completionStatus = profileComplete ? "YES" : "NO";
 
         // Only update if the status has changed
