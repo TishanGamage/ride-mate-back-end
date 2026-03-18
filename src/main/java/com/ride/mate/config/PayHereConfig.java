@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Configuration;
 public class PayHereConfig {
 
     private String merchantId;
-    private String merchantSecret;
     private String apiBaseUrl;
     private Api api = new Api();
 
