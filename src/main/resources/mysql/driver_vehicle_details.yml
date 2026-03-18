@@ -158,3 +158,71 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 2
+      author: Tishan
+      comment: "Rename vehicle_image_document_id to vehicle_image_document_id_1; rename insurance_document_id to insurance_document_id_1; add vehicle_model_id, vehicle_image_document_id_2/3/4, insurance_document_id_2, revenue_license_document_id_1/2"
+      changes:
+        - renameColumn:
+            tableName: driver_vehicle_details
+            oldColumnName: vehicle_image_document_id
+            newColumnName: vehicle_image_document_id_1
+            columnDataType: BIGINT
+        - renameColumn:
+            tableName: driver_vehicle_details
+            oldColumnName: insurance_document_id
+            newColumnName: insurance_document_id_1
+            columnDataType: BIGINT
+        - addColumn:
+            tableName: driver_vehicle_details
+            columns:
+              - column:
+                  name: vehicle_model_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_model
+                    references: vehicle_model(id)
+              - column:
+                  name: vehicle_image_document_id_2
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_vehicle_image_document_2
+                    references: document_details(id)
+              - column:
+                  name: vehicle_image_document_id_3
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_vehicle_image_document_3
+                    references: document_details(id)
+              - column:
+                  name: vehicle_image_document_id_4
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_vehicle_image_document_4
+                    references: document_details(id)
+              - column:
+                  name: insurance_document_id_2
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_insurance_document_2
+                    references: document_details(id)
+              - column:
+                  name: revenue_license_document_id_1
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_revenue_license_document_1
+                    references: document_details(id)
+              - column:
+                  name: revenue_license_document_id_2
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_driver_vehicle_revenue_license_document_2
+                    references: document_details(id)
