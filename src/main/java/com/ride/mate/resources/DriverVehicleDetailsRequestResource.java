@@ -16,6 +16,7 @@ import lombok.Setter;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
+ * 2 18-03-2026    N/A          N/A          Tishan          Added vehicleModelId, multiple image/insurance/revenue docs; added model, registrationCertificateDocumentId
  */
 @Getter
 @Setter
@@ -29,7 +30,9 @@ public class DriverVehicleDetailsRequestResource {
 
     private String registrationNumber;
 
-    private Long year;
+    private String model;
+
+    private Integer year;
 
     private String color;
 
@@ -39,6 +42,8 @@ public class DriverVehicleDetailsRequestResource {
     private Long vehicleImageDocumentId2;
     private Long vehicleImageDocumentId3;
     private Long vehicleImageDocumentId4;
+
+    private Long registrationCertificateDocumentId;
 
     private Long insuranceDocumentId1;
     private Long insuranceDocumentId2;
@@ -51,6 +56,6 @@ public class DriverVehicleDetailsRequestResource {
 
     private Long revenueLicenseDocumentId1;
     private Long revenueLicenseDocumentId2;
-    
+
 }
 
