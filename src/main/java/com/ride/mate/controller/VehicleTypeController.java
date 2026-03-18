@@ -1,13 +1,11 @@
 package com.ride.mate.controller;
 
-import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.VehicleType;
-import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.VehicleTypeService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,63 +14,68 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * VehicleType Controller
- * REST API endpoints for vehicle types
-
+ * VehicleTypeController
+ * REST API endpoints for vehicle type management
+ *
+ * @author Tishan
+ * @version 1.0.0
+ * @since 1.0.0
+ *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 25-02-2026    N/A          N/A          Iruni          Initial Development
+ * 1 25-02-2026    N/A          N/A          Iruni           Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Updated to follow coding standards
  */
-
 @Slf4j
 @RestController
 @RequestMapping(value = "/vehicle-type")
 @CrossOrigin(origins = "*")
 public class VehicleTypeController extends MessagePropertyBase {
-    @Autowired
-    private VehicleTypeService vehicleTypeService;
+
+    private final VehicleTypeService vehicleTypeService;
+    private final Environment environment;
+
+    public VehicleTypeController(VehicleTypeService vehicleTypeService, Environment environment) {
+        this.vehicleTypeService = vehicleTypeService;
+        this.environment = environment;
+    }
 
     /**
-     * get VehicleType by id
-     * @param @PathVariable{tenantId}
-     * @param @PathVariable{id}
-     * @return Optional<VehicleType>
+     * Get VehicleType by id
+     *
+     * @param id - Vehicle Type Id
+     * @return VehicleType matching the id
      */
-    @GetMapping(value = "/get-identification-type/id/{id}")
-    public ResponseEntity<Object> getVehicleTypeById(
-            @PathVariable(value = "id", required = true) Long id) {
-        String userName = LoginAuthentication.getUserName();
-        if(userName == null || userName.isEmpty()) {
-            throw new ValidateRecordException("User not found","message");
-        }
+    @GetMapping(value = "/get-vehicle-type/id/{id}")
+    public ResponseEntity<Object> getVehicleTypeById(@PathVariable(value = "id") Long id) {
+        log.info("Received request to get vehicle type by ID: {}", id);
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+
         Optional<VehicleType> vehicleType = vehicleTypeService.findById(id);
         if (vehicleType.isPresent()) {
             return new ResponseEntity<>(vehicleType.get(), HttpStatus.OK);
-        }
-        else {
-            response.setMessages(RECORD_NOT_FOUND);
+        } else {
+            response.setMessages(environment.getProperty(RECORD_NOT_FOUND));
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
         }
     }
 
     /**
-     *get VehicleType by   status
-     * @param @PathVariable{status}
-     * @return List<VehicleType>
+     * Get VehicleTypes by status
+     *
+     * @param status - status
+     * @return List of VehicleTypes matching the status
      */
     @GetMapping(value = "/get-vehicle-type/status/{status}")
-    public ResponseEntity<Object> getVehicleTypeByStatus(
-            @PathVariable(value = "status", required = true) String status) {
+    public ResponseEntity<Object> getVehicleTypeByStatus(@PathVariable(value = "status") String status) {
+        log.info("Received request to get vehicle types by status: {}", status);
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
 
         List<VehicleType> vehicleTypes = vehicleTypeService.findByStatus(status);
-
-        if(vehicleTypes !=null && !vehicleTypes.isEmpty()) {
+        if (vehicleTypes != null && !vehicleTypes.isEmpty()) {
             return new ResponseEntity<>(vehicleTypes, HttpStatus.OK);
-        }
-        else {
-            response.setMessages(RECORD_NOT_FOUND);
+        } else {
+            response.setMessages(environment.getProperty(RECORD_NOT_FOUND));
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
         }
     }

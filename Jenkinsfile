@@ -9,6 +9,7 @@ pipeline {
         APP_PORT = "8080"
         GIT_BRANCH = "main"
         REPO_URL = "https://github.com/TishanGamage/ride-mate-back-end"
+        ENV_FILE = "/root/ride-mate-backend/.env"
     }
 
     stages {
@@ -50,7 +51,12 @@ pipeline {
             steps {
                 echo "Running new container: ${CONTAINER_NAME}"
                 sh """
-                docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:${APP_PORT} ${IMAGE_NAME}
+                docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    -p ${APP_PORT}:${APP_PORT} \
+                    --env-file ${ENV_FILE} \
+                    -e SPRING_PROFILES_ACTIVE=prod \
+                    ${IMAGE_NAME}
                 """
             }
         }

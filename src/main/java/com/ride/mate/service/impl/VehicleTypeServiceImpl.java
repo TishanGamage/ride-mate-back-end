@@ -10,21 +10,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+
 /**
- * Vehicle Type Service Implementation
- * Business logic for managing vehicle types
+ * VehicleTypeServiceImpl
+ * Business logic implementation for vehicle type management
  *
- * @author Iruni
+ * @author Tishan
+ * @version 1.0.0
+ * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 25-02-2026    N/A          N/A          Iruni          Initial Development
+ * 1 25-02-2026    N/A          N/A          Iruni           Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Updated to follow coding standards
  */
 @Slf4j
 @Service
 @Transactional
-public class VehicleTypeServiceImpl  extends MessagePropertyBase implements VehicleTypeService {
-
+public class VehicleTypeServiceImpl extends MessagePropertyBase implements VehicleTypeService {
 
     private final VehicleTypeRepository vehicleTypeRepository;
 
@@ -34,11 +37,13 @@ public class VehicleTypeServiceImpl  extends MessagePropertyBase implements Vehi
 
     @Override
     public Optional<VehicleType> findById(long id) {
+        log.info("Fetching vehicle type by ID: {}", id);
         return vehicleTypeRepository.findById(id);
     }
 
     @Override
     public List<VehicleType> findByStatus(String status) {
+        log.info("Fetching vehicle types by status: {}", status);
         return vehicleTypeRepository.findByStatus(status);
     }
 }

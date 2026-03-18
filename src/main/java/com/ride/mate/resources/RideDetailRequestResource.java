@@ -32,6 +32,12 @@ public class RideDetailRequestResource {
     @NotNull(message = "{invalid.value}")
     private BigDecimal endLocationLongitude;
 
+    @NotNull(message = "{invalid.value}")
+    private BigDecimal startLocationLatitude;
+
+    @NotNull(message = "{invalid.value}")
+    private BigDecimal endLocationLatitude;
+
     @NotBlank(message = "{can.not.be.blank}")
     private String startCity;
 

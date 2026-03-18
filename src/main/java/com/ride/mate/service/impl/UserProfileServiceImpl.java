@@ -22,6 +22,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 /**
  * UserProfileServiceImpl
  * Implementation of user profile management business logic
@@ -111,6 +112,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setGender(request.getGender());
         userProfile.setPreferredLanguage("EN");
         userProfile.setUserProfileCompleted("NO");
+        userProfile.setWillingToDrive(request.getWillingToDrive() != null ? request.getWillingToDrive() : YesNo.NO);
 
         // Set audit fields
         userProfile.setCreatedDate(DateUtil.getDate());
@@ -118,23 +120,24 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setSyncTs(DateUtil.getDate());
 
         // Save to database
-        UserProfile savedProfile = userProfileRepository.save(userProfile);
+        UserProfile savedProfile = userProfileRepository.saveAndFlush(userProfile);
         log.info("User profile created successfully with ID: {} for user ID: {}", savedProfile.getId(), request.getUserId());
 
         // Handle user identification details if provided
+        boolean hasIdentificationDetails = false;
         if (request.getUserIdentificationDetails() != null) {
             setUserIdentificationDetails(user, request.getUserIdentificationDetails());
+            hasIdentificationDetails = true;
         }
 
-        if(request.getWillingToDrive() != null &&
-                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+        if (YesNo.YES.equals(request.getWillingToDrive())) {
             if (request.getDriverDetails() != null) {
                 driverProfileService.saveDriverProfile(user.getId(), request.getDriverDetails());
             }
         }
 
         // Evaluate and update profile completion status
-        evaluateProfileCompletion(savedProfile);
+        evaluateProfileCompletion(userProfile, hasIdentificationDetails);
 
         return savedProfile;
     }
@@ -175,6 +178,7 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 .country(userProfile.getCountry())
                 .preferredLanguage(userProfile.getPreferredLanguage())
                 .userProfileCompleted(userProfile.getUserProfileCompleted())
+                .willingToDrive(userProfile.getWillingToDrive() != null ? userProfile.getWillingToDrive().name() : null)
                 .profileImageDocumentId(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getId() : null)
                 .profileImageUrl(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getDocumentUrl() : null)
                 .userVerificationImageDocumentId(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getId() : null)
@@ -247,6 +251,9 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         if (request.getPreferredLanguage() != null) {
             userProfile.setPreferredLanguage(request.getPreferredLanguage());
         }
+        if (request.getWillingToDrive() != null) {
+            userProfile.setWillingToDrive(request.getWillingToDrive());
+        }
 
         // Update audit fields
         userProfile.setModifiedDate(DateUtil.getDate());
@@ -254,12 +261,14 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         userProfile.setSyncTs(DateUtil.getDate());
 
         // Save updated profile
-        UserProfile updatedProfile = userProfileRepository.save(userProfile);
+        UserProfile updatedProfile = userProfileRepository.saveAndFlush(userProfile);
         log.info("User profile updated successfully with ID: {}", updatedProfile.getId());
 
         // Handle user identification details if provided
+        boolean hasIdentificationDetails = userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
         if (request.getUserIdentificationDetails() != null) {
             setUserIdentificationDetails(userProfile.getUser(), request.getUserIdentificationDetails());
+            hasIdentificationDetails = true;
         }
 
         // Handle emergency contact details if provided
@@ -268,15 +277,15 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
 
         // Handle driver profile details if willing to drive
-        if (request.getWillingToDrive() != null &&
-                request.getWillingToDrive().equalsIgnoreCase(YesNo.YES.toString())) {
+        if (YesNo.YES.equals(request.getWillingToDrive())) {
             if (request.getDriverDetails() != null) {
                 driverProfileService.saveDriverProfile(userProfile.getUser().getId(), request.getDriverDetails());
             }
         }
 
         // Evaluate and update profile completion status
-        evaluateProfileCompletion(updatedProfile);
+        // Use the in-memory userProfile object which has all associations set (updatedProfile may have lazy proxies)
+        evaluateProfileCompletion(userProfile, hasIdentificationDetails);
 
         return updatedProfile;
     }
@@ -324,8 +333,8 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
         }
         details.setSyncTs(DateUtil.getDate());
 
-        // Save the identification details
-        userIdentificationDetailsRepository.save(details);
+        // Save and flush the identification details so they are visible within the same transaction
+        userIdentificationDetailsRepository.saveAndFlush(details);
         log.info("User identification details saved for user ID: {}", user.getId());
     }
 
@@ -359,14 +368,14 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
 
-    private void evaluateProfileCompletion(UserProfile userProfile) {
+    private void evaluateProfileCompletion(UserProfile userProfile, boolean hasIdentificationDetails) {
 
         boolean profileComplete =
                 userProfile.getDateOfBirth() != null &&
                 userProfile.getGender() != null &&
-                userProfile.getProfileImageDocument() != null &&
                 userProfile.getUserVerificationImageDocument() != null &&
-                userIdentificationDetailsRepository.existsByUserId(userProfile.getUser().getId());
+                hasIdentificationDetails;
+
 
         String completionStatus = profileComplete ? "YES" : "NO";
 

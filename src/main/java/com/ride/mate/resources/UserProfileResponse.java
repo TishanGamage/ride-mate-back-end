@@ -16,6 +16,7 @@ import lombok.Setter;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
+ * 2 17-03-2026    N/A          N/A          Tishan          Added willingToDrive field
  */
 @Getter
 @Setter
@@ -47,6 +48,7 @@ public class UserProfileResponse {
     private String country;
     private String preferredLanguage;
     private String userProfileCompleted;
+    private String willingToDrive;
 
     // Document references
     private Long profileImageDocumentId;

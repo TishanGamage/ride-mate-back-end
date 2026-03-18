@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Iruni
       changes:
         - createTable:
-            tableName: driver_ride_detail
+            tableName: vehicle_model
             columns:
               - column:
                   name: id
@@ -14,53 +14,26 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: driver_profile_id
-                  type: BIGINT
+                  name: code
+                  type: VARCHAR(50)
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_rider_details_driver_profile
-                    references: driver_profile(id)
-                    deleteCascade: true
+                    unique: true
               - column:
-                  name: start_location_longitude
-                  type: DECIMAL(10,7)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: end_location_longitude
-                  type: DECIMAL(10,7)
+                  name: name
+                  type: VARCHAR(100)
                   constraints:
                     nullable: false
               - column:
-                  name: start_city
+                  name: country_of_origin
                   type: VARCHAR(100)
                   constraints:
                     nullable: true
-              - column:
-                  name: available_seats
-                  type: BIGINT
-                  constraints:
-                    nullable: false
-              - column:
-                  name: start_time
-                  type: TIMESTAMP
-                  constraints:
-                    nullable: false
-              - column:
-                  name: total_ride_distance
-                  type: DECIMAL(10,2)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: trip_route
-                  type: CLOB
-                  constraints:
-                    nullable: false
               - column:
                   name: status
-                  type: VARCHAR(100)
+                  type: VARCHAR(10)
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: created_date
                   type: TIMESTAMP
@@ -93,19 +66,3 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
-  - changeSet:
-      id: 2
-      author: Iruni
-      changes:
-        - addColumn:
-            columns:
-              - column:
-                  name: start_location_latitude
-                  type: decimal(10,7)
-            tableName:  driver_ride_detail
-        - addColumn:
-            columns:
-              - column:
-                  name: end_location_latitude
-                  type: decimal(10,7)
-            tableName:  driver_ride_detail
