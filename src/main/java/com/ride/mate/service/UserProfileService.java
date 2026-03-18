@@ -4,6 +4,7 @@ import com.ride.mate.domain.UserProfile;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
+import com.ride.mate.resources.WillingToDriveUpdateResource;
 
 /**
  * UserProfileService
@@ -19,6 +20,7 @@ import com.ride.mate.resources.UserProfileUpdateResource;
  * 2 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
  * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  * 4 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
+ * 5 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive method
  */
 public interface UserProfileService {
 
@@ -45,5 +47,14 @@ public interface UserProfileService {
      * @return UserProfileResponse containing full profile details
      */
     UserProfileResponse getUserProfileByUserId(Long userId);
+
+    /**
+     * Update only the willingToDrive field of a user profile
+     *
+     * @param id      the ID of the user profile record
+     * @param request request containing the new willingToDrive value (YES/NO)
+     * @return the updated UserProfile entity
+     */
+    UserProfile updateWillingToDrive(Long id, WillingToDriveUpdateResource request);
 }
 
