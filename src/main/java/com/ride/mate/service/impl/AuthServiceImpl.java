@@ -190,5 +190,26 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         log.info("Token refreshed successfully for user: {}", email);
         return response;
     }
+
+    @Override
+    public SuccessAndErrorDetailsResource resetPassword(ResetPasswordRequest request) {
+        log.info("Processing reset password request for email: {}", request.getEmail());
+
+        // Check user exists
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ValidateRecordException(environment.getProperty(LOGIN_USER_NOT_FOUND), "errorMessage"));
+
+        // Ensure email verification code was verified
+        verificationCodeService.ensureVerified(request.getEmail());
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setModifiedDate(DateUtil.getDate());
+        user.setModifiedUser(SYSTEM);
+        userRepository.save(user);
+
+        log.info("Password reset successfully for email: {}", request.getEmail());
+        return new SuccessAndErrorDetailsResource(environment.getProperty(RESET_PASSWORD_SUCCESS));
+    }
 }
 

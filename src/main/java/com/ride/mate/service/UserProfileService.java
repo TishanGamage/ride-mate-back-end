@@ -1,6 +1,8 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.UserProfile;
+import com.ride.mate.resources.SuccessAndErrorDetailsResource;
+import com.ride.mate.resources.UpdateRoleRequest;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
@@ -56,5 +58,7 @@ public interface UserProfileService {
      * @return the updated UserProfile entity
      */
     UserProfile updateWillingToDrive(Long id, WillingToDriveUpdateResource request);
+
+    SuccessAndErrorDetailsResource updateRole(Long userId, UpdateRoleRequest request);
 }
 

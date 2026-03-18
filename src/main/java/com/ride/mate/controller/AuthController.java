@@ -128,4 +128,11 @@ public class AuthController extends MessagePropertyBase {
         LoginResponse response = authService.refreshToken(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping(value = "/reset-password")
+    public ResponseEntity<SuccessAndErrorDetailsResource> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Received reset password request for email: {}", request.getEmail());
+        SuccessAndErrorDetailsResource response = authService.resetPassword(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

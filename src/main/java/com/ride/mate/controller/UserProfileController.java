@@ -7,6 +7,7 @@ import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
 import com.ride.mate.resources.WillingToDriveUpdateResource;
+import com.ride.mate.resources.UpdateRoleRequest;
 import com.ride.mate.service.UserProfileService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -109,6 +110,14 @@ public class UserProfileController extends MessagePropertyBase {
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(userProfile.getId());
         response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PatchMapping(value = "/update-role/{userId}")
+    public ResponseEntity<SuccessAndErrorDetailsResource> updateRole(@PathVariable Long userId,
+                                                                     @Valid @RequestBody UpdateRoleRequest request) {
+        log.info("Received role update request for user ID: {}", userId);
+        SuccessAndErrorDetailsResource response = userProfileService.updateRole(userId, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
