@@ -69,6 +69,7 @@ public class VehicleTypeServiceImpl extends MessagePropertyBase implements Vehic
                         );
                         vehicleType.setModifiedDate(DateUtil.getDate());
                         vehicleType.setModifiedUser(SYSTEM);
+                        vehicleType.setSyncTs(DateUtil.getDate());
                         vehicleTypeRepository.save(vehicleType);
                         log.info("Updated perKmRate for [{}] to {} ({})",
                                 vehicleTypeCode.getCode(),
