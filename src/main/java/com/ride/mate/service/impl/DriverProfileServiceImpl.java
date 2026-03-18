@@ -12,6 +12,7 @@ import com.ride.mate.repository.DriverProfileRepository;
 import com.ride.mate.repository.DriverVehicleDetailsRepository;
 import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.VehicleMakeRepository;
+import com.ride.mate.repository.VehicleModelRepository;
 import com.ride.mate.repository.VehicleTypeRepository;
 import com.ride.mate.resources.DriverProfileRequestResource;
 import com.ride.mate.resources.DriverProfileResponse;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted evaluation
+ * 3 18-03-2026    N/A          N/A          Tishan          Added vehicleModel, multiple vehicle image/insurance/revenue license docs
  */
 @Slf4j
 @Service
@@ -50,6 +52,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
     private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
     private final VehicleMakeRepository vehicleMakeRepository;
+    private final VehicleModelRepository vehicleModelRepository;
     private final DocumentDetailsRepository documentDetailsRepository;
     private final Environment environment;
 
@@ -58,6 +61,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                                     DriverVehicleDetailsRepository driverVehicleDetailsRepository,
                                     VehicleTypeRepository vehicleTypeRepository,
                                     VehicleMakeRepository vehicleMakeRepository,
+                                    VehicleModelRepository vehicleModelRepository,
                                     DocumentDetailsRepository documentDetailsRepository,
                                     Environment environment) {
         this.userRepository = userRepository;
@@ -65,6 +69,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
         this.vehicleTypeRepository = vehicleTypeRepository;
         this.vehicleMakeRepository = vehicleMakeRepository;
+        this.vehicleModelRepository = vehicleModelRepository;
         this.documentDetailsRepository = documentDetailsRepository;
         this.environment = environment;
     }
@@ -191,20 +196,34 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                 .vehicleTypeName(v.getVehicleType() != null ? v.getVehicleType().getName() : null)
                 .vehicleMakeId(v.getVehicleMake() != null ? v.getVehicleMake().getId() : null)
                 .vehicleMakeName(v.getVehicleMake() != null ? v.getVehicleMake().getName() : null)
+                .vehicleModelId(v.getVehicleModel() != null ? v.getVehicleModel().getId() : null)
+                .vehicleModelName(v.getVehicleModel() != null ? v.getVehicleModel().getName() : null)
                 .registrationNumber(v.getRegistrationNumber())
                 .model(v.getModel())
                 .year(v.getYear())
                 .color(v.getColor())
                 .seats(v.getSeats())
-                .vehicleImageDocumentId(v.getVehicleImageDocument() != null ? v.getVehicleImageDocument().getId() : null)
-                .vehicleImageUrl(v.getVehicleImageDocument() != null ? v.getVehicleImageDocument().getDocumentUrl() : null)
+                .vehicleImageDocumentId1(v.getVehicleImageDocument1() != null ? v.getVehicleImageDocument1().getId() : null)
+                .vehicleImageUrl1(v.getVehicleImageDocument1() != null ? v.getVehicleImageDocument1().getDocumentUrl() : null)
+                .vehicleImageDocumentId2(v.getVehicleImageDocument2() != null ? v.getVehicleImageDocument2().getId() : null)
+                .vehicleImageUrl2(v.getVehicleImageDocument2() != null ? v.getVehicleImageDocument2().getDocumentUrl() : null)
+                .vehicleImageDocumentId3(v.getVehicleImageDocument3() != null ? v.getVehicleImageDocument3().getId() : null)
+                .vehicleImageUrl3(v.getVehicleImageDocument3() != null ? v.getVehicleImageDocument3().getDocumentUrl() : null)
+                .vehicleImageDocumentId4(v.getVehicleImageDocument4() != null ? v.getVehicleImageDocument4().getId() : null)
+                .vehicleImageUrl4(v.getVehicleImageDocument4() != null ? v.getVehicleImageDocument4().getDocumentUrl() : null)
                 .registrationCertificateDocumentId(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getId() : null)
                 .registrationCertificateUrl(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getDocumentUrl() : null)
                 .insuranceNumber(v.getInsuranceNumber())
                 .insuranceProvider(v.getInsuranceProvider())
                 .insuranceExpiry(v.getInsuranceExpiry() != null ? v.getInsuranceExpiry().toString() : null)
-                .insuranceDocumentId(v.getInsuranceDocument() != null ? v.getInsuranceDocument().getId() : null)
-                .insuranceDocumentUrl(v.getInsuranceDocument() != null ? v.getInsuranceDocument().getDocumentUrl() : null)
+                .insuranceDocumentId1(v.getInsuranceDocument1() != null ? v.getInsuranceDocument1().getId() : null)
+                .insuranceDocumentUrl1(v.getInsuranceDocument1() != null ? v.getInsuranceDocument1().getDocumentUrl() : null)
+                .insuranceDocumentId2(v.getInsuranceDocument2() != null ? v.getInsuranceDocument2().getId() : null)
+                .insuranceDocumentUrl2(v.getInsuranceDocument2() != null ? v.getInsuranceDocument2().getDocumentUrl() : null)
+                .revenueLicenseDocumentId1(v.getRevenueLicenseDocument1() != null ? v.getRevenueLicenseDocument1().getId() : null)
+                .revenueLicenseDocumentUrl1(v.getRevenueLicenseDocument1() != null ? v.getRevenueLicenseDocument1().getDocumentUrl() : null)
+                .revenueLicenseDocumentId2(v.getRevenueLicenseDocument2() != null ? v.getRevenueLicenseDocument2().getId() : null)
+                .revenueLicenseDocumentUrl2(v.getRevenueLicenseDocument2() != null ? v.getRevenueLicenseDocument2().getDocumentUrl() : null)
                 .isVerified(v.getIsVerified() != null ? v.getIsVerified().name() : null)
                 .isPrimary(v.getIsPrimary() != null ? v.getIsPrimary().name() : null)
                 .isActive(v.getIsActive() != null ? v.getIsActive().name() : null)
@@ -234,6 +253,12 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                     throw new ValidateRecordException(environment.getProperty(VEHICLE_MAKE_NOT_FOUND), "errorMessage");
                 });
 
+        // Resolve and set VehicleModel (optional)
+        if (vehicleRequest.getVehicleModelId() != null) {
+            vehicleModelRepository.findById(vehicleRequest.getVehicleModelId())
+                    .ifPresent(vehicle::setVehicleModel);
+        }
+
         // Map all fields from request
         vehicle.setRegistrationNumber(vehicleRequest.getRegistrationNumber());
         vehicle.setModel(vehicleRequest.getModel());
@@ -241,18 +266,42 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         vehicle.setColor(vehicleRequest.getColor());
         vehicle.setSeats(vehicleRequest.getSeats());
 
-        // Set optional document references
+        // Set optional vehicle image document references (up to 4)
         if (vehicleRequest.getVehicleImageDocumentId1() != null) {
             documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId1())
-                    .ifPresent(vehicle::setVehicleImageDocument);
+                    .ifPresent(vehicle::setVehicleImageDocument1);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId2())
+                    .ifPresent(vehicle::setVehicleImageDocument2);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId3() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId3())
+                    .ifPresent(vehicle::setVehicleImageDocument3);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId4() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId4())
+                    .ifPresent(vehicle::setVehicleImageDocument4);
         }
         if (vehicleRequest.getRegistrationCertificateDocumentId() != null) {
             documentDetailsRepository.findById(vehicleRequest.getRegistrationCertificateDocumentId())
                     .ifPresent(vehicle::setRegistrationCertificateDocument);
         }
-        if (vehicleRequest.getInsuranceDocumentId() != null) {
-            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId())
-                    .ifPresent(vehicle::setInsuranceDocument);
+        if (vehicleRequest.getInsuranceDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId1())
+                    .ifPresent(vehicle::setInsuranceDocument1);
+        }
+        if (vehicleRequest.getInsuranceDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId2())
+                    .ifPresent(vehicle::setInsuranceDocument2);
+        }
+        if (vehicleRequest.getRevenueLicenseDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getRevenueLicenseDocumentId1())
+                    .ifPresent(vehicle::setRevenueLicenseDocument1);
+        }
+        if (vehicleRequest.getRevenueLicenseDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getRevenueLicenseDocumentId2())
+                    .ifPresent(vehicle::setRevenueLicenseDocument2);
         }
 
         // Set optional insurance details
