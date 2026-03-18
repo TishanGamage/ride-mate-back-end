@@ -13,6 +13,7 @@ package com.ride.mate.core;
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 09-03-2026    N/A          N/A          Tishan          Added JWT authentication constants
  * 3 18-03-2026    N/A          N/A          Tishan          Added FILE_SIZE_EXCEEDED constant
+ * 4 18-03-2026    N/A          N/A          Tishan          Added scheduler rate update constants
  */
 public abstract class MessagePropertyBase {
 
@@ -81,4 +82,8 @@ public abstract class MessagePropertyBase {
     protected static final String SUPABASE_UPLOAD_FAILED = "supabase.upload.failed";
     protected static final String SUPABASE_DELETE_FAILED = "supabase.delete.failed";
     protected static final String SUPABASE_DOWNLOAD_FAILED = "supabase.download.failed";
+
+    // Scheduler message property keys
+    protected static final String SCHEDULER_RATE_UPDATE_SUCCESS = "scheduler.rate.update.success";
+    protected static final String SCHEDULER_RATE_UPDATE_FAILED = "scheduler.rate.update.failed";
 }

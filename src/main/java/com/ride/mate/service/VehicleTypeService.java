@@ -17,6 +17,7 @@ import java.util.Optional;
  * ---------------------------------------------------------------------------
  * 1 25-02-2026    N/A          N/A          Iruni           Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Updated to follow coding standards
+ * 3 18-03-2026    N/A          N/A          Tishan          Added updatePerKmRates for scheduler
  */
 public interface VehicleTypeService {
 
@@ -35,4 +36,10 @@ public interface VehicleTypeService {
      * @return List of VehicleType records matching the status
      */
     List<VehicleType> findByStatus(String status);
+
+    /**
+     * Update per km rates for all vehicle types based on time of day.
+     * Applies night rates during night hours (20:00 - 05:59) and day rates otherwise.
+     */
+    void updatePerKmRates();
 }
