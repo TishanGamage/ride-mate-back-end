@@ -37,8 +37,6 @@ public interface DriverVehicleDetailsRepository extends JpaRepository<DriverVehi
 
     List<DriverVehicleDetails> findByDriverProfileIdAndStatus(Long driverProfileId, String status);
 
-    List<DriverVehicleDetails> findByDriverProfileIdAndIsActive(Long driverProfileId, YesNo isActive);
-
     List<DriverVehicleDetails> findByStatus(String status);
 
     boolean existsByRegistrationNumber(String registrationNumber);
