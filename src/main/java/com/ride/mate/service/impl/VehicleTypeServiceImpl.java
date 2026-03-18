@@ -2,7 +2,8 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.VehicleType;
-import com.ride.mate.enums.VehicleTypeCode;
+import com.ride.mate.domain.VehicleTypeRate;
+import com.ride.mate.repository.VehicleTypeRateRepository;
 import com.ride.mate.repository.VehicleTypeRepository;
 import com.ride.mate.service.VehicleTypeService;
 import com.ride.mate.util.DateUtil;
@@ -27,6 +28,7 @@ import java.util.Optional;
  * 1 25-02-2026    N/A          N/A          Iruni           Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Updated to follow coding standards
  * 3 18-03-2026    N/A          N/A          Tishan          Added updatePerKmRates for hourly scheduler
+ * 4 18-03-2026    N/A          N/A          Tishan          Refactored to read rates from vehicle_type_rate table
  */
 @Slf4j
 @Service
@@ -37,10 +39,15 @@ public class VehicleTypeServiceImpl extends MessagePropertyBase implements Vehic
     private static final LocalTime NIGHT_START = LocalTime.of(20, 0);
     private static final LocalTime NIGHT_END = LocalTime.of(6, 0);
 
-    private final VehicleTypeRepository vehicleTypeRepository;
+    private static final String ACTIVE_STATUS = "ACTIVE";
 
-    public VehicleTypeServiceImpl(VehicleTypeRepository vehicleTypeRepository) {
+    private final VehicleTypeRepository vehicleTypeRepository;
+    private final VehicleTypeRateRepository vehicleTypeRateRepository;
+
+    public VehicleTypeServiceImpl(VehicleTypeRepository vehicleTypeRepository,
+                                  VehicleTypeRateRepository vehicleTypeRateRepository) {
         this.vehicleTypeRepository = vehicleTypeRepository;
+        this.vehicleTypeRateRepository = vehicleTypeRateRepository;
     }
 
     @Override
@@ -61,24 +68,27 @@ public class VehicleTypeServiceImpl extends MessagePropertyBase implements Vehic
         boolean isNightTime = isNightTime(now);
         log.info("Running per km rate update. Current time: {} | Mode: {}", now, isNightTime ? "NIGHT" : "DAY");
 
-        for (VehicleTypeCode vehicleTypeCode : VehicleTypeCode.values()) {
-            vehicleTypeRepository.findByCode(vehicleTypeCode.getCode()).ifPresentOrElse(
-                    vehicleType -> {
-                        vehicleType.setPerKmRate(
-                                isNightTime ? vehicleTypeCode.getNightRate() : vehicleTypeCode.getDayRate()
-                        );
-                        vehicleType.setModifiedDate(DateUtil.getDate());
-                        vehicleType.setModifiedUser(SYSTEM);
-                        vehicleType.setSyncTs(DateUtil.getDate());
-                        vehicleTypeRepository.save(vehicleType);
-                        log.info("Updated perKmRate for [{}] to {} ({})",
-                                vehicleTypeCode.getCode(),
-                                vehicleType.getPerKmRate(),
-                                isNightTime ? "NIGHT" : "DAY");
-                    },
-                    () -> log.warn("VehicleType with code [{}] not found in database. Skipping rate update.",
-                            vehicleTypeCode.getCode())
-            );
+        List<VehicleType> vehicleTypes = vehicleTypeRepository.findByStatus(ACTIVE_STATUS);
+
+        for (VehicleType vehicleType : vehicleTypes) {
+            vehicleTypeRateRepository.findByVehicleTypeIdAndStatus(vehicleType.getId(), ACTIVE_STATUS)
+                    .ifPresentOrElse(
+                            rate -> {
+                                vehicleType.setPerKmRate(
+                                        isNightTime ? rate.getNightRate() : rate.getDayRate()
+                                );
+                                vehicleType.setModifiedDate(DateUtil.getDate());
+                                vehicleType.setModifiedUser(SYSTEM);
+                                vehicleType.setSyncTs(DateUtil.getDate());
+                                vehicleTypeRepository.save(vehicleType);
+                                log.info("Updated perKmRate for [{}] to {} ({})",
+                                        vehicleType.getCode(),
+                                        vehicleType.getPerKmRate(),
+                                        isNightTime ? "NIGHT" : "DAY");
+                            },
+                            () -> log.warn("No active rate configuration found for vehicle type [{}] (ID: {}). Skipping rate update.",
+                                    vehicleType.getCode(), vehicleType.getId())
+                    );
         }
 
         log.info("Per km rate update completed for all vehicle types.");

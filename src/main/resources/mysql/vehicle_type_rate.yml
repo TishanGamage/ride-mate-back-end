@@ -1,0 +1,103 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: vehicle_type_rate
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: vehicle_type_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: day_rate
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: night_rate
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(10)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: vehicle_type_rate
+            baseColumnNames: vehicle_type_id
+            constraintName: fk_vehicle_type_rate_vehicle_type
+            referencedTableName: vehicle_type
+            referencedColumnNames: id
+
+  - changeSet:
+      id: 2
+      author: Tishan
+      comment: "Seed default day/night rates for existing vehicle types (CAR, VAN, TUK, BIKE)"
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO vehicle_type_rate (id, vehicle_type_id, day_rate, night_rate, status, created_date, created_user, sync_ts, version)
+              SELECT (SELECT next_val FROM common_seq LIMIT 1) + ROW_NUMBER() OVER (ORDER BY vt.id) - 1,
+                vt.id,
+                CASE vt.code
+                  WHEN 'CAR' THEN 65.00
+                  WHEN 'VAN' THEN 90.00
+                  WHEN 'TUK' THEN 40.00
+                  WHEN 'BIKE' THEN 30.00
+                END,
+                CASE vt.code
+                  WHEN 'CAR' THEN 85.00
+                  WHEN 'VAN' THEN 115.00
+                  WHEN 'TUK' THEN 55.00
+                  WHEN 'BIKE' THEN 42.00
+                END,
+                'ACTIVE', NOW(), 'SYSTEM', NOW(), 0
+              FROM vehicle_type vt
+              WHERE vt.code IN ('CAR', 'VAN', 'TUK', 'BIKE');
+        - sql:
+            sql: >
+              UPDATE common_seq SET next_val = next_val + (SELECT COUNT(*) FROM vehicle_type WHERE code IN ('CAR', 'VAN', 'TUK', 'BIKE'));
+

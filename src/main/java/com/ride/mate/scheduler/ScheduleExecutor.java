@@ -34,15 +34,9 @@ public class ScheduleExecutor {
      * Runs at the start of every hour (e.g., 00:00, 01:00, 02:00 ...).
      * Applies night rates between 20:00 – 05:59 and day rates from 06:00 – 19:59.
      *
-     * <p>Rate schedule (approximate, edit values in {@code VehicleTypeCode} enum):</p>
-     * <pre>
-     *   Vehicle  | Day Rate (LKR/km) | Night Rate (LKR/km)
-     *   ---------|-------------------|--------------------
-     *   CAR      |      65.00        |       85.00
-     *   VAN      |      90.00        |      115.00
-     *   TUK      |      40.00        |       55.00
-     *   BIKE     |      30.00        |       42.00
-     * </pre>
+     * <p>Rates are read from the {@code vehicle_type_rate} table in the database.
+     * To change rates, update the {@code day_rate} and {@code night_rate} columns
+     * directly in the database — no code changes required.</p>
      *
      * Cron expression: {@code 0 0 * * * *} → at second 0, minute 0 of every hour
      */

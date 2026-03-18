@@ -6,6 +6,8 @@ databaseChangeLog:
   - include:
       file: classpath:/mysql/vehicle_type.yml
   - include:
+      file: classpath:/mysql/vehicle_type_rate.yml
+  - include:
       file: classpath:/mysql/vehicle_make.yml
   - include:
       file: classpath:/mysql/vehicle_model.yml
