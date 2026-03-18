@@ -242,8 +242,8 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         vehicle.setSeats(vehicleRequest.getSeats());
 
         // Set optional document references
-        if (vehicleRequest.getVehicleImageDocumentId() != null) {
-            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId())
+        if (vehicleRequest.getVehicleImageDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId1())
                     .ifPresent(vehicle::setVehicleImageDocument);
         }
         if (vehicleRequest.getRegistrationCertificateDocumentId() != null) {

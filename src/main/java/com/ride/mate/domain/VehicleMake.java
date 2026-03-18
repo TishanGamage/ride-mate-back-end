@@ -1,5 +1,6 @@
 package com.ride.mate.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ride.mate.core.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,11 +20,13 @@ import java.sql.Timestamp;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 18-03-2026    N/A          N/A          Tishan          Added @JsonIgnoreProperties to fix Hibernate lazy proxy serialization
  */
 @Getter
 @Setter
 @Entity
 @Table(name = "vehicle_make")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class VehicleMake extends BaseEntity implements Serializable {
 
     @Column(name = "code", nullable = false, unique = true, length = 50)

@@ -25,19 +25,23 @@ public class DriverVehicleDetailsRequestResource {
 
     private Long vehicleMakeId;
 
+    private Long vehicleModelId;
+
     private String registrationNumber;
 
-    private String model;
-
-    private Integer year;
+    private Long year;
 
     private String color;
 
     private Integer seats;
 
-    private Long vehicleImageDocumentId;
+    private Long vehicleImageDocumentId1;
+    private Long vehicleImageDocumentId2;
+    private Long vehicleImageDocumentId3;
+    private Long vehicleImageDocumentId4;
 
-    private Long registrationCertificateDocumentId;
+    private Long insuranceDocumentId1;
+    private Long insuranceDocumentId2;
 
     private String insuranceNumber;
 
@@ -45,6 +49,8 @@ public class DriverVehicleDetailsRequestResource {
 
     private String insuranceExpiry;
 
-    private Long insuranceDocumentId;
+    private Long revenueLicenseDocumentId1;
+    private Long revenueLicenseDocumentId2;
+    
 }
 
