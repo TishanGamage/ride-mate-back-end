@@ -152,6 +152,15 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         return String.valueOf(code);
     }
 
+    @Override
+    public void ensureVerified(String email) {
+        VerificationCode verificationCode = verificationCodeRepository.findByEmail(email)
+                .orElseThrow(() -> new ValidateRecordException(environment.getProperty(VERIFICATION_CODE_NOT_FOUND), "errorMessage"));
+        if (!verificationCode.getVerified().equals(YesNo.YES)) {
+            throw new ValidateRecordException(environment.getProperty(VERIFICATION_NOT_COMPLETED), "errorMessage");
+        }
+    }
+
     /**
      * Sends email with verification code
      * If email sending fails (e.g., in development), logs the code to console
