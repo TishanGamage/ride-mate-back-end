@@ -29,3 +29,11 @@ databaseChangeLog:
       file: classpath:/mysql/ride_detail.yml
   - include:
       file: classpath:/mysql/shared_ride_detail.yml
+  - include:
+      file: classpath:/mysql/user_saved_card.yml
+  - include:
+      file: classpath:/mysql/payment_transaction.yml
+  - include:
+      file: classpath:/mysql/driver_earning.yml
+  - include:
+      file: classpath:/mysql/withdrawal_request.yml
