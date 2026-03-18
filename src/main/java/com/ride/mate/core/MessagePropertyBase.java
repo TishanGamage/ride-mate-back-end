@@ -12,6 +12,7 @@ package com.ride.mate.core;
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 09-03-2026    N/A          N/A          Tishan          Added JWT authentication constants
+ * 3 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
  */
 public abstract class MessagePropertyBase {
 
@@ -79,4 +80,13 @@ public abstract class MessagePropertyBase {
     protected static final String SUPABASE_UPLOAD_FAILED = "supabase.upload.failed";
     protected static final String SUPABASE_DELETE_FAILED = "supabase.delete.failed";
     protected static final String SUPABASE_DOWNLOAD_FAILED = "supabase.download.failed";
+
+    // Payment message property keys
+    protected static final String SAVED_CARD_NOT_FOUND = "saved.card.not.found";
+    protected static final String PAYMENT_SIGNATURE_INVALID = "payment.signature.invalid";
+    protected static final String PAYMENT_CHARGE_FAILED = "payment.charge.failed";
+    protected static final String PAYMENT_ORDER_ID_DUPLICATE = "payment.order.id.duplicate";
+    protected static final String WITHDRAWAL_INSUFFICIENT_BALANCE = "withdrawal.insufficient.balance";
+    protected static final String WITHDRAWAL_REQUEST_NOT_FOUND = "withdrawal.request.not.found";
+    protected static final String DRIVER_EARNING_NOT_FOUND = "driver.earning.not.found";
 }
