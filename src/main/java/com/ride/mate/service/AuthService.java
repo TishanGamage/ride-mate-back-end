@@ -49,5 +49,7 @@ public interface AuthService {
      * @return new login response with fresh access token
      */
     LoginResponse refreshToken(RefreshTokenRequest request);
+
+    SuccessAndErrorDetailsResource resetPassword(ResetPasswordRequest request);
 }
 
