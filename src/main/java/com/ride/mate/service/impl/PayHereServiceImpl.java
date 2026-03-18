@@ -246,6 +246,7 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
     private boolean isSignatureValid(PayHereNotifyResource request) {
         try {
             String merchantSecretHash = computeMd5(payHereConfig.getMerchantSecret()).toUpperCase();
+            log.info("pAyhere MD5 signature verification: merchantSecretHash={}, requestMd5sig={}", payHereConfig.getMerchantSecret(), request.getMd5sig());
             String rawSignature = payHereConfig.getMerchantId()
                     + request.getOrderId()
                     + request.getPayhereAmount()
