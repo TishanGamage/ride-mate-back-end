@@ -65,4 +65,18 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 2
+      author: Iruni
+      changes:
+        - addColumn:
+            tableName: vehicle_model
+            columns:
+              - column:
+                  name: vehicle_make_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_vehicle_model_vehicle_make
+                    references: vehicle_make(id)
 

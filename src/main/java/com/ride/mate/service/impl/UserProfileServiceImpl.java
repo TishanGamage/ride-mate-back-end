@@ -14,6 +14,7 @@ import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
+import com.ride.mate.resources.WillingToDriveUpdateResource;
 import com.ride.mate.service.DriverProfileService;
 import com.ride.mate.service.UserProfileService;
 import com.ride.mate.util.DateUtil;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 3 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile method
  * 4 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  * 5 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
+ * 6 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive method
  */
 @Slf4j
 @Service
@@ -388,5 +390,38 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
             userProfileRepository.save(userProfile);
             log.info("User profile completion status updated to '{}' for profile ID: {}", completionStatus, userProfile.getId());
         }
+    }
+
+    @Override
+    public UserProfile updateWillingToDrive(Long id, WillingToDriveUpdateResource request) {
+
+        log.info("Processing willingToDrive update for user profile ID: {}", id);
+
+        // Fetch existing user profile
+        UserProfile userProfile = userProfileRepository.findByUserId(id)
+                .orElseThrow(() -> {
+                    log.warn("User profile not found for ID: {}", id);
+                    return new ValidateRecordException(
+                            environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        // Validate mandatory audit fields are present on the existing record
+        if (userProfile.getCreatedDate() == null || userProfile.getCreatedUser() == null || userProfile.getSyncTs() == null) {
+            log.warn("User profile ID {} is missing mandatory audit fields (createdDate/createdUser/syncTs)", id);
+            throw new ValidateRecordException(
+                    environment.getProperty(RECORD_NOT_FOUND), "message");
+        }
+
+        // Update only the willingToDrive field
+        userProfile.setWillingToDrive(request.getWillingToDrive());
+        userProfile.setModifiedDate(DateUtil.getDate());
+        userProfile.setModifiedUser(LoginAuthentication.getUserName());
+        userProfile.setSyncTs(DateUtil.getDate());
+
+        UserProfile updatedProfile = userProfileRepository.saveAndFlush(userProfile);
+        log.info("willingToDrive updated successfully for user profile ID: {} to value: {}",
+                updatedProfile.getId(), updatedProfile.getWillingToDrive());
+
+        return updatedProfile;
     }
 }

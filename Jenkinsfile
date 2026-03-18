@@ -9,7 +9,7 @@ pipeline {
         APP_PORT = "8080"
         GIT_BRANCH = "main"
         REPO_URL = "https://github.com/TishanGamage/ride-mate-back-end"
-        ENV_FILE = "/root/ride-mate-backend/.env"
+        ENV_FILE = "/opt/jenkins-env/.env"
     }
 
     stages {

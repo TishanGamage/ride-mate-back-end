@@ -12,8 +12,11 @@ import com.ride.mate.repository.DriverProfileRepository;
 import com.ride.mate.repository.DriverVehicleDetailsRepository;
 import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.VehicleMakeRepository;
+import com.ride.mate.repository.VehicleModelRepository;
 import com.ride.mate.repository.VehicleTypeRepository;
 import com.ride.mate.resources.DriverProfileRequestResource;
+import com.ride.mate.resources.DriverProfileResponse;
+import com.ride.mate.resources.DriverVehicleDetailsResponse;
 import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.service.DriverProfileService;
 import com.ride.mate.util.DateUtil;
@@ -21,6 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DriverProfileServiceImpl
@@ -34,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
  * ---------------------------------------------------------------------------
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted evaluation
+ * 3 18-03-2026    N/A          N/A          Tishan          Added vehicleModel, multiple vehicle image/insurance/revenue license docs
  */
 @Slf4j
 @Service
@@ -45,6 +52,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
     private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
     private final VehicleMakeRepository vehicleMakeRepository;
+    private final VehicleModelRepository vehicleModelRepository;
     private final DocumentDetailsRepository documentDetailsRepository;
     private final Environment environment;
 
@@ -53,6 +61,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                                     DriverVehicleDetailsRepository driverVehicleDetailsRepository,
                                     VehicleTypeRepository vehicleTypeRepository,
                                     VehicleMakeRepository vehicleMakeRepository,
+                                    VehicleModelRepository vehicleModelRepository,
                                     DocumentDetailsRepository documentDetailsRepository,
                                     Environment environment) {
         this.userRepository = userRepository;
@@ -60,6 +69,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
         this.vehicleTypeRepository = vehicleTypeRepository;
         this.vehicleMakeRepository = vehicleMakeRepository;
+        this.vehicleModelRepository = vehicleModelRepository;
         this.documentDetailsRepository = documentDetailsRepository;
         this.environment = environment;
     }
@@ -135,6 +145,93 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         return savedDriverProfile;
     }
 
+    @Override
+    public DriverProfileResponse getDriverProfileByUserId(Long userId) {
+
+        log.info("Fetching driver profile for user ID: {}", userId);
+
+        DriverProfile driverProfile = driverProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("Driver profile not found for user ID: {}", userId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        User user = driverProfile.getUser();
+
+        // Map all vehicles associated with this driver profile
+        List<DriverVehicleDetailsResponse> vehicleResponses = driverVehicleDetailsRepository
+                .findByDriverProfileId(driverProfile.getId())
+                .stream()
+                .map(this::mapVehicleToResponse)
+                .collect(Collectors.toList());
+
+        return DriverProfileResponse.builder()
+                .id(driverProfile.getId())
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .driverLicenseNumber(driverProfile.getDriverLicenseNumber())
+                .driverLicenseExpiry(driverProfile.getDriverLicenseExpiry() != null ? driverProfile.getDriverLicenseExpiry().toString() : null)
+                .driverLicenseVerified(driverProfile.getDriverLicenseVerified() != null ? driverProfile.getDriverLicenseVerified().name() : null)
+                .driverLicenseFrontDocumentId(driverProfile.getDriverLicenseFrontDocument() != null ? driverProfile.getDriverLicenseFrontDocument().getId() : null)
+                .driverLicenseFrontDocumentUrl(driverProfile.getDriverLicenseFrontDocument() != null ? driverProfile.getDriverLicenseFrontDocument().getDocumentUrl() : null)
+                .driverLicenseBackDocumentId(driverProfile.getDriverLicenseBackDocument() != null ? driverProfile.getDriverLicenseBackDocument().getId() : null)
+                .driverLicenseBackDocumentUrl(driverProfile.getDriverLicenseBackDocument() != null ? driverProfile.getDriverLicenseBackDocument().getDocumentUrl() : null)
+                .ratingAsDriver(driverProfile.getRatingAsDriver() != null ? driverProfile.getRatingAsDriver().toPlainString() : null)
+                .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
+                .totalEarnings(driverProfile.getTotalEarnings() != null ? driverProfile.getTotalEarnings().toPlainString() : null)
+                .accountStatus(driverProfile.getAccountStatus())
+                .driverProfileCompleted(driverProfile.getDriverProfileCompleted())
+                .vehicles(vehicleResponses)
+                .createdDate(driverProfile.getCreatedDate() != null ? driverProfile.getCreatedDate().toString() : null)
+                .modifiedDate(driverProfile.getModifiedDate() != null ? driverProfile.getModifiedDate().toString() : null)
+                .build();
+    }
+
+    private DriverVehicleDetailsResponse mapVehicleToResponse(com.ride.mate.domain.DriverVehicleDetails v) {
+        return DriverVehicleDetailsResponse.builder()
+                .id(v.getId())
+                .vehicleTypeId(v.getVehicleType() != null ? v.getVehicleType().getId() : null)
+                .vehicleTypeName(v.getVehicleType() != null ? v.getVehicleType().getName() : null)
+                .vehicleMakeId(v.getVehicleMake() != null ? v.getVehicleMake().getId() : null)
+                .vehicleMakeName(v.getVehicleMake() != null ? v.getVehicleMake().getName() : null)
+                .vehicleModelId(v.getVehicleModel() != null ? v.getVehicleModel().getId() : null)
+                .vehicleModelName(v.getVehicleModel() != null ? v.getVehicleModel().getName() : null)
+                .registrationNumber(v.getRegistrationNumber())
+                .model(v.getModel())
+                .year(v.getYear())
+                .color(v.getColor())
+                .seats(v.getSeats())
+                .vehicleImageDocumentId1(v.getVehicleImageDocument1() != null ? v.getVehicleImageDocument1().getId() : null)
+                .vehicleImageUrl1(v.getVehicleImageDocument1() != null ? v.getVehicleImageDocument1().getDocumentUrl() : null)
+                .vehicleImageDocumentId2(v.getVehicleImageDocument2() != null ? v.getVehicleImageDocument2().getId() : null)
+                .vehicleImageUrl2(v.getVehicleImageDocument2() != null ? v.getVehicleImageDocument2().getDocumentUrl() : null)
+                .vehicleImageDocumentId3(v.getVehicleImageDocument3() != null ? v.getVehicleImageDocument3().getId() : null)
+                .vehicleImageUrl3(v.getVehicleImageDocument3() != null ? v.getVehicleImageDocument3().getDocumentUrl() : null)
+                .vehicleImageDocumentId4(v.getVehicleImageDocument4() != null ? v.getVehicleImageDocument4().getId() : null)
+                .vehicleImageUrl4(v.getVehicleImageDocument4() != null ? v.getVehicleImageDocument4().getDocumentUrl() : null)
+                .registrationCertificateDocumentId(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getId() : null)
+                .registrationCertificateUrl(v.getRegistrationCertificateDocument() != null ? v.getRegistrationCertificateDocument().getDocumentUrl() : null)
+                .insuranceNumber(v.getInsuranceNumber())
+                .insuranceProvider(v.getInsuranceProvider())
+                .insuranceExpiry(v.getInsuranceExpiry() != null ? v.getInsuranceExpiry().toString() : null)
+                .insuranceDocumentId1(v.getInsuranceDocument1() != null ? v.getInsuranceDocument1().getId() : null)
+                .insuranceDocumentUrl1(v.getInsuranceDocument1() != null ? v.getInsuranceDocument1().getDocumentUrl() : null)
+                .insuranceDocumentId2(v.getInsuranceDocument2() != null ? v.getInsuranceDocument2().getId() : null)
+                .insuranceDocumentUrl2(v.getInsuranceDocument2() != null ? v.getInsuranceDocument2().getDocumentUrl() : null)
+                .revenueLicenseDocumentId1(v.getRevenueLicenseDocument1() != null ? v.getRevenueLicenseDocument1().getId() : null)
+                .revenueLicenseDocumentUrl1(v.getRevenueLicenseDocument1() != null ? v.getRevenueLicenseDocument1().getDocumentUrl() : null)
+                .revenueLicenseDocumentId2(v.getRevenueLicenseDocument2() != null ? v.getRevenueLicenseDocument2().getId() : null)
+                .revenueLicenseDocumentUrl2(v.getRevenueLicenseDocument2() != null ? v.getRevenueLicenseDocument2().getDocumentUrl() : null)
+                .isVerified(v.getIsVerified() != null ? v.getIsVerified().name() : null)
+                .isPrimary(v.getIsPrimary() != null ? v.getIsPrimary().name() : null)
+                .status(v.getStatus())
+                .createdDate(v.getCreatedDate() != null ? v.getCreatedDate().toString() : null)
+                .modifiedDate(v.getModifiedDate() != null ? v.getModifiedDate().toString() : null)
+                .build();
+    }
+
     private void saveDriverVehicleDetails(DriverProfile driverProfile, DriverVehicleDetailsRequestResource vehicleRequest) {
 
         // Create new vehicle details entry
@@ -155,25 +252,55 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                     throw new ValidateRecordException(environment.getProperty(VEHICLE_MAKE_NOT_FOUND), "errorMessage");
                 });
 
+        // Resolve and set VehicleModel (optional)
+        if (vehicleRequest.getVehicleModelId() != null) {
+            vehicleModelRepository.findById(vehicleRequest.getVehicleModelId())
+                    .ifPresent(vehicle::setVehicleModel);
+        }
+
         // Map all fields from request
         vehicle.setRegistrationNumber(vehicleRequest.getRegistrationNumber());
         vehicle.setModel(vehicleRequest.getModel());
         vehicle.setYear(vehicleRequest.getYear());
         vehicle.setColor(vehicleRequest.getColor());
-        vehicle.setSeats(vehicleRequest.getSeats());
+        vehicle.setSeats(vehicleRequest.getSeats() != null ? vehicleRequest.getSeats() : 0);
 
-        // Set optional document references
-        if (vehicleRequest.getVehicleImageDocumentId() != null) {
-            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId())
-                    .ifPresent(vehicle::setVehicleImageDocument);
+        // Set optional vehicle image document references (up to 4)
+        if (vehicleRequest.getVehicleImageDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId1())
+                    .ifPresent(vehicle::setVehicleImageDocument1);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId2())
+                    .ifPresent(vehicle::setVehicleImageDocument2);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId3() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId3())
+                    .ifPresent(vehicle::setVehicleImageDocument3);
+        }
+        if (vehicleRequest.getVehicleImageDocumentId4() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getVehicleImageDocumentId4())
+                    .ifPresent(vehicle::setVehicleImageDocument4);
         }
         if (vehicleRequest.getRegistrationCertificateDocumentId() != null) {
             documentDetailsRepository.findById(vehicleRequest.getRegistrationCertificateDocumentId())
                     .ifPresent(vehicle::setRegistrationCertificateDocument);
         }
-        if (vehicleRequest.getInsuranceDocumentId() != null) {
-            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId())
-                    .ifPresent(vehicle::setInsuranceDocument);
+        if (vehicleRequest.getInsuranceDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId1())
+                    .ifPresent(vehicle::setInsuranceDocument1);
+        }
+        if (vehicleRequest.getInsuranceDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getInsuranceDocumentId2())
+                    .ifPresent(vehicle::setInsuranceDocument2);
+        }
+        if (vehicleRequest.getRevenueLicenseDocumentId1() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getRevenueLicenseDocumentId1())
+                    .ifPresent(vehicle::setRevenueLicenseDocument1);
+        }
+        if (vehicleRequest.getRevenueLicenseDocumentId2() != null) {
+            documentDetailsRepository.findById(vehicleRequest.getRevenueLicenseDocumentId2())
+                    .ifPresent(vehicle::setRevenueLicenseDocument2);
         }
 
         // Set optional insurance details
@@ -186,7 +313,6 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         // Set default status fields
         vehicle.setIsVerified(YesNo.NO);
         vehicle.setIsPrimary(YesNo.YES);
-        vehicle.setIsActive(YesNo.YES);
         vehicle.setStatus("PENDING");
 
         // Set audit fields

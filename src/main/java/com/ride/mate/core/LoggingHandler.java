@@ -25,6 +25,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 02-03-2026    N/A          N/A          Tishan          Removed LoginAuthentication (handled by AuthenticationFilter)
+ * 3 18-03-2026    N/A          N/A          Tishan          Fixed userName overwrite - read from LoginAuthentication instead of header
  */
 @Slf4j
 @Aspect
@@ -46,9 +47,7 @@ public class LoggingHandler {
         String sampled = request.getHeader("x-b3-sampled");
         String flags = request.getHeader("x-b3-flags");
         String spanContext = request.getHeader("x-ot-span-context");
-        String userName = request.getHeader("username");
-        // Get username from LoginAuthentication (set by AuthenticationFilter)
-        LoginAuthentication.setUserName(userName);
+        String userName = LoginAuthentication.getUserName() != null ? LoginAuthentication.getUserName() : request.getHeader("username");
 
         DefaultRequestHeaders.getInstance().setHeaders(userAgent, requestId, traceId, spanId,
             parentspanId, sampled, flags, spanContext, userName);

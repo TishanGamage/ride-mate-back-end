@@ -1,6 +1,5 @@
 package com.ride.mate.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ride.mate.core.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,24 +9,22 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * Vehicle Make Entity
- * Stores vehicle manufacturers (Toyota, Mercedes-Benz, BMW, etc.)
+ * Vehicle Model Entity
+ * Stores vehicle models
  *
- * @author Tishan
+ * @author Iruni
  * @version 1.0.0
  * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
- * 2 18-03-2026    N/A          N/A          Tishan          Added @JsonIgnoreProperties to fix Hibernate lazy proxy serialization
+ * 1 18-03-2026    N/A          N/A          Iruni          Initial Development
  */
 @Getter
 @Setter
 @Entity
-@Table(name = "vehicle_make")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class VehicleMake extends BaseEntity implements Serializable {
+@Table(name = "vehicle_model")
+public class VehicleModel extends BaseEntity implements Serializable {
 
     @Column(name = "code", nullable = false, unique = true, length = 50)
     private String code;
@@ -52,5 +49,9 @@ public class VehicleMake extends BaseEntity implements Serializable {
 
     @Column(name = "modified_date")
     private Timestamp modifiedDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_make_id", foreignKey = @ForeignKey(name = "fk_vehicle_model_vehicle_make"))
+    private VehicleMake vehicleMake;
 }
 

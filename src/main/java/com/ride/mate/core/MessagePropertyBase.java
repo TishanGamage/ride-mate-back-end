@@ -12,7 +12,9 @@ package com.ride.mate.core;
  * ---------------------------------------------------------------------------
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 09-03-2026    N/A          N/A          Tishan          Added JWT authentication constants
- * 3 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
+ * 3 18-03-2026    N/A          N/A          Tishan          Added FILE_SIZE_EXCEEDED constant
+ * 4 18-03-2026    N/A          N/A          Tishan          Added scheduler rate update constants
+ * 5 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
  */
 public abstract class MessagePropertyBase {
 
@@ -73,6 +75,7 @@ public abstract class MessagePropertyBase {
     protected static final String FILE_DELETED_SUCCESS = "file.deleted.success";
     protected static final String FILE_EMPTY = "file.empty";
     protected static final String FILE_NAME_EMPTY = "file.name.empty";
+    protected static final String FILE_SIZE_EXCEEDED = "file.size.exceeded";
     protected static final String DOCUMENT_NOT_FOUND = "document.not.found";
     protected static final String FILE_READ_ERROR = "file.read.error";
 
@@ -80,6 +83,10 @@ public abstract class MessagePropertyBase {
     protected static final String SUPABASE_UPLOAD_FAILED = "supabase.upload.failed";
     protected static final String SUPABASE_DELETE_FAILED = "supabase.delete.failed";
     protected static final String SUPABASE_DOWNLOAD_FAILED = "supabase.download.failed";
+
+    // Scheduler message property keys
+    protected static final String SCHEDULER_RATE_UPDATE_SUCCESS = "scheduler.rate.update.success";
+    protected static final String SCHEDULER_RATE_UPDATE_FAILED = "scheduler.rate.update.failed";
 
     // Payment message property keys
     protected static final String SAVED_CARD_NOT_FOUND = "saved.card.not.found";

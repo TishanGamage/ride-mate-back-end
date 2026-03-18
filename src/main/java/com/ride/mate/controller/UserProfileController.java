@@ -6,6 +6,7 @@ import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
+import com.ride.mate.resources.WillingToDriveUpdateResource;
 import com.ride.mate.service.UserProfileService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
  * 2 15-03-2026    N/A          N/A          Tishan          Added updateUserProfile endpoint
  * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId endpoint
  * 4 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
+ * 5 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive endpoint
  */
 @Slf4j
 @RestController
@@ -90,5 +92,23 @@ public class UserProfileController extends MessagePropertyBase {
         UserProfileResponse response = userProfileService.getUserProfileByUserId(userId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-}
 
+    /**
+     * Update willingToDrive field of a user profile
+     * Accepts YES or NO and updates only the willingToDrive column
+     *
+     * @param id      the ID of the user profile record
+     * @param request request body containing the willingToDrive value (YES/NO)
+     * @return ResponseEntity with updated user profile ID and success message
+     */
+    @PatchMapping(value = "/update-willing-to-drive/{userId}")
+    public ResponseEntity<?> updateWillingToDrive(@PathVariable Long userId,
+                                                  @Valid @RequestBody WillingToDriveUpdateResource request) {
+        log.info("Received willingToDrive update request for user profile ID: {}", userId);
+        UserProfile userProfile = userProfileService.updateWillingToDrive(userId, request);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(userProfile.getId());
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+}

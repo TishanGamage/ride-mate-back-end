@@ -17,10 +17,13 @@ import java.util.Optional;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
+ * 2 18-03-2026    N/A          N/A          Tishan          Added findByCode method for scheduler
  */
 @Repository
 public interface VehicleTypeRepository extends JpaRepository<VehicleType, Long> {
 
     List<VehicleType> findByStatus(String status);
+
+    Optional<VehicleType> findByCode(String code);
 }
 
