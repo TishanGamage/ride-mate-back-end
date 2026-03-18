@@ -115,6 +115,8 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
             String filePath = documentId + fileExtension;
             // Build upload URL
             String uploadUrl = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, filePath);
+            log.info("Supabase upload URL: {}", uploadUrl);
+            log.info("SupaBase Key: {}", supabaseKey != null ? "****" : "null");
             // Set headers
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + supabaseKey);
