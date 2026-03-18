@@ -22,6 +22,7 @@ import java.time.LocalDate;
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 22-02-2026    N/A          N/A          Tishan          Updated to properly reference DriverProfile
+ * 3 18-03-2026    N/A          N/A          Tishan          Added vehicleModel FK, multiple vehicle image docs, dual insurance docs, revenue license docs
  */
 @Getter
 @Setter
@@ -41,6 +42,10 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     @JoinColumn(name = "vehicle_make_id", nullable = false)
     private VehicleMake vehicleMake;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_model_id")
+    private VehicleModel vehicleModel;
+
     @Column(name = "registration_number", nullable = false, unique = true, length = 50)
     private String registrationNumber;
 
@@ -57,8 +62,20 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     private Integer seats;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_image_document_id")
-    private DocumentDetails vehicleImageDocument;
+    @JoinColumn(name = "vehicle_image_document_id_1")
+    private DocumentDetails vehicleImageDocument1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_image_document_id_2")
+    private DocumentDetails vehicleImageDocument2;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_image_document_id_3")
+    private DocumentDetails vehicleImageDocument3;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_image_document_id_4")
+    private DocumentDetails vehicleImageDocument4;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registration_certificate_document_id")
@@ -74,8 +91,20 @@ public class DriverVehicleDetails extends BaseEntity implements Serializable {
     private LocalDate insuranceExpiry;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "insurance_document_id")
-    private DocumentDetails insuranceDocument;
+    @JoinColumn(name = "insurance_document_id_1")
+    private DocumentDetails insuranceDocument1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "insurance_document_id_2")
+    private DocumentDetails insuranceDocument2;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "revenue_license_document_id_1")
+    private DocumentDetails revenueLicenseDocument1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "revenue_license_document_id_2")
+    private DocumentDetails revenueLicenseDocument2;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "is_verified", nullable = false, length = 3)
