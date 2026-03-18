@@ -24,6 +24,7 @@ import java.util.Set;
  * ---------------------------------------------------------------------------
  * 1 20-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 22-02-2026    N/A          N/A          Tishan          Updated to reference User entity
+ * 3 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted field
  */
 @Getter
 @Setter
@@ -64,6 +65,9 @@ public class DriverProfile extends BaseEntity implements Serializable {
 
     @Column(name = "account_status", nullable = false, length = 20)
     private String accountStatus;
+
+    @Column(name = "driver_profile_completed", nullable = false, length = 3)
+    private String driverProfileCompleted = "NO";
 
     @Column(name = "approved_by", nullable = false, length = 100)
     private String approvedBy;
