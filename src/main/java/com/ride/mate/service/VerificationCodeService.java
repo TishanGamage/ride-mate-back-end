@@ -34,5 +34,7 @@ public interface VerificationCodeService {
      * @return SuccessAndErrorDetailsResource with success or error message
      */
     SuccessAndErrorDetailsResource verifyCode(VerifyCodeRequest request);
+
+    void ensureVerified(String email);
 }
 
