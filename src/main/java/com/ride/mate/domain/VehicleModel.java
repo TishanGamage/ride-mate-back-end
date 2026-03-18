@@ -49,5 +49,9 @@ public class VehicleModel extends BaseEntity implements Serializable {
 
     @Column(name = "modified_date")
     private Timestamp modifiedDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_make_id", foreignKey = @ForeignKey(name = "fk_vehicle_model_vehicle_make"))
+    private VehicleMake vehicleMake;
 }
 
