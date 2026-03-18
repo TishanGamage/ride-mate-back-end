@@ -32,6 +32,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 02-03-2026    N/A          N/A          Tishan          Added Auth0 Bearer Token support
  * 3 09-03-2026    N/A          N/A          Tishan          Implemented JWT Authentication
+ * 4 18-03-2026    N/A          N/A          Danushka          Added public endpoints for payment notifications and API documentation
  */
 @Configuration
 @EnableWebSecurity
@@ -79,6 +80,7 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/**",
+            "/payment/notify",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
