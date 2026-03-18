@@ -15,6 +15,8 @@ package com.ride.mate.core;
  * 3 18-03-2026    N/A          N/A          Tishan          Added FILE_SIZE_EXCEEDED constant
  * 4 18-03-2026    N/A          N/A          Tishan          Added scheduler rate update constants
  * 5 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
+ * 6 19-03-2026    N/A          N/A          Danushka          Removed PayHere config constants (moved to @Value injection)
+ * 7 19-03-2026    N/A          N/A          Tishan            Added Supabase configuration property key constants
  */
 public abstract class MessagePropertyBase {
 

@@ -1,6 +1,5 @@
 package com.ride.mate.service.impl;
 
-import com.ride.mate.config.PayHereConfig;
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.*;
@@ -13,6 +12,7 @@ import com.ride.mate.resources.PaymentInitResource;
 import com.ride.mate.service.PayHereService;
 import com.ride.mate.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -40,6 +40,7 @@ import java.util.UUID;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 18-03-2026    N/A          N/A          Danushka          Initial Development
+ * 2 19-03-2026    N/A          N/A          Danushka          Migrated PayHere config to @Value injection
  */
 @Slf4j
 @Service
@@ -51,9 +52,20 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
     private final DriverEarningRepository driverEarningRepository;
     private final UserRepository userRepository;
     private final RideDetailRepository rideDetailRepository;
-    private final PayHereConfig payHereConfig;
     private final RestTemplate restTemplate;
     private final Environment environment;
+
+    @Value("${payhere.api-base-url}")
+    private String payhereApiBaseUrl;
+
+    @Value("${payhere.api.charge-path}")
+    private String payhereApiChargePath;
+
+    @Value("${payhere.merchant-id}")
+    private String payhereMerchantId;
+
+    @Value("${payhere.merchant-secret}")
+    private String payhereMerchantSecret;
 
 
     public PayHereServiceImpl(UserSavedCardRepository userSavedCardRepository,
@@ -61,7 +73,6 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
                               DriverEarningRepository driverEarningRepository,
                               UserRepository userRepository,
                               RideDetailRepository rideDetailRepository,
-                              PayHereConfig payHereConfig,
                               RestTemplate restTemplate,
                               Environment environment) {
         this.userSavedCardRepository = userSavedCardRepository;
@@ -69,7 +80,6 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
         this.driverEarningRepository = driverEarningRepository;
         this.userRepository = userRepository;
         this.rideDetailRepository = rideDetailRepository;
-        this.payHereConfig = payHereConfig;
         this.restTemplate = restTemplate;
         this.environment = environment;
     }
@@ -246,8 +256,8 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
      */
     private boolean isSignatureValid(PayHereNotifyResource request) {
         try {
-            String merchantSecretHash = computeMd5(payHereConfig.getMerchantSecret()).toUpperCase();
-            String rawSignature = payHereConfig.getMerchantId()
+            String merchantSecretHash = computeMd5(payhereMerchantSecret).toUpperCase();
+            String rawSignature = payhereMerchantId
                     + request.getOrderId()
                     + request.getPayhereAmount()
                     + request.getPayhereCurrency()
@@ -266,13 +276,13 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
      */
     private boolean callPayHereChargeApi(String customerToken, String orderId, BigDecimal amount, String currency, String itemName) {
         try {
-            String url = payHereConfig.getApiBaseUrl() + payHereConfig.getApi().getChargePath();
+            String url = payhereApiBaseUrl + payhereApiChargePath;
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-            body.add("merchant_id", payHereConfig.getMerchantId());
+            body.add("merchant_id", payhereMerchantId);
             body.add("customer_token", customerToken);
             body.add("order_id", orderId);
             body.add("amount", amount.toPlainString());
