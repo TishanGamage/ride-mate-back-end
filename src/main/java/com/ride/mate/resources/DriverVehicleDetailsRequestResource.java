@@ -1,5 +1,6 @@
 package com.ride.mate.resources;
 
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -50,6 +51,7 @@ public class DriverVehicleDetailsRequestResource {
 
     private String insuranceProvider;
 
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "insuranceExpiry must be in yyyy-MM-dd format")
     private String insuranceExpiry;
 
     private Long revenueLicenseDocumentId1;
