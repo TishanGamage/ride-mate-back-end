@@ -26,7 +26,6 @@ import lombok.Setter;
 public class UserProfileUpdateResource {
 
 
-    @NotNull(message = "{invalid.value}")
     private Long version;
 
     private Long profileImageDocumentId;

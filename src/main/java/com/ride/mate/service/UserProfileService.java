@@ -1,6 +1,7 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.UserProfile;
+import com.ride.mate.resources.ProfilePhotoUpdateResource;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.resources.UpdateRoleRequest;
 import com.ride.mate.resources.UserProfileAddResource;
@@ -23,6 +24,7 @@ import com.ride.mate.resources.WillingToDriveUpdateResource;
  * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  * 4 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  * 5 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive method
+ * 6 19-03-2026    N/A          N/A          Tishan          Added updateProfilePhoto method
  */
 public interface UserProfileService {
 
@@ -58,6 +60,15 @@ public interface UserProfileService {
      * @return the updated UserProfile entity
      */
     UserProfile updateWillingToDrive(Long id, WillingToDriveUpdateResource request);
+
+    /**
+     * Update only the profile photo of a user profile
+     *
+     * @param userId  the ID of the user
+     * @param request request containing the new profileImageDocumentId
+     * @return the updated UserProfile entity
+     */
+    UserProfile updateProfilePhoto(Long userId, ProfilePhotoUpdateResource request);
 
     SuccessAndErrorDetailsResource updateRole(Long userId, UpdateRoleRequest request);
 }

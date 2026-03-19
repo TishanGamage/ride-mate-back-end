@@ -3,6 +3,7 @@ package com.ride.mate.controller;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.UserProfile;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
+import com.ride.mate.resources.ProfilePhotoUpdateResource;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
  * 3 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId endpoint
  * 4 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  * 5 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive endpoint
+ * 6 19-03-2026    N/A          N/A          Tishan          Added updateProfilePhoto endpoint
  */
 @Slf4j
 @RestController
@@ -98,7 +100,7 @@ public class UserProfileController extends MessagePropertyBase {
      * Update willingToDrive field of a user profile
      * Accepts YES or NO and updates only the willingToDrive column
      *
-     * @param id      the ID of the user profile record
+     * @param userId  the ID of the user
      * @param request request body containing the willingToDrive value (YES/NO)
      * @return ResponseEntity with updated user profile ID and success message
      */
@@ -110,6 +112,28 @@ public class UserProfileController extends MessagePropertyBase {
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(userProfile.getId());
         response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Update profile photo of a user profile
+     * Updates only the profileImageDocument field for the given user
+     *
+     * @param userId  the ID of the user
+     * @param request request body containing the new profileImageDocumentId
+     * @return ResponseEntity with updated user profile ID and success message
+     */
+    @PutMapping(value = "/update-profile-photo/{userId}")
+    public ResponseEntity<?> updateProfilePhoto(@PathVariable Long userId,
+                                                @Valid @RequestBody ProfilePhotoUpdateResource request) {
+        log.info("Received profile photo update request for user ID: {}", userId);
+        UserProfile userProfile = userProfileService.updateProfilePhoto(userId, request);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(userProfile.getId());
+        response.setMessages(environment.getProperty(PROFILE_PHOTO_UPDATED));
+        if (userProfile.getProfileImageDocument() != null) {
+            response.setUrl(userProfile.getProfileImageDocument().getDocumentUrl());
+        }
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
