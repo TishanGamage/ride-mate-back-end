@@ -28,7 +28,7 @@ import java.sql.Timestamp;
 public class ShareRideDetail extends BaseEntity implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ride_detail_id", nullable = false, unique = true)
+    @JoinColumn(name = "ride_detail_id", nullable = false)
     private RideDetail rideDetail;
 
     @Column(name = "request_id", nullable = false)
@@ -41,8 +41,20 @@ public class ShareRideDetail extends BaseEntity implements Serializable {
     @Column(name = "passenger_start_location_longitude", precision = 10, scale = 7)
     private BigDecimal startLocationLongitude = BigDecimal.ZERO;
 
+    @Column(name = "passenger_start_location_latitude", precision = 10, scale = 7)
+    private BigDecimal startLocationLatitude = BigDecimal.ZERO;
+
     @Column(name = "passenger_end_location_longitude", precision = 10, scale = 7)
-    private BigDecimal endLocationLongitude = BigDecimal.ZERO ;
+    private BigDecimal endLocationLongitude = BigDecimal.ZERO;
+
+    @Column(name = "passenger_end_location_latitude", precision = 10, scale = 7)
+    private BigDecimal endLocationLatitude = BigDecimal.ZERO;
+
+    @Column(name = "start_city", length = 200)
+    private String startCity;
+
+    @Column(name = "end_city", length = 200)
+    private String endCity;
 
     @Column(name = "passenger_cost", precision = 25, scale = 2, nullable = false)
     private BigDecimal passengerCost;
