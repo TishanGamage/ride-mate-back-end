@@ -119,12 +119,13 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + supabaseKey);
             headers.set("apikey", supabaseKey);
+            headers.set("x-upsert", "true");
             headers.setContentType(MediaType.parseMediaType(file.getContentType() != null ? file.getContentType() : "application/octet-stream"));
 
             // Create request entity with file bytes
             HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
-            // Execute upload request
-            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.POST, requestEntity, String.class);
+            // Execute upload request (PUT with upsert to overwrite if exists)
+            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.PUT, requestEntity, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 String publicUrl = getSupabasePublicUrl(filePath);
                 log.info("File uploaded successfully to Supabase. URL: {}", publicUrl);
