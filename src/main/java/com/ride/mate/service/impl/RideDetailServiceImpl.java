@@ -67,6 +67,29 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                             environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message");
                 });
 
+        // Get driver's primary vehicle to validate available seats
+        DriverVehicleDetails vehicleDetails = driverVehicleDetailsRepository
+                .findByDriverProfileIdAndIsPrimary(request.getDriverProfileId(), YesNo.YES)
+                .orElseThrow(() -> {
+                    log.warn("Validation failed: No primary vehicle found for driver profile ID: {}",
+                            request.getDriverProfileId());
+                    return new ValidateRecordException(
+                            environment.getProperty(DRIVER_VEHICLE_NOT_FOUND), "message");
+                });
+
+        // Get vehicle type to validate available seats against vehicle type capacity
+        VehicleType vehicleType = vehicleDetails.getVehicleType();
+
+        if (vehicleType == null) {
+            log.warn("Validation failed: Vehicle type not found for driver vehicle ID: {}",
+                    vehicleDetails.getId());
+            throw new ValidateRecordException(
+                    environment.getProperty(VEHICLE_TYPE_NOT_FOUND), "message");
+        }
+
+        // Validate available seats against vehicle type's maximum seats
+        Integer vehicleTypeMaxSeats = vehicleType.getMaxSeats();
+
         // Create and populate ride detail
         RideDetail rideDetail = new RideDetail();
         rideDetail.setDriverProfile(driverProfile);
@@ -75,10 +98,22 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setStartLocationLatitude(request.getStartLocationLatitude());
         rideDetail.setEndLocationLatitude(request.getEndLocationLatitude());
         rideDetail.setStartCity(request.getStartCity());
-        rideDetail.setAvailableSeats(request.getAvailableSeats());
+
+        // Validate and set available seats
+        if (request.getAvailableSeats() != null && vehicleTypeMaxSeats != null && request.getAvailableSeats() > vehicleTypeMaxSeats) {
+            log.warn("Validation failed: Requested seats {} exceeds vehicle type capacity {} for driver profile ID: {}",
+                    request.getAvailableSeats(), vehicleTypeMaxSeats, request.getDriverProfileId());
+            throw new ValidateRecordException(
+                    String.format(environment.getProperty(AVAILABLE_SEATS_EXCEEDS_VEHICLE_CAPACITY), vehicleTypeMaxSeats),
+                    "message");
+        } else {
+            rideDetail.setAvailableSeats(request.getAvailableSeats());
+        }
         rideDetail.setTotalRideDistance(request.getTotalRideDistance());
         rideDetail.setTripRoute(request.getTripRoute());
         rideDetail.setStatus(request.getStatus());
+        rideDetail.setTotalRideCost(request.getTotalRideCost());
+        rideDetail.setPerKmRate(vehicleType.getPerKmRate());
 
         // Parse and set timestamps
         if (request.getStartTime() != null && !request.getStartTime().isEmpty()) {
