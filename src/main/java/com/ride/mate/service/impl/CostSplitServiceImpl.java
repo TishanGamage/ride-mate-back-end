@@ -148,6 +148,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
             segment.setCostPerRider(costPerRider);
             segment.setCreatedDate(DateUtil.getDate());
             segment.setCreatedUser(LoginAuthentication.getUserName());
+            segment.setSyncTs(DateUtil.getDate());
 
             segments.add(segment);
 
