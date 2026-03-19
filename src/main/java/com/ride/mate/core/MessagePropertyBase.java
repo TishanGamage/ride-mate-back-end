@@ -119,4 +119,13 @@ public abstract class MessagePropertyBase {
     protected static final String COST_SPLIT_CALCULATED = "cost.split.calculated";
     protected static final String NO_AVAILABLE_SEATS = "no.available.seats";
     protected static final String PASSENGER_ALREADY_JOINED = "passenger.already.joined";
+
+    // Ride detail validation message property keys
+    protected static final String AVAILABLE_SEATS_EXCEEDS_VEHICLE_CAPACITY = "available.seats.exceeds.vehicle.capacity";
+
+    // Passenger ride confirm message property keys
+    protected static final String RIDE_NOT_FOUND = "ride.not.found";
+    protected static final String RIDE_NOT_AVAILABLE = "ride.not.available";
+    protected static final String PASSENGER_ALREADY_CONFIRMED = "passenger.already.confirmed";
+    protected static final String RIDE_NO_SEATS_AVAILABLE = "ride.no.seats.available";
 }
