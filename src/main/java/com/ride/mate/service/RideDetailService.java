@@ -1,6 +1,8 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.resources.CostSplitResponse;
+import com.ride.mate.resources.PassengerRideConfirmRequestResource;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Iruni           Initial Development
  * 2 19-03-2026    N/A          N/A          Iruni           Added calculateRidePrice method
+ * 3 20-03-2026    N/A          N/A          Tishan           Added confirmPassengerRide method
  */
 public interface RideDetailService {
 
@@ -38,5 +41,14 @@ public interface RideDetailService {
      * @return RidePriceCalculationResponse with calculated price details
      */
     RidePriceCalculationResponse calculateRidePrice(Long driverProfileId, BigDecimal totalDistance);
+
+    /**
+     * Confirm a passenger joining a ride.
+     * Creates a ShareRideDetail record and recalculates the cost split.
+     *
+     * @param request Passenger ride confirm request
+     * @return CostSplitResponse with updated cost breakdown
+     */
+    CostSplitResponse confirmPassengerRide(PassengerRideConfirmRequestResource request);
 }
 

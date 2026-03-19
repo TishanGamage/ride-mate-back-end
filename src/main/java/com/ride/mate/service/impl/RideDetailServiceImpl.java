@@ -2,17 +2,15 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
-import com.ride.mate.domain.DriverProfile;
-import com.ride.mate.domain.DriverVehicleDetails;
-import com.ride.mate.domain.RideDetail;
-import com.ride.mate.domain.VehicleType;
+import com.ride.mate.domain.*;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
-import com.ride.mate.repository.DriverProfileRepository;
-import com.ride.mate.repository.DriverVehicleDetailsRepository;
-import com.ride.mate.repository.RideDetailRepository;
+import com.ride.mate.repository.*;
+import com.ride.mate.resources.CostSplitResponse;
+import com.ride.mate.resources.PassengerRideConfirmRequestResource;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
+import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideDetailService;
 import com.ride.mate.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +32,7 @@ import java.math.BigDecimal;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Iruni           Initial Development
  * 2 19-03-2026    N/A          N/A          Iruni           Added calculateRidePrice method
+ * 3 20-03-2026    N/A          N/A          Tishan           Added confirmPassengerRide method
  */
 @Slf4j
 @Service
@@ -43,15 +42,24 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     private final RideDetailRepository rideDetailRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
+    private final ShareRideDetailRepository shareRideDetailRepository;
+    private final UserRepository userRepository;
+    private final CostSplitService costSplitService;
     private final Environment environment;
 
     public RideDetailServiceImpl(RideDetailRepository rideDetailRepository,
                                  DriverProfileRepository driverProfileRepository,
                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
+                                 ShareRideDetailRepository shareRideDetailRepository,
+                                 UserRepository userRepository,
+                                 CostSplitService costSplitService,
                                  Environment environment) {
         this.rideDetailRepository = rideDetailRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
+        this.shareRideDetailRepository = shareRideDetailRepository;
+        this.userRepository = userRepository;
+        this.costSplitService = costSplitService;
         this.environment = environment;
     }
 
@@ -85,6 +93,13 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
             rideDetail.setStartTime(DateUtil.stringToTimeStamp(request.getStartTime()));
         }
 
+        // Set per km rate and total cost if provided
+        if (request.getPerKmRate() != null) {
+            rideDetail.setPerKmRate(request.getPerKmRate());
+        }
+        if (request.getTotalRideCost() != null) {
+            rideDetail.setTotalRideCost(request.getTotalRideCost());
+        }
 
         // Set audit fields
         rideDetail.setCreatedDate(DateUtil.getDate());
@@ -155,6 +170,65 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                 .perKmRate(perKmRate)
                 .totalRidePrice(totalRidePrice)
                 .build();
+    }
+
+    @Override
+    public CostSplitResponse confirmPassengerRide(PassengerRideConfirmRequestResource request) {
+        log.info("Processing passenger ride confirmation for ride ID: {}, user ID: {}",
+                request.getRideDetailId(), request.getUserId());
+
+        // 1. Validate ride detail exists
+        RideDetail rideDetail = rideDetailRepository.findById(request.getRideDetailId())
+                .orElseThrow(() -> {
+                    log.warn("Ride detail not found: {}", request.getRideDetailId());
+                    return new ValidateRecordException(
+                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+                });
+
+        // 2. Check available seats
+        long currentPassengers = shareRideDetailRepository
+                .countByRideDetailIdAndStatus(request.getRideDetailId(), "ACTIVE");
+        if (rideDetail.getAvailableSeats() != null && currentPassengers >= rideDetail.getAvailableSeats()) {
+            log.warn("No available seats for ride ID: {}", request.getRideDetailId());
+            throw new ValidateRecordException(
+                    environment.getProperty(NO_AVAILABLE_SEATS), "message");
+        }
+
+        // 3. Validate user exists
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> {
+                    log.warn("User not found: {}", request.getUserId());
+                    return new ValidateRecordException(
+                            environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        // 4. Create ShareRideDetail
+        ShareRideDetail shareRideDetail = new ShareRideDetail();
+        shareRideDetail.setRideDetail(rideDetail);
+        shareRideDetail.setRequestId(System.currentTimeMillis()); // unique request ID
+        shareRideDetail.setUser(user);
+        shareRideDetail.setStartLocationLongitude(request.getStartLocationLongitude());
+        shareRideDetail.setStartLocationLatitude(request.getStartLocationLatitude());
+        shareRideDetail.setEndLocationLongitude(request.getEndLocationLongitude());
+        shareRideDetail.setEndLocationLatitude(request.getEndLocationLatitude());
+        shareRideDetail.setStartCity(request.getStartCity());
+        shareRideDetail.setEndCity(request.getEndCity());
+        shareRideDetail.setPassengerRideDistance(request.getPassengerRideDistance());
+        shareRideDetail.setPassengerCost(BigDecimal.ZERO); // will be recalculated
+        shareRideDetail.setStatus("ACTIVE");
+        shareRideDetail.setCreatedDate(DateUtil.getDate());
+        shareRideDetail.setCreatedUser(LoginAuthentication.getUserName());
+
+        shareRideDetailRepository.save(shareRideDetail);
+        log.info("Share ride detail created with ID: {}", shareRideDetail.getId());
+
+        // 5. Recalculate cost split for all passengers
+        CostSplitResponse costSplit = costSplitService.calculateCostSplit(request.getRideDetailId());
+
+        log.info("Cost split recalculated after passenger {} joined ride {}",
+                request.getUserId(), request.getRideDetailId());
+
+        return costSplit;
     }
 }
 
