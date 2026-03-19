@@ -125,3 +125,15 @@ databaseChangeLog:
                   name: total_ride_cost
                   type: decimal(10,7)
             tableName: driver_ride_detail
+  - changeSet:
+      id: 4
+      author: Iruni
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: alert_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+            tableName: driver_ride_detail
