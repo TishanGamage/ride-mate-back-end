@@ -126,6 +126,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setStatus(request.getStatus());
         rideDetail.setTotalRideCost(request.getTotalRideCost());
         rideDetail.setPerKmRate(vehicleType.getPerKmRate());
+        rideDetail.setSyncTs(DateUtil.getDate());
 
         // Parse and set timestamps
         if (request.getStartTime() != null && !request.getStartTime().isEmpty()) {
