@@ -73,6 +73,7 @@ public class RideDetailController extends MessagePropertyBase {
      * @param totalDistance Total distance in kilometers
      * @return ResponseEntity with calculated ride price details
      */
+
     @GetMapping("/calculate-price")
     public ResponseEntity<?> calculateRidePrice(
             @RequestParam("driverProfileId") Long driverProfileId,
@@ -80,7 +81,6 @@ public class RideDetailController extends MessagePropertyBase {
 
         log.info("Received request to calculate ride price for driver profile ID: {} with distance: {} km",
                 driverProfileId, totalDistance);
-
         RidePriceCalculationResponse response = rideDetailService.calculateRidePrice(driverProfileId, totalDistance);
 
         log.info("Ride price calculation successful: {}", response.getTotalRidePrice());
@@ -103,4 +103,6 @@ public class RideDetailController extends MessagePropertyBase {
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+
 }

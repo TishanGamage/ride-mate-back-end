@@ -72,35 +72,15 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         log.info("Processing ride detail creation for driver profile ID: {}", request.getDriverProfileId());
 
         // Validate driver profile exists
-        DriverProfile driverProfile = driverProfileRepository.findById(request.getDriverProfileId())
-                .orElseThrow(() -> {
-                    log.warn("Validation failed: Driver profile not found - ID: {}", request.getDriverProfileId());
-                    return new ValidateRecordException(
-                            environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message");
-                });
+        DriverProfile driverProfile = validateAndGetDriverProfile(request.getDriverProfileId());
 
-        // Get driver's primary vehicle to validate available seats
-        DriverVehicleDetails vehicleDetails = driverVehicleDetailsRepository
-                .findByDriverProfileIdAndIsPrimary(request.getDriverProfileId(), YesNo.YES)
-                .orElseThrow(() -> {
-                    log.warn("Validation failed: No primary vehicle found for driver profile ID: {}",
-                            request.getDriverProfileId());
-                    return new ValidateRecordException(
-                            environment.getProperty(DRIVER_VEHICLE_NOT_FOUND), "message");
-                });
-
-        // Get vehicle type to validate available seats against vehicle type capacity
-        VehicleType vehicleType = vehicleDetails.getVehicleType();
-
-        if (vehicleType == null) {
-            log.warn("Validation failed: Vehicle type not found for driver vehicle ID: {}",
-                    vehicleDetails.getId());
-            throw new ValidateRecordException(
-                    environment.getProperty(VEHICLE_TYPE_NOT_FOUND), "message");
-        }
+        // Get driver's primary vehicle and vehicle type
+        DriverVehicleDetails vehicleDetails = validateAndGetPrimaryVehicle(request.getDriverProfileId());
+        VehicleType vehicleType = validateAndGetVehicleType(vehicleDetails);
 
         // Validate available seats against vehicle type's maximum seats
         Integer vehicleTypeMaxSeats = vehicleType.getMaxSeats();
+        validateAvailableSeats(request.getAvailableSeats(), vehicleTypeMaxSeats, request.getDriverProfileId());
 
         // Create and populate ride detail
         RideDetail rideDetail = new RideDetail();
@@ -110,17 +90,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setStartLocationLatitude(request.getStartLocationLatitude());
         rideDetail.setEndLocationLatitude(request.getEndLocationLatitude());
         rideDetail.setStartCity(request.getStartCity());
-
-        // Validate and set available seats
-        if (request.getAvailableSeats() != null && vehicleTypeMaxSeats != null && request.getAvailableSeats() > vehicleTypeMaxSeats) {
-            log.warn("Validation failed: Requested seats {} exceeds vehicle type capacity {} for driver profile ID: {}",
-                    request.getAvailableSeats(), vehicleTypeMaxSeats, request.getDriverProfileId());
-            throw new ValidateRecordException(
-                    String.format(environment.getProperty(AVAILABLE_SEATS_EXCEEDS_VEHICLE_CAPACITY), vehicleTypeMaxSeats),
-                    "message");
-        } else {
-            rideDetail.setAvailableSeats(request.getAvailableSeats());
-        }
+        rideDetail.setAvailableSeats(request.getAvailableSeats());
         rideDetail.setTotalRideDistance(request.getTotalRideDistance());
         rideDetail.setTripRoute(request.getTripRoute());
         rideDetail.setStatus(request.getStatus());
@@ -131,7 +101,6 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         if (request.getStartTime() != null && !request.getStartTime().isEmpty()) {
             rideDetail.setStartTime(DateUtil.stringToTimeStamp(request.getStartTime()));
         }
-
 
         // Set audit fields
         rideDetail.setCreatedDate(DateUtil.getDate());
@@ -149,16 +118,58 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         log.info("Calculating ride price for driver profile ID: {} with distance: {} km",
                 driverProfileId, totalDistance);
 
-        // Step 1: Validate driver profile exists
-        driverProfileRepository.findById(driverProfileId)
+        // Validate driver profile exists
+        validateAndGetDriverProfile(driverProfileId);
+
+        // Get driver's primary vehicle and vehicle type
+        DriverVehicleDetails vehicleDetails = validateAndGetPrimaryVehicle(driverProfileId);
+        VehicleType vehicleType = validateAndGetVehicleType(vehicleDetails);
+
+        // Get and validate per km rate
+        BigDecimal perKmRate = validateAndGetPerKmRate(vehicleType);
+
+        // Calculate total ride price (distance * per km rate)
+        BigDecimal totalRidePrice = totalDistance.multiply(perKmRate);
+
+        log.info("Ride price calculated successfully: {} (Distance: {} km x Rate: {} per km)",
+                totalRidePrice, totalDistance, perKmRate);
+
+        // Build and return response
+        return RidePriceCalculationResponse.builder()
+                .driverProfileId(driverProfileId)
+                .vehicleTypeId(vehicleType.getId())
+                .vehicleTypeName(vehicleType.getName())
+                .totalDistance(totalDistance)
+                .perKmRate(perKmRate)
+                .totalRidePrice(totalRidePrice)
+                .build();
+    }
+
+    /**
+     * Validates and retrieves driver profile by ID
+     *
+     * @param driverProfileId the driver profile ID
+     * @return DriverProfile entity
+     * @throws ValidateRecordException if driver profile not found
+     */
+    private DriverProfile validateAndGetDriverProfile(Long driverProfileId) {
+        return driverProfileRepository.findById(driverProfileId)
                 .orElseThrow(() -> {
                     log.warn("Validation failed: Driver profile not found - ID: {}", driverProfileId);
                     return new ValidateRecordException(
                             environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message");
                 });
+    }
 
-        // Step 2: Get driver's primary vehicle details (or any active vehicle)
-        DriverVehicleDetails vehicleDetails = driverVehicleDetailsRepository
+    /**
+     * Validates and retrieves driver's primary vehicle details
+     *
+     * @param driverProfileId the driver profile ID
+     * @return DriverVehicleDetails entity
+     * @throws ValidateRecordException if primary vehicle not found
+     */
+    private DriverVehicleDetails validateAndGetPrimaryVehicle(Long driverProfileId) {
+        return driverVehicleDetailsRepository
                 .findByDriverProfileIdAndIsPrimary(driverProfileId, YesNo.YES)
                 .orElseThrow(() -> {
                     log.warn("Validation failed: No primary vehicle found for driver profile ID: {}",
@@ -166,8 +177,16 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                     return new ValidateRecordException(
                             environment.getProperty(DRIVER_VEHICLE_NOT_FOUND), "message");
                 });
+    }
 
-        // Step 3: Get vehicle type from vehicle details
+    /**
+     * Validates and retrieves vehicle type from vehicle details
+     *
+     * @param vehicleDetails the driver vehicle details
+     * @return VehicleType entity
+     * @throws ValidateRecordException if vehicle type not found
+     */
+    private VehicleType validateAndGetVehicleType(DriverVehicleDetails vehicleDetails) {
         VehicleType vehicleType = vehicleDetails.getVehicleType();
 
         if (vehicleType == null) {
@@ -177,7 +196,35 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                     environment.getProperty(VEHICLE_TYPE_NOT_FOUND), "message");
         }
 
-        // Step 4: Get per km rate from vehicle type
+        return vehicleType;
+    }
+
+    /**
+     * Validates available seats against vehicle type capacity
+     *
+     * @param requestedSeats the requested available seats
+     * @param vehicleMaxSeats the vehicle type's maximum seats
+     * @param driverProfileId the driver profile ID (for logging)
+     * @throws ValidateRecordException if requested seats exceed vehicle capacity
+     */
+    private void validateAvailableSeats(Long requestedSeats, Integer vehicleMaxSeats, Long driverProfileId) {
+        if (requestedSeats != null && vehicleMaxSeats != null && requestedSeats > vehicleMaxSeats) {
+            log.warn("Validation failed: Requested seats {} exceeds vehicle type capacity {} for driver profile ID: {}",
+                    requestedSeats, vehicleMaxSeats, driverProfileId);
+            throw new ValidateRecordException(
+                    String.format(environment.getProperty(AVAILABLE_SEATS_EXCEEDS_VEHICLE_CAPACITY), vehicleMaxSeats),
+                    "message");
+        }
+    }
+
+    /**
+     * Validates and retrieves per km rate from vehicle type
+     *
+     * @param vehicleType the vehicle type
+     * @return BigDecimal per km rate
+     * @throws ValidateRecordException if rate is not configured or invalid
+     */
+    private BigDecimal validateAndGetPerKmRate(VehicleType vehicleType) {
         BigDecimal perKmRate = vehicleType.getPerKmRate();
 
         if (perKmRate == null || perKmRate.compareTo(BigDecimal.ZERO) <= 0) {
@@ -187,21 +234,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                     environment.getProperty(VEHICLE_TYPE_RATE_NOT_CONFIGURED), "message");
         }
 
-        // Step 5: Calculate total ride price (distance * per km rate)
-        BigDecimal totalRidePrice = totalDistance.multiply(perKmRate);
-
-        log.info("Ride price calculated successfully: {} (Distance: {} km x Rate: {} per km)",
-                totalRidePrice, totalDistance, perKmRate);
-
-        // Step 6: Build and return response
-        return RidePriceCalculationResponse.builder()
-                .driverProfileId(driverProfileId)
-                .vehicleTypeId(vehicleType.getId())
-                .vehicleTypeName(vehicleType.getName())
-                .totalDistance(totalDistance)
-                .perKmRate(perKmRate)
-                .totalRidePrice(totalRidePrice)
-                .build();
+        return perKmRate;
     }
 
     @Override
