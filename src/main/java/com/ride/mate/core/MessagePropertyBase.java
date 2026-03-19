@@ -46,6 +46,8 @@ public abstract class MessagePropertyBase {
 
     // User Profile message property keys
     protected static final String USER_PROFILE_ALREADY_EXISTS = "user.profile.already.exists";
+    protected static final String PROFILE_PHOTO_UPDATED = "profile.photo.updated";
+    protected static final String PROFILE_PHOTO_NOT_FOUND = "profile.photo.not.found";
 
     // Identification message property keys
     protected static final String IDENTIFICATION_TYPE_NOT_FOUND = "identification.type.not.found";

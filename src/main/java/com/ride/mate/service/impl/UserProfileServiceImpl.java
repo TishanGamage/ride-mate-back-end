@@ -11,6 +11,7 @@ import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
 import com.ride.mate.resources.UserEmergencyContactDetailsRequestResource;
 import com.ride.mate.resources.UserIdentificationDetailsRequestResource;
+import com.ride.mate.resources.ProfilePhotoUpdateResource;
 import com.ride.mate.resources.UserProfileAddResource;
 import com.ride.mate.resources.UserProfileResponse;
 import com.ride.mate.resources.UserProfileUpdateResource;
@@ -43,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 4 15-03-2026    N/A          N/A          Tishan          Added getUserProfileByUserId method
  * 5 16-03-2026    N/A          N/A          Tishan          Changed getUserProfileByUserId to return UserProfileResponse
  * 6 18-03-2026    N/A          N/A          Tishan          Added updateWillingToDrive method
+ * 7 19-03-2026    N/A          N/A          Tishan          Added updateProfilePhoto method
  */
 @Slf4j
 @Service
@@ -399,7 +401,6 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     public UserProfile updateWillingToDrive(Long id, WillingToDriveUpdateResource request) {
 
         log.info("Processing willingToDrive update for user profile ID: {}", id);
-
         // Fetch existing user profile
         UserProfile userProfile = userProfileRepository.findByUserId(id)
                 .orElseThrow(() -> {
@@ -429,8 +430,38 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
     }
 
     @Override
-    public SuccessAndErrorDetailsResource updateRole(Long userId, UpdateRoleRequest request) {
-        log.info("Processing role update for user ID: {}", userId);
+    public UserProfile updateProfilePhoto(Long userId, ProfilePhotoUpdateResource request) {
+
+        log.info("Processing profile photo update for user ID: {}", userId);
+
+        // Fetch existing user profile by userId
+        UserProfile userProfile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("Profile photo update failed: User profile not found for user ID - {}", userId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        // Validate that the document exists
+        documentDetailsRepository.findById(request.getProfileImageDocumentId())
+                .ifPresentOrElse(
+                        userProfile::setProfileImageDocument,
+                        () -> {
+                            log.warn("Profile photo update failed: Document not found with ID - {}", request.getProfileImageDocumentId());
+                            throw new ValidateRecordException(environment.getProperty(PROFILE_PHOTO_NOT_FOUND), "message");
+                        }
+                );
+        // Update audit fields
+        userProfile.setModifiedDate(DateUtil.getDate());
+        userProfile.setModifiedUser(LoginAuthentication.getUserName());
+        userProfile.setSyncTs(DateUtil.getDate());
+
+        UserProfile updatedProfile = userProfileRepository.saveAndFlush(userProfile);
+        log.info("Profile photo updated successfully for user ID: {} with document ID: {}", userId, request.getProfileImageDocumentId());
+        return updatedProfile;
+    }
+
+    @Override
+    public SuccessAndErrorDetailsResource updateRole(Long userId, UpdateRoleRequest request) {        log.info("Processing role update for user ID: {}", userId);
 
         UserRole newRole;
         try {
