@@ -219,6 +219,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         shareRideDetail.setStatus("ACTIVE");
         shareRideDetail.setCreatedDate(DateUtil.getDate());
         shareRideDetail.setCreatedUser(LoginAuthentication.getUserName());
+        shareRideDetail.setSyncTs(DateUtil.getDate());
 
         shareRideDetailRepository.save(shareRideDetail);
         log.info("Share ride detail created with ID: {}", shareRideDetail.getId());
