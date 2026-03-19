@@ -2,11 +2,12 @@ package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.resources.CostSplitResponse;
 import com.ride.mate.resources.PassengerRideConfirmRequestResource;
-import com.ride.mate.resources.PassengerRideConfirmResponse;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
+import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideDetailService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.math.BigDecimal;
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Iruni           Initial Development
  * 2 19-03-2026    N/A          N/A          Iruni           Added calculate ride price endpoint
+ * 3 20-03-2026    N/A          N/A          Tishan           Added cost split and passenger confirm endpoints
  */
 
 @Slf4j
@@ -38,11 +40,14 @@ import java.math.BigDecimal;
 public class RideDetailController extends MessagePropertyBase {
 
     private final RideDetailService rideDetailService;
+    private final CostSplitService costSplitService;
     private final Environment environment;
 
     public RideDetailController(RideDetailService rideDetailService,
+                                CostSplitService costSplitService,
                                 Environment environment) {
         this.rideDetailService = rideDetailService;
+        this.costSplitService = costSplitService;
         this.environment = environment;
     }
 
@@ -73,7 +78,6 @@ public class RideDetailController extends MessagePropertyBase {
      * @param totalDistance Total distance in kilometers
      * @return ResponseEntity with calculated ride price details
      */
-
     @GetMapping("/calculate-price")
     public ResponseEntity<?> calculateRidePrice(
             @RequestParam("driverProfileId") Long driverProfileId,
@@ -81,6 +85,7 @@ public class RideDetailController extends MessagePropertyBase {
 
         log.info("Received request to calculate ride price for driver profile ID: {} with distance: {} km",
                 driverProfileId, totalDistance);
+
         RidePriceCalculationResponse response = rideDetailService.calculateRidePrice(driverProfileId, totalDistance);
 
         log.info("Ride price calculation successful: {}", response.getTotalRidePrice());
@@ -89,20 +94,57 @@ public class RideDetailController extends MessagePropertyBase {
     }
 
     /**
-     * Confirm a passenger joining a ride
+     * Confirm a passenger joining a ride.
+     * After confirmation, the cost split is automatically recalculated.
      *
-     * @param request PassengerRideConfirmRequestResource containing booking details
-     * @return ResponseEntity with booking confirmation
+     * @param request PassengerRideConfirmRequestResource
+     * @return ResponseEntity with cost split response
      */
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPassengerRide(@Valid @RequestBody PassengerRideConfirmRequestResource request) {
-        log.info("Received passenger ride confirmation request for ride ID: {} by user ID: {}",
+    public ResponseEntity<?> confirmPassengerRide(
+            @Valid @RequestBody PassengerRideConfirmRequestResource request) {
+
+        log.info("Received passenger ride confirm request for ride ID: {}, user ID: {}",
                 request.getRideDetailId(), request.getUserId());
 
-        PassengerRideConfirmResponse response = rideDetailService.confirmPassengerRide(request);
+        // Create the shared ride detail and recalculate cost split
+        CostSplitResponse response = rideDetailService.confirmPassengerRide(request);
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    /**
+     * Get cost split breakdown for a ride.
+     * Returns segment-by-segment cost analysis showing how costs are distributed
+     * among the driver and all passengers.
+     *
+     * @param rideDetailId The ride detail ID
+     * @return ResponseEntity with CostSplitResponse
+     */
+    @GetMapping("/{rideDetailId}/cost-split")
+    public ResponseEntity<?> getCostSplit(@PathVariable Long rideDetailId) {
 
+        log.info("Received request to get cost split for ride ID: {}", rideDetailId);
+
+        CostSplitResponse response = costSplitService.getCostSplit(rideDetailId);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Recalculate cost split for a ride.
+     * Useful when passengers join or leave mid-ride.
+     *
+     * @param rideDetailId The ride detail ID
+     * @return ResponseEntity with updated CostSplitResponse
+     */
+    @PostMapping("/{rideDetailId}/cost-split/recalculate")
+    public ResponseEntity<?> recalculateCostSplit(@PathVariable Long rideDetailId) {
+
+        log.info("Received request to recalculate cost split for ride ID: {}", rideDetailId);
+
+        CostSplitResponse response = costSplitService.calculateCostSplit(rideDetailId);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

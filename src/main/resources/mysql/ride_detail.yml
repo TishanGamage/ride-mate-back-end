@@ -137,3 +137,16 @@ databaseChangeLog:
                   constraints:
                     nullable: true
             tableName: driver_ride_detail
+
+  - changeSet:
+      id: 5
+      author: Tishan
+      changes:
+        - modifyDataType:
+            tableName: driver_ride_detail
+            columnName: total_ride_cost
+            newDataType: DECIMAL(10,2)
+        - modifyDataType:
+            tableName: driver_ride_detail
+            columnName: per_km_rate
+            newDataType: DECIMAL(10,2)

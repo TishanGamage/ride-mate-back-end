@@ -55,6 +55,7 @@ public class RideDetailRequestResource {
     @NotBlank(message = "{can.not.be.blank}")
     private String status;
 
-    @NotNull(message = "{invalid.value}")
+    private BigDecimal perKmRate;
+
     private BigDecimal totalRideCost;
 }

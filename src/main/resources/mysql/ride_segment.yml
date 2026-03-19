@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
       id: 1
-      author: Iruni
+      author: Tishan
       changes:
         - createTable:
-            tableName: shared_ride_detail
+            tableName: ride_segment
             columns:
               - column:
                   name: id
@@ -18,54 +18,62 @@ databaseChangeLog:
                   type: BIGINT
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_share_ride_detail_driver_profile
+                    foreignKeyName: fk_ride_segment_ride_detail
                     references: driver_ride_detail(id)
                     deleteCascade: true
               - column:
-                  name: request_id
-                  type: BIGINT
+                  name: segment_order
+                  type: INT
                   constraints:
                     nullable: false
               - column:
-                  name: user_id
-                  type: BIGINT
-                  constraints:
-                    nullable: false
-              - column:
-                  name: passenger_start_location_latitude
-                  type: DECIMAL(10,7)
-              - column:
-                  name: passenger_start_location_longitude
+                  name: start_latitude
                   type: DECIMAL(10,7)
                   constraints:
                     nullable: false
               - column:
-                  name: passenger_end_location_latitude
-                  type: DECIMAL(10,7)
-              - column:
-                  name: passenger_end_location_longitude
+                  name: start_longitude
                   type: DECIMAL(10,7)
                   constraints:
                     nullable: false
               - column:
-                  name: start_city
+                  name: end_latitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_longitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_label
                   type: VARCHAR(200)
+                  constraints:
+                    nullable: true
               - column:
-                  name: end_city
+                  name: end_label
                   type: VARCHAR(200)
+                  constraints:
+                    nullable: true
               - column:
-                  name: passenger_cost
-                  type: decimal(25,2)
+                  name: distance_km
+                  type: DECIMAL(10,2)
                   constraints:
                     nullable: false
               - column:
-                  name: passenger_ride_distance
-                  type: decimal(25,2)
+                  name: rider_count
+                  type: INT
                   constraints:
                     nullable: false
               - column:
-                  name: status
-                  type: VARCHAR(20)
+                  name: segment_cost
+                  type: DECIMAL(25,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cost_per_rider
+                  type: DECIMAL(25,2)
                   constraints:
                     nullable: false
               - column:
@@ -99,20 +107,4 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
-  - changeSet:
-      id: 2
-      author: Dulan
-      changes:
-        - addColumn:
-            tableName: shared_ride_detail
-            columns:
-              - column:
-                  name: passenger_start_city
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
-              - column:
-                  name: passenger_end_city
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: true
+
