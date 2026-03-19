@@ -2,6 +2,8 @@ package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.resources.PassengerRideConfirmRequestResource;
+import com.ride.mate.resources.PassengerRideConfirmResponse;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
@@ -50,7 +52,7 @@ public class RideDetailController extends MessagePropertyBase {
      * @param request RideDetailRequestResource containing ride information
      * @return ResponseEntity with success response
      */
-    @PostMapping
+    @PostMapping("/addRide")
     public ResponseEntity<?> createRideDetail(@Valid @RequestBody RideDetailRequestResource request) {
         log.info("Received request to create ride detail for driver profile ID: {}", request.getDriverProfileId());
 
@@ -84,6 +86,22 @@ public class RideDetailController extends MessagePropertyBase {
         log.info("Ride price calculation successful: {}", response.getTotalRidePrice());
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Confirm a passenger joining a ride
+     *
+     * @param request PassengerRideConfirmRequestResource containing booking details
+     * @return ResponseEntity with booking confirmation
+     */
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmPassengerRide(@Valid @RequestBody PassengerRideConfirmRequestResource request) {
+        log.info("Received passenger ride confirmation request for ride ID: {} by user ID: {}",
+                request.getRideDetailId(), request.getUserId());
+
+        PassengerRideConfirmResponse response = rideDetailService.confirmPassengerRide(request);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 

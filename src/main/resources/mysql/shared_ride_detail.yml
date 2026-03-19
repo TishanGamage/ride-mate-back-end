@@ -88,3 +88,20 @@ databaseChangeLog:
                   defaultValueNumeric: 0
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 2
+      author: Dulan
+      changes:
+        - addColumn:
+            tableName: shared_ride_detail
+            columns:
+              - column:
+                  name: passenger_start_city
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: passenger_end_city
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
