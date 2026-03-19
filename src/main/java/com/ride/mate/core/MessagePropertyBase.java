@@ -111,4 +111,7 @@ public abstract class MessagePropertyBase {
     protected static final String DRIVER_VEHICLE_NOT_FOUND = "driver.vehicle.not.found";
     protected static final String VEHICLE_TYPE_RATE_NOT_CONFIGURED = "vehicle.type.rate.not.configured";
     protected static final String RIDE_PRICE_CALCULATED = "ride.price.calculated";
+
+    // Ride detail validation message property keys
+    protected static final String AVAILABLE_SEATS_EXCEEDS_VEHICLE_CAPACITY = "available.seats.exceeds.vehicle.capacity";
 }
