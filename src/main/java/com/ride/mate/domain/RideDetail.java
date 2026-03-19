@@ -65,12 +65,6 @@ public class RideDetail extends BaseEntity implements Serializable {
     @Column(name = "trip_route")
     private String tripRoute;
 
-    @Column(name = "per_km_rate", precision = 10, scale = 7)
-    private BigDecimal perKmRate = BigDecimal.ZERO;
-
-    @Column(name = "total_ride_cost", precision = 10, scale = 7)
-    private BigDecimal totalRideCost = BigDecimal.ZERO;
-
     @Column(name = "alert_time")
     private Timestamp alertTime;
 
