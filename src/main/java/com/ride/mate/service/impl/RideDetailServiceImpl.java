@@ -104,6 +104,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         // Set audit fields
         rideDetail.setCreatedDate(DateUtil.getDate());
         rideDetail.setCreatedUser(LoginAuthentication.getUserName());
+        rideDetail.setSyncTs(DateUtil.getDate());
 
         // Save to database
         RideDetail savedRideDetail = rideDetailRepository.save(rideDetail);

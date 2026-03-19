@@ -57,7 +57,7 @@ public class RideDetailController extends MessagePropertyBase {
      * @param request RideDetailRequestResource containing ride information
      * @return ResponseEntity with success response
      */
-    @PostMapping
+    @PostMapping("/addRide")
     public ResponseEntity<?> createRideDetail(@Valid @RequestBody RideDetailRequestResource request) {
         log.info("Received request to create ride detail for driver profile ID: {}", request.getDriverProfileId());
 
