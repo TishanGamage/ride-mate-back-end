@@ -3,6 +3,7 @@ package com.ride.mate.controller;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.RideDetail;
 import com.ride.mate.resources.RideDetailRequestResource;
+import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.RideDetailService;
 import jakarta.validation.Valid;
@@ -11,6 +12,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 /**
  * RideDetail Controller
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 15-03-2026    N/A          N/A          Iruni           Initial Development
+ * 2 19-03-2026    N/A          N/A          Iruni           Added calculate ride price endpoint
  */
 
 @Slf4j
@@ -57,5 +61,28 @@ public class RideDetailController extends MessagePropertyBase {
         response.setMessages(environment.getProperty(RECORD_CREATED));
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Calculate ride price based on total distance and driver profile
+     * Algorithm: Get driver vehicle -> Get vehicle type -> Get per km rate -> Calculate price
+     *
+     * @param driverProfileId Driver profile ID
+     * @param totalDistance Total distance in kilometers
+     * @return ResponseEntity with calculated ride price details
+     */
+    @GetMapping("/calculate-price")
+    public ResponseEntity<?> calculateRidePrice(
+            @RequestParam("driverProfileId") Long driverProfileId,
+            @RequestParam("totalDistance") BigDecimal totalDistance) {
+
+        log.info("Received request to calculate ride price for driver profile ID: {} with distance: {} km",
+                driverProfileId, totalDistance);
+
+        RidePriceCalculationResponse response = rideDetailService.calculateRidePrice(driverProfileId, totalDistance);
+
+        log.info("Ride price calculation successful: {}", response.getTotalRidePrice());
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
