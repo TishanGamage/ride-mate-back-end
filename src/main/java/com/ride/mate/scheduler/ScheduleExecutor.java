@@ -1,0 +1,60 @@
+package com.ride.mate.scheduler;
+
+import com.ride.mate.service.VehicleTypeService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/**
+ * ScheduleExecutor
+ * Centralized scheduler for all time-based background tasks in RideMate.
+ * Handles periodic operations such as dynamic per km rate updates for vehicle types
+ * based on time-of-day (day/night pricing) similar to PickMe and Uber surge logic.
+ *
+ * @author Tishan
+ * @version 1.0.0
+ * @since 1.0.0
+ *
+ * # Date       Story Point    Task No      Author           Description
+ * ---------------------------------------------------------------------------
+ * 1 18-03-2026    N/A          N/A          Tishan          Initial Development
+ */
+@Slf4j
+@Component
+public class ScheduleExecutor {
+
+    private final VehicleTypeService vehicleTypeService;
+
+    public ScheduleExecutor(VehicleTypeService vehicleTypeService) {
+        this.vehicleTypeService = vehicleTypeService;
+    }
+
+    /**
+     * Hourly per km rate updater for all vehicle types.
+     * Runs at the start of every hour (e.g., 00:00, 01:00, 02:00 ...).
+     * Applies night rates between 20:00 – 05:59 and day rates from 06:00 – 19:59.
+     *
+     * <p>Rate schedule (approximate, edit values in {@code VehicleTypeCode} enum):</p>
+     * <pre>
+     *   Vehicle  | Day Rate (LKR/km) | Night Rate (LKR/km)
+     *   ---------|-------------------|--------------------
+     *   CAR      |      65.00        |       85.00
+     *   VAN      |      90.00        |      115.00
+     *   TUK      |      40.00        |       55.00
+     *   BIKE     |      30.00        |       42.00
+     * </pre>
+     *
+     * Cron expression: {@code 0 0 * * * *} → at second 0, minute 0 of every hour
+     */
+    @Scheduled(cron = "0 0 * * * *")
+    public void updateVehicleTypePerKmRates() {
+        log.info("=== [ScheduleExecutor] Hourly per km rate update triggered ===");
+        try {
+            vehicleTypeService.updatePerKmRates();
+            log.info("=== [ScheduleExecutor] Per km rate update completed successfully ===");
+        } catch (Exception e) {
+            log.error("=== [ScheduleExecutor] Per km rate update failed: {} ===", e.getMessage(), e);
+        }
+    }
+}
+

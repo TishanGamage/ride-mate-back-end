@@ -47,7 +47,7 @@ public class LoggingHandler {
         String sampled = request.getHeader("x-b3-sampled");
         String flags = request.getHeader("x-b3-flags");
         String spanContext = request.getHeader("x-ot-span-context");
-        String userName = LoginAuthentication.getUserName();
+        String userName = LoginAuthentication.getUserName() != null ? LoginAuthentication.getUserName() : request.getHeader("username");
 
         DefaultRequestHeaders.getInstance().setHeaders(userAgent, requestId, traceId, spanId,
             parentspanId, sampled, flags, spanContext, userName);

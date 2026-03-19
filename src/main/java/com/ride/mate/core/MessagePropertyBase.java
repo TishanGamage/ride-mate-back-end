@@ -13,6 +13,10 @@ package com.ride.mate.core;
  * 1 18-02-2026    N/A          N/A          Tishan          Initial Development
  * 2 09-03-2026    N/A          N/A          Tishan          Added JWT authentication constants
  * 3 18-03-2026    N/A          N/A          Tishan          Added FILE_SIZE_EXCEEDED constant
+ * 4 18-03-2026    N/A          N/A          Tishan          Added scheduler rate update constants
+ * 5 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
+ * 6 19-03-2026    N/A          N/A          Danushka          Removed PayHere config constants (moved to @Value injection)
+ * 7 19-03-2026    N/A          N/A          Tishan            Added Supabase configuration property key constants
  */
 public abstract class MessagePropertyBase {
 
@@ -89,4 +93,17 @@ public abstract class MessagePropertyBase {
     // Role update message property keys
     protected static final String ROLE_UPDATE_SUCCESS = "role.update.success";
     protected static final String ROLE_INVALID = "role.invalid";
+
+    // Scheduler message property keys
+    protected static final String SCHEDULER_RATE_UPDATE_SUCCESS = "scheduler.rate.update.success";
+    protected static final String SCHEDULER_RATE_UPDATE_FAILED = "scheduler.rate.update.failed";
+
+    // Payment message property keys
+    protected static final String SAVED_CARD_NOT_FOUND = "saved.card.not.found";
+    protected static final String PAYMENT_SIGNATURE_INVALID = "payment.signature.invalid";
+    protected static final String PAYMENT_CHARGE_FAILED = "payment.charge.failed";
+    protected static final String PAYMENT_ORDER_ID_DUPLICATE = "payment.order.id.duplicate";
+    protected static final String WITHDRAWAL_INSUFFICIENT_BALANCE = "withdrawal.insufficient.balance";
+    protected static final String WITHDRAWAL_REQUEST_NOT_FOUND = "withdrawal.request.not.found";
+    protected static final String DRIVER_EARNING_NOT_FOUND = "driver.earning.not.found";
 }
