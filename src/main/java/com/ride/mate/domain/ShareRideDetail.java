@@ -42,7 +42,13 @@ public class ShareRideDetail extends BaseEntity implements Serializable {
     private BigDecimal startLocationLongitude = BigDecimal.ZERO;
 
     @Column(name = "passenger_end_location_longitude", precision = 10, scale = 7)
-    private BigDecimal endLocationLongitude = BigDecimal.ZERO ;
+    private BigDecimal endLocationLongitude = BigDecimal.ZERO;
+
+    @Column(name = "passenger_start_city", length = 100)
+    private String startCity;
+
+    @Column(name = "passenger_end_city", length = 100)
+    private String endCity;
 
     @Column(name = "passenger_cost", precision = 25, scale = 2, nullable = false)
     private BigDecimal passengerCost;

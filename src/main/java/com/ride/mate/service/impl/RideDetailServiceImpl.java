@@ -5,12 +5,18 @@ import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.DriverProfile;
 import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.domain.ShareRideDetail;
+import com.ride.mate.domain.User;
 import com.ride.mate.domain.VehicleType;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.DriverProfileRepository;
 import com.ride.mate.repository.DriverVehicleDetailsRepository;
 import com.ride.mate.repository.RideDetailRepository;
+import com.ride.mate.repository.ShareRideDetailRepository;
+import com.ride.mate.repository.UserRepository;
+import com.ride.mate.resources.PassengerRideConfirmRequestResource;
+import com.ride.mate.resources.PassengerRideConfirmResponse;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.service.RideDetailService;
@@ -43,15 +49,21 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     private final RideDetailRepository rideDetailRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
+    private final ShareRideDetailRepository shareRideDetailRepository;
+    private final UserRepository userRepository;
     private final Environment environment;
 
     public RideDetailServiceImpl(RideDetailRepository rideDetailRepository,
                                  DriverProfileRepository driverProfileRepository,
                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
+                                 ShareRideDetailRepository shareRideDetailRepository,
+                                 UserRepository userRepository,
                                  Environment environment) {
         this.rideDetailRepository = rideDetailRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
+        this.shareRideDetailRepository = shareRideDetailRepository;
+        this.userRepository = userRepository;
         this.environment = environment;
     }
 
@@ -189,6 +201,77 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                 .totalDistance(totalDistance)
                 .perKmRate(perKmRate)
                 .totalRidePrice(totalRidePrice)
+                .build();
+    }
+
+    @Override
+    public PassengerRideConfirmResponse confirmPassengerRide(PassengerRideConfirmRequestResource request) {
+        log.info("Processing passenger ride confirmation for ride ID: {} by user ID: {}",
+                request.getRideDetailId(), request.getUserId());
+
+        // Validate ride exists
+        RideDetail rideDetail = rideDetailRepository.findById(request.getRideDetailId())
+                .orElseThrow(() -> {
+                    log.warn("Ride not found - ID: {}", request.getRideDetailId());
+                    return new ValidateRecordException(environment.getProperty(RIDE_NOT_FOUND), "message");
+                });
+
+        // Validate user exists
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> {
+                    log.warn("User not found - ID: {}", request.getUserId());
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        // Check ride is still open
+        if (!"ACTIVE".equalsIgnoreCase(rideDetail.getStatus())) {
+            log.warn("Ride ID: {} is not available for booking. Status: {}", rideDetail.getId(), rideDetail.getStatus());
+            throw new ValidateRecordException(environment.getProperty(RIDE_NOT_AVAILABLE), "message");
+        }
+
+        // Check passenger hasn't already joined this ride
+        if (shareRideDetailRepository.existsByRideDetailIdAndUserId(rideDetail.getId(), user.getId())) {
+            log.warn("User ID: {} has already confirmed ride ID: {}", user.getId(), rideDetail.getId());
+            throw new ValidateRecordException(environment.getProperty(PASSENGER_ALREADY_CONFIRMED), "message");
+        }
+
+        // Check available seats
+        long confirmedCount = shareRideDetailRepository.countByRideDetailIdAndStatus(rideDetail.getId(), "CONFIRMED");
+        if (confirmedCount >= rideDetail.getAvailableSeats()) {
+            log.warn("Ride ID: {} has no available seats. Confirmed: {}, Available: {}",
+                    rideDetail.getId(), confirmedCount, rideDetail.getAvailableSeats());
+            throw new ValidateRecordException(environment.getProperty(RIDE_NO_SEATS_AVAILABLE), "message");
+        }
+
+        // Create share ride detail
+        ShareRideDetail shareRideDetail = new ShareRideDetail();
+        shareRideDetail.setRideDetail(rideDetail);
+        shareRideDetail.setRequestId(request.getUserId());
+        shareRideDetail.setUser(user);
+        shareRideDetail.setStartLocationLongitude(request.getStartLocationLongitude());
+        shareRideDetail.setEndLocationLongitude(request.getEndLocationLongitude());
+        shareRideDetail.setStartCity(request.getStartCity());
+        shareRideDetail.setEndCity(request.getEndCity());
+        shareRideDetail.setPassengerRideDistance(request.getPassengerRideDistance());
+        shareRideDetail.setPassengerCost(request.getPassengerCost());
+        shareRideDetail.setStatus("CONFIRMED");
+        shareRideDetail.setCreatedDate(DateUtil.getDate());
+        shareRideDetail.setCreatedUser(LoginAuthentication.getUserName());
+        shareRideDetail.setSyncTs(DateUtil.getDate());
+
+        ShareRideDetail saved = shareRideDetailRepository.save(shareRideDetail);
+        log.info("Passenger ride confirmed successfully. ShareRideDetail ID: {}", saved.getId());
+
+        return PassengerRideConfirmResponse.builder()
+                .shareRideDetailId(saved.getId())
+                .rideDetailId(rideDetail.getId())
+                .userId(user.getId())
+                .passengerCost(saved.getPassengerCost())
+                .passengerRideDistance(saved.getPassengerRideDistance())
+                .startCity(saved.getStartCity())
+                .endCity(saved.getEndCity())
+                .status(saved.getStatus())
+                .message(environment.getProperty(RECORD_CREATED))
                 .build();
     }
 }

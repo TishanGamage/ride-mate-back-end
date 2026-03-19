@@ -1,6 +1,8 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.resources.PassengerRideConfirmRequestResource;
+import com.ride.mate.resources.PassengerRideConfirmResponse;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 
@@ -38,5 +40,13 @@ public interface RideDetailService {
      * @return RidePriceCalculationResponse with calculated price details
      */
     RidePriceCalculationResponse calculateRidePrice(Long driverProfileId, BigDecimal totalDistance);
+
+    /**
+     * Confirm a passenger joining a ride
+     *
+     * @param request Passenger ride confirm request
+     * @return PassengerRideConfirmResponse with booking details
+     */
+    PassengerRideConfirmResponse confirmPassengerRide(PassengerRideConfirmRequestResource request);
 }
 
