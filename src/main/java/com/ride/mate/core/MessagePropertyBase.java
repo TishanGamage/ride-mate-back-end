@@ -113,4 +113,10 @@ public abstract class MessagePropertyBase {
     protected static final String DRIVER_VEHICLE_NOT_FOUND = "driver.vehicle.not.found";
     protected static final String VEHICLE_TYPE_RATE_NOT_CONFIGURED = "vehicle.type.rate.not.configured";
     protected static final String RIDE_PRICE_CALCULATED = "ride.price.calculated";
+
+    // Cost splitting message property keys
+    protected static final String RIDE_DETAIL_NOT_FOUND = "ride.detail.not.found";
+    protected static final String COST_SPLIT_CALCULATED = "cost.split.calculated";
+    protected static final String NO_AVAILABLE_SEATS = "no.available.seats";
+    protected static final String PASSENGER_ALREADY_JOINED = "passenger.already.joined";
 }
