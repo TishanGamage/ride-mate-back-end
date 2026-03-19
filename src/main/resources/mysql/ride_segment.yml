@@ -1,0 +1,110 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: ride_segment
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: ride_detail_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ride_segment_ride_detail
+                    references: driver_ride_detail(id)
+                    deleteCascade: true
+              - column:
+                  name: segment_order
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_latitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_longitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_latitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_longitude
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_label
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: end_label
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: distance_km
+                  type: DECIMAL(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rider_count
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: segment_cost
+                  type: DECIMAL(25,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cost_per_rider
+                  type: DECIMAL(25,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
