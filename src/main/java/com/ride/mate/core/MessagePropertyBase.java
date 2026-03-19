@@ -106,4 +106,9 @@ public abstract class MessagePropertyBase {
     protected static final String WITHDRAWAL_INSUFFICIENT_BALANCE = "withdrawal.insufficient.balance";
     protected static final String WITHDRAWAL_REQUEST_NOT_FOUND = "withdrawal.request.not.found";
     protected static final String DRIVER_EARNING_NOT_FOUND = "driver.earning.not.found";
+
+    // Ride price calculation message property keys
+    protected static final String DRIVER_VEHICLE_NOT_FOUND = "driver.vehicle.not.found";
+    protected static final String VEHICLE_TYPE_RATE_NOT_CONFIGURED = "vehicle.type.rate.not.configured";
+    protected static final String RIDE_PRICE_CALCULATED = "ride.price.calculated";
 }
