@@ -27,7 +27,7 @@ import org.springframework.web.client.RestTemplate;
 @Transactional
 public class MLServiceImpl implements MLService {
 
-    @Value("${ml.service.base-url:http://localhost:8000}")
+    @Value("${ml.service.base-url}")
     private String mlServiceBaseUrl;
 
     @Value("${ml.service.enabled:true}")
