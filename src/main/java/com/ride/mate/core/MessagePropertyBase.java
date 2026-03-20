@@ -128,4 +128,6 @@ public abstract class MessagePropertyBase {
     protected static final String RIDE_NOT_AVAILABLE = "ride.not.available";
     protected static final String PASSENGER_ALREADY_CONFIRMED = "passenger.already.confirmed";
     protected static final String RIDE_NO_SEATS_AVAILABLE = "ride.no.seats.available";
+
+    protected static final String ACTIVE_RIDE_EXISTS = "active.ride.exists";
 }
