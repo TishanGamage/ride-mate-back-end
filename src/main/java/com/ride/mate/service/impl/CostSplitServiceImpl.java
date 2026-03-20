@@ -682,7 +682,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         if (waypoints.size() <= 2) return waypoints;
 
         List<Waypoint> result = new ArrayList<>();
-        result.add(waypoints.get(0));
+        result.add(waypoints.getFirst());
 
         for (int i = 1; i < waypoints.size(); i++) {
             Waypoint prev = result.get(result.size() - 1);

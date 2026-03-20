@@ -47,7 +47,7 @@ public class MarketingSiteServiceImpl extends MessagePropertyBase implements Mar
         log.info("Processing marketing site statistics fetch");
         long ridesCompleted = rideDetailRepository.countByStatus(RideStatus.COMPLETED);
         long activeUsers = userRepository.countByStatus(UserStatus.ACTIVE);
-        long verifiedDrivers = driverProfileRepository.countByAccountStatus(DriverStatus.ACTIVE);
+        long verifiedDrivers = driverProfileRepository.countByAccountStatus(DriverStatus.APPROVED);
         MarketingSiteStatsResponse response = new MarketingSiteStatsResponse();
         response.setRidesCompleted(ridesCompleted);
         response.setActiveUsers(activeUsers);
