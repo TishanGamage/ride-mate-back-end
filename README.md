@@ -153,7 +153,7 @@ The application follows a **layered architecture** with clear separation of conc
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure 
 
 ```
 com.ride.mate/
