@@ -87,7 +87,6 @@ public class AuthController extends MessagePropertyBase {
     @PostMapping(value = "/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest request) {
         log.info("Received verify code request for email: {}", request.getEmail());
-        log.debug("Request reached AuthController.verifyCode method");
         try {
             SuccessAndErrorDetailsResource response = authService.verifyCode(request);
             if (response != null && response.getIsValid()) {
