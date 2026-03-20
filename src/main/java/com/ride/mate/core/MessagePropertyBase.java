@@ -148,4 +148,13 @@ public abstract class MessagePropertyBase {
     protected static final String WALLET_DEBIT_SUCCESS = "wallet.debit.success";
     protected static final String WALLET_TRANSACTION_NOT_FOUND = "wallet.transaction.not.found";
     protected static final String INVALID_COMMISSION_PERCENTAGE = "invalid.commission.percentage";
+
+    // Shared Ride message property keys
+    protected static final String SHARED_RIDE_CREATED = "shared.ride.created";
+    protected static final String SHARED_RIDE_CONFIRMED = "shared.ride.confirmed";
+    protected static final String SHARED_RIDE_CANCELLED = "shared.ride.cancelled";
+    protected static final String SHARED_RIDE_NOT_FOUND = "shared.ride.not.found";
+    protected static final String SHARED_RIDE_COMPLETED = "shared.ride.completed";
+    protected static final String RIDE_NOT_ACTIVE = "ride.not.active";
+    protected static final String USER_NOT_FOUND = "user.not.found";
 }
