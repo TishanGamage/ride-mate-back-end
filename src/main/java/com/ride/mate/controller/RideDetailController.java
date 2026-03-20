@@ -166,4 +166,19 @@ public class RideDetailController extends MessagePropertyBase {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    /**
+     * Get active ride for a driver profile
+     *
+     * @param driverProfileId The driver profile ID
+     * @return ResponseEntity with active ride detail
+     */
+    @GetMapping("/driver/{driverProfileId}/active")
+    public ResponseEntity<?> getActiveRideByDriver(@PathVariable Long driverProfileId) {
+        log.info("Received request to get active ride for driver profile ID: {}", driverProfileId);
+
+        RideDetail rideDetail = rideDetailService.getActiveRideByDriverProfileId(driverProfileId);
+
+        return new ResponseEntity<>(rideDetail, HttpStatus.OK);
+    }
 }

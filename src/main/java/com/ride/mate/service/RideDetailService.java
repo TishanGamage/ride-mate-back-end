@@ -58,5 +58,13 @@ public interface RideDetailService {
      * @return Updated RideDetail entity
      */
     RideDetail endRide(Long rideDetailId);
+
+    /**
+     * Get active ride for a driver profile
+     *
+     * @param driverProfileId Driver profile ID
+     * @return Active RideDetail if exists
+     */
+    RideDetail getActiveRideByDriverProfileId(Long driverProfileId);
 }
 
