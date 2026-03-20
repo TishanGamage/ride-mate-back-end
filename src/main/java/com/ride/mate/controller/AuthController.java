@@ -135,4 +135,5 @@ public class AuthController extends MessagePropertyBase {
         SuccessAndErrorDetailsResource response = authService.resetPassword(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 }
