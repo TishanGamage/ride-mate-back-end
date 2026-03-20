@@ -9,6 +9,7 @@ import com.ride.mate.repository.*;
 import com.ride.mate.resources.CostSplitResponse;
 import com.ride.mate.resources.PassengerRideConfirmRequestResource;
 import com.ride.mate.resources.RideDetailRequestResource;
+import com.ride.mate.resources.RideDetailResponseResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideDetailService;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Ride Detail Service Implementation
@@ -264,15 +266,51 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     }
 
     @Override
-    public RideDetail getActiveRideByDriverProfileId(Long driverProfileId) {
+    public RideDetailResponseResource getActiveRideByDriverProfileId(Long driverProfileId) {
         log.info("Fetching active ride for driver profile ID: {}", driverProfileId);
 
-        return rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, "ACTIVE")
-                .orElseThrow(() -> {
-                    log.warn("No active ride found for driver profile ID: {}", driverProfileId);
-                    return new ValidateRecordException(
-                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
-                });
+        List<RideDetail> activeRides = rideDetailRepository
+                .findByDriverProfileIdAndStatus(driverProfileId, "ACTIVE");
+
+        if (activeRides.isEmpty()) {
+            log.warn("No active ride found for driver profile ID: {}", driverProfileId);
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+        }
+
+        return mapToResponse(activeRides.get(0));
+    }
+
+    @Override
+    public List<RideDetailResponseResource> getRidesByDriverProfileId(Long driverProfileId, String status) {
+        log.info("Fetching rides for driver profile ID: {}, status: {}", driverProfileId, status);
+
+        List<RideDetail> rides = (status != null && !status.isEmpty())
+                ? rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, status)
+                : rideDetailRepository.findByDriverProfileId(driverProfileId);
+
+        return rides.stream().map(this::mapToResponse).toList();
+    }
+
+    private RideDetailResponseResource mapToResponse(RideDetail ride) {
+        return RideDetailResponseResource.builder()
+                .id(ride.getId())
+                .driverProfileId(ride.getDriverProfile().getId())
+                .startLocationLongitude(ride.getStartLocationLongitude())
+                .startLocationLatitude(ride.getStartLocationLatitude())
+                .endLocationLongitude(ride.getEndLocationLongitude())
+                .endLocationLatitude(ride.getEndLocationLatitude())
+                .startCity(ride.getStartCity())
+                .endCity(ride.getEndCity())
+                .availableSeats(ride.getAvailableSeats())
+                .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
+                .totalRideDistance(ride.getTotalRideDistance())
+                .totalRideCost(ride.getTotalRideCost())
+                .perKmRate(ride.getPerKmRate())
+                .tripRoute(ride.getTripRoute())
+                .status(ride.getStatus())
+                .createdDate(ride.getCreatedDate() != null ? ride.getCreatedDate().toString() : null)
+                .build();
     }
 }
 

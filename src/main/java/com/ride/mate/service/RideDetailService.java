@@ -4,6 +4,7 @@ import com.ride.mate.domain.RideDetail;
 import com.ride.mate.resources.CostSplitResponse;
 import com.ride.mate.resources.PassengerRideConfirmRequestResource;
 import com.ride.mate.resources.RideDetailRequestResource;
+import com.ride.mate.resources.RideDetailResponseResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
 
 import java.math.BigDecimal;
@@ -63,8 +64,17 @@ public interface RideDetailService {
      * Get active ride for a driver profile
      *
      * @param driverProfileId Driver profile ID
-     * @return Active RideDetail if exists
+     * @return Active RideDetailResponseResource if exists
      */
-    RideDetail getActiveRideByDriverProfileId(Long driverProfileId);
+    RideDetailResponseResource getActiveRideByDriverProfileId(Long driverProfileId);
+
+    /**
+     * Get rides by driver profile ID with optional status filter
+     *
+     * @param driverProfileId Driver profile ID
+     * @param status Optional status filter
+     * @return List of RideDetailResponseResource
+     */
+    java.util.List<RideDetailResponseResource> getRidesByDriverProfileId(Long driverProfileId, String status);
 }
 
