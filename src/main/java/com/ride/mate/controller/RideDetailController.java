@@ -3,6 +3,7 @@ package com.ride.mate.controller;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.RideDetail;
 import com.ride.mate.resources.CostSplitResponse;
+import com.ride.mate.resources.RideDetailResponseResource;
 import com.ride.mate.resources.PassengerRideConfirmRequestResource;
 import com.ride.mate.resources.RideDetailRequestResource;
 import com.ride.mate.resources.RidePriceCalculationResponse;
@@ -168,7 +169,7 @@ public class RideDetailController extends MessagePropertyBase {
     }
 
     /**
-     * Get active ride for a driver profile
+     * Get active ride for a driver profile (returns the latest one)
      *
      * @param driverProfileId The driver profile ID
      * @return ResponseEntity with active ride detail
@@ -177,8 +178,24 @@ public class RideDetailController extends MessagePropertyBase {
     public ResponseEntity<?> getActiveRideByDriver(@PathVariable Long driverProfileId) {
         log.info("Received request to get active ride for driver profile ID: {}", driverProfileId);
 
-        RideDetail rideDetail = rideDetailService.getActiveRideByDriverProfileId(driverProfileId);
+        RideDetailResponseResource rideDetail = rideDetailService.getActiveRideByDriverProfileId(driverProfileId);
 
         return new ResponseEntity<>(rideDetail, HttpStatus.OK);
+    }
+
+    /**
+     * Get all rides for a driver profile, optionally filtered by status
+     *
+     * @param driverProfileId The driver profile ID
+     * @param status Optional status filter (e.g. ACTIVE, COMPLETED)
+     * @return ResponseEntity with list of ride details
+     */
+    @GetMapping("/driver/{driverProfileId}")
+    public ResponseEntity<?> getRidesByDriver(
+            @PathVariable Long driverProfileId,
+            @RequestParam(value = "status", required = false) String status) {
+        log.info("Received request to get rides for driver profile ID: {}, status: {}", driverProfileId, status);
+
+        return new ResponseEntity<>(rideDetailService.getRidesByDriverProfileId(driverProfileId, status), HttpStatus.OK);
     }
 }

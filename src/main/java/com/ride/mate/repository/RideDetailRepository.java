@@ -39,6 +39,6 @@ public interface RideDetailRepository extends JpaRepository<RideDetail, Long> {
 
     boolean existsRideDetailByDriverProfileIdAndStatus(Long driverProfileId , String status);
 
-    java.util.Optional<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, String status);
+    List<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, String status);
 }
 
