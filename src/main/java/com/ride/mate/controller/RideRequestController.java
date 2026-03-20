@@ -30,6 +30,7 @@ import java.util.List;
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
  * 2 21-03-2026    N/A          N/A          Tishan           Added cancel and estimate-cost endpoints
+ * 3 22-03-2026    N/A          N/A          Tishan           Moved getAvailableRides to ShareRideDetailController
  */
 @Slf4j
 @RestController
