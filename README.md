@@ -564,5 +564,5 @@ This project is developed as part of the **SDGP (Software Development Group Proj
 ---
 
 <p align="center">
-  Made with ❤️ by the RideMate Team
+  Made with ❤️ by the RideMate Team 
 </p>
