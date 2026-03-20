@@ -39,3 +39,5 @@ databaseChangeLog:
       file: classpath:/mysql/withdrawal_request.yml
   - include:
       file: classpath:/mysql/ride_segment.yml
+  - include:
+      file: classpath:/mysql/ride_request.yml

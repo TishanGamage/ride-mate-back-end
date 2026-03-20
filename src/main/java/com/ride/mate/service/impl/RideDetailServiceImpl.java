@@ -90,6 +90,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setStartLocationLatitude(request.getStartLocationLatitude());
         rideDetail.setEndLocationLatitude(request.getEndLocationLatitude());
         rideDetail.setStartCity(request.getStartCity());
+        rideDetail.setEndCity(request.getEndCity());
         rideDetail.setAvailableSeats(request.getAvailableSeats());
         rideDetail.setTotalRideDistance(request.getTotalRideDistance());
         rideDetail.setTripRoute(request.getTripRoute());

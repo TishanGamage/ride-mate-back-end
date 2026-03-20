@@ -46,6 +46,9 @@ public class RideDetail extends BaseEntity implements Serializable {
     @Column(name = "start_city", length = 100)
     private String startCity;
 
+    @Column(name = "end_city", length = 200)
+    private String endCity;
+
     @Column(name = "available_seats")
     private Long availableSeats;
 
