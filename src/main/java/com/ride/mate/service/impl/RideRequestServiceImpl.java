@@ -1,0 +1,387 @@
+package com.ride.mate.service.impl;
+
+import com.ride.mate.core.LoginAuthentication;
+import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.*;
+import com.ride.mate.enums.YesNo;
+import com.ride.mate.exception.ValidateRecordException;
+import com.ride.mate.repository.*;
+import com.ride.mate.resources.AvailableRideResponse;
+import com.ride.mate.resources.RideRequestResource;
+import com.ride.mate.resources.RideRequestResponse;
+import com.ride.mate.service.CostSplitService;
+import com.ride.mate.service.RideRequestService;
+import com.ride.mate.util.DateUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Ride Request Service Implementation
+ * Handles the ride request/accept/reject flow between passengers and drivers
+ *
+ * @author Tishan
+ * @version 1.0.0
+ * @since 1.0.0
+ *
+ * # Date       Story Point    Task No      Author           Description
+ * ---------------------------------------------------------------------------
+ * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ */
+@Slf4j
+@Service
+@Transactional
+public class RideRequestServiceImpl extends MessagePropertyBase implements RideRequestService {
+
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_ACCEPTED = "ACCEPTED";
+    private static final String STATUS_REJECTED = "REJECTED";
+    private static final BigDecimal DEFAULT_RADIUS_KM = new BigDecimal("15");
+
+    private final RideRequestRepository rideRequestRepository;
+    private final RideDetailRepository rideDetailRepository;
+    private final ShareRideDetailRepository shareRideDetailRepository;
+    private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final DriverProfileRepository driverProfileRepository;
+    private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
+    private final CostSplitService costSplitService;
+    private final Environment environment;
+
+    public RideRequestServiceImpl(RideRequestRepository rideRequestRepository,
+                                  RideDetailRepository rideDetailRepository,
+                                  ShareRideDetailRepository shareRideDetailRepository,
+                                  UserRepository userRepository,
+                                  UserProfileRepository userProfileRepository,
+                                  DriverProfileRepository driverProfileRepository,
+                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
+                                  CostSplitService costSplitService,
+                                  Environment environment) {
+        this.rideRequestRepository = rideRequestRepository;
+        this.rideDetailRepository = rideDetailRepository;
+        this.shareRideDetailRepository = shareRideDetailRepository;
+        this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
+        this.driverProfileRepository = driverProfileRepository;
+        this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
+        this.costSplitService = costSplitService;
+        this.environment = environment;
+    }
+
+    @Override
+    public List<AvailableRideResponse> getAvailableRides(BigDecimal endLat, BigDecimal endLng, BigDecimal radiusKm) {
+        log.info("Fetching available rides near destination ({}, {}), radius: {} km", endLat, endLng, radiusKm);
+
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+
+        if (activeRides.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
+
+        // Filter by proximity to passenger's destination if coordinates provided
+        List<RideDetail> filteredRides;
+        if (endLat != null && endLng != null) {
+            filteredRides = activeRides.stream()
+                    .filter(ride -> {
+                        BigDecimal dist = haversineDistance(
+                                endLat, endLng,
+                                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
+                        return dist.compareTo(effectiveRadius) <= 0;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            filteredRides = activeRides;
+        }
+
+        return filteredRides.stream()
+                .map(this::mapToAvailableRideResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public RideRequestResponse createRideRequest(RideRequestResource resource) {
+        log.info("Creating ride request for ride ID: {}, user ID: {}", resource.getRideDetailId(), resource.getUserId());
+
+        // 1. Validate ride exists and is active
+        RideDetail rideDetail = rideDetailRepository.findById(resource.getRideDetailId())
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message"));
+
+        if (!STATUS_ACTIVE.equals(rideDetail.getStatus())) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_NOT_AVAILABLE), "message");
+        }
+
+        // 2. Check available seats
+        long currentPassengers = shareRideDetailRepository
+                .countByRideDetailIdAndStatus(resource.getRideDetailId(), STATUS_ACTIVE);
+        if (rideDetail.getAvailableSeats() != null && currentPassengers >= rideDetail.getAvailableSeats()) {
+            throw new ValidateRecordException(
+                    environment.getProperty(NO_AVAILABLE_SEATS), "message");
+        }
+
+        // 3. Validate user exists
+        User user = userRepository.findById(resource.getUserId())
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RECORD_NOT_FOUND), "message"));
+
+        // 4. Check no duplicate pending/accepted request
+        boolean alreadyRequested = rideRequestRepository.existsByRideDetailIdAndUserIdAndStatusIn(
+                resource.getRideDetailId(), resource.getUserId(),
+                Arrays.asList(STATUS_PENDING, STATUS_ACCEPTED));
+        if (alreadyRequested) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_REQUEST_ALREADY_PENDING), "message");
+        }
+
+        // 5. Create the ride request
+        RideRequest rideRequest = new RideRequest();
+        rideRequest.setRideDetail(rideDetail);
+        rideRequest.setUser(user);
+        rideRequest.setPassengerStartLat(resource.getPassengerStartLat());
+        rideRequest.setPassengerStartLng(resource.getPassengerStartLng());
+        rideRequest.setPassengerEndLat(resource.getPassengerEndLat());
+        rideRequest.setPassengerEndLng(resource.getPassengerEndLng());
+        rideRequest.setStartCity(resource.getStartCity());
+        rideRequest.setEndCity(resource.getEndCity());
+        rideRequest.setPassengerRideDistance(resource.getPassengerRideDistance());
+        rideRequest.setStatus(STATUS_PENDING);
+        rideRequest.setCreatedDate(DateUtil.getDate());
+        rideRequest.setCreatedUser(LoginAuthentication.getUserName());
+        rideRequest.setSyncTs(DateUtil.getDate());
+
+        RideRequest saved = rideRequestRepository.save(rideRequest);
+        log.info("Ride request created with ID: {}", saved.getId());
+
+        return mapToRideRequestResponse(saved);
+    }
+
+    @Override
+    public List<RideRequestResponse> getPendingRequestsForDriver(Long driverProfileId) {
+        log.info("Fetching pending ride requests for driver profile ID: {}", driverProfileId);
+
+        // Validate driver profile exists
+        driverProfileRepository.findById(driverProfileId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message"));
+
+        List<RideRequest> pendingRequests = rideRequestRepository
+                .findByDriverProfileIdAndStatus(driverProfileId, STATUS_PENDING);
+
+        return pendingRequests.stream()
+                .map(this::mapToRideRequestResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public RideRequestResponse acceptRideRequest(Long rideRequestId) {
+        log.info("Accepting ride request ID: {}", rideRequestId);
+
+        RideRequest rideRequest = rideRequestRepository.findById(rideRequestId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RIDE_REQUEST_NOT_FOUND), "message"));
+
+        if (!STATUS_PENDING.equals(rideRequest.getStatus())) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_REQUEST_ALREADY_PROCESSED), "message");
+        }
+
+        RideDetail rideDetail = rideRequest.getRideDetail();
+
+        // Re-check available seats inside the transaction
+        long currentPassengers = shareRideDetailRepository
+                .countByRideDetailIdAndStatus(rideDetail.getId(), STATUS_ACTIVE);
+        if (rideDetail.getAvailableSeats() != null && currentPassengers >= rideDetail.getAvailableSeats()) {
+            throw new ValidateRecordException(
+                    environment.getProperty(NO_AVAILABLE_SEATS), "message");
+        }
+
+        // Update request status to ACCEPTED
+        rideRequest.setStatus(STATUS_ACCEPTED);
+        rideRequest.setModifiedDate(DateUtil.getDate());
+        rideRequest.setModifiedUser(LoginAuthentication.getUserName());
+        rideRequestRepository.save(rideRequest);
+
+        // Create the ShareRideDetail (passenger officially joins the ride)
+        ShareRideDetail shareRideDetail = new ShareRideDetail();
+        shareRideDetail.setRideDetail(rideDetail);
+        shareRideDetail.setRequestId(rideRequest.getId());
+        shareRideDetail.setUser(rideRequest.getUser());
+        shareRideDetail.setStartLocationLatitude(rideRequest.getPassengerStartLat());
+        shareRideDetail.setStartLocationLongitude(rideRequest.getPassengerStartLng());
+        shareRideDetail.setEndLocationLatitude(rideRequest.getPassengerEndLat());
+        shareRideDetail.setEndLocationLongitude(rideRequest.getPassengerEndLng());
+        shareRideDetail.setStartCity(rideRequest.getStartCity());
+        shareRideDetail.setEndCity(rideRequest.getEndCity());
+        shareRideDetail.setPassengerRideDistance(rideRequest.getPassengerRideDistance());
+        shareRideDetail.setPassengerCost(BigDecimal.ZERO); // recalculated below
+        shareRideDetail.setStatus(STATUS_ACTIVE);
+        shareRideDetail.setCreatedDate(DateUtil.getDate());
+        shareRideDetail.setCreatedUser(LoginAuthentication.getUserName());
+        shareRideDetail.setSyncTs(DateUtil.getDate());
+
+        shareRideDetailRepository.save(shareRideDetail);
+        log.info("ShareRideDetail created for accepted request ID: {}", rideRequestId);
+
+        // Recalculate cost split
+        costSplitService.calculateCostSplit(rideDetail.getId());
+
+        log.info("Ride request {} accepted, passenger {} joined ride {}",
+                rideRequestId, rideRequest.getUser().getId(), rideDetail.getId());
+
+        return mapToRideRequestResponse(rideRequest);
+    }
+
+    @Override
+    public RideRequestResponse rejectRideRequest(Long rideRequestId) {
+        log.info("Rejecting ride request ID: {}", rideRequestId);
+
+        RideRequest rideRequest = rideRequestRepository.findById(rideRequestId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RIDE_REQUEST_NOT_FOUND), "message"));
+
+        if (!STATUS_PENDING.equals(rideRequest.getStatus())) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_REQUEST_ALREADY_PROCESSED), "message");
+        }
+
+        rideRequest.setStatus(STATUS_REJECTED);
+        rideRequest.setModifiedDate(DateUtil.getDate());
+        rideRequest.setModifiedUser(LoginAuthentication.getUserName());
+        rideRequestRepository.save(rideRequest);
+
+        log.info("Ride request {} rejected", rideRequestId);
+
+        return mapToRideRequestResponse(rideRequest);
+    }
+
+    @Override
+    public List<RideRequestResponse> getRequestsByPassenger(Long userId) {
+        log.info("Fetching ride requests for user ID: {}", userId);
+        List<RideRequest> requests = rideRequestRepository.findByUserId(userId);
+        return requests.stream()
+                .map(this::mapToRideRequestResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ─── Helper methods ─────────────────────────────────────────────
+
+    private RideRequestResponse mapToRideRequestResponse(RideRequest rideRequest) {
+        User user = rideRequest.getUser();
+        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElse(null);
+
+        String profileImageUrl = null;
+        if (profile != null && profile.getProfileImageDocument() != null) {
+            profileImageUrl = profile.getProfileImageDocument().getDocumentUrl();
+        }
+
+        return RideRequestResponse.builder()
+                .id(rideRequest.getId())
+                .rideDetailId(rideRequest.getRideDetail().getId())
+                .userId(user.getId())
+                .passengerFirstName(user.getFirstName())
+                .passengerLastName(user.getLastName())
+                .passengerEmail(user.getEmail())
+                .passengerPhone(user.getPhoneNumber())
+                .passengerProfileImageUrl(profileImageUrl)
+                .passengerStartLat(rideRequest.getPassengerStartLat())
+                .passengerStartLng(rideRequest.getPassengerStartLng())
+                .passengerEndLat(rideRequest.getPassengerEndLat())
+                .passengerEndLng(rideRequest.getPassengerEndLng())
+                .startCity(rideRequest.getStartCity())
+                .endCity(rideRequest.getEndCity())
+                .passengerRideDistance(rideRequest.getPassengerRideDistance())
+                .status(rideRequest.getStatus())
+                .createdDate(rideRequest.getCreatedDate() != null ? rideRequest.getCreatedDate().toString() : null)
+                .build();
+    }
+
+    private AvailableRideResponse mapToAvailableRideResponse(RideDetail ride) {
+        DriverProfile driverProfile = ride.getDriverProfile();
+        User driverUser = driverProfile.getUser();
+
+        // Get driver profile image
+        String driverProfileImageUrl = null;
+        UserProfile driverUserProfile = userProfileRepository.findByUserId(driverUser.getId()).orElse(null);
+        if (driverUserProfile != null && driverUserProfile.getProfileImageDocument() != null) {
+            driverProfileImageUrl = driverUserProfile.getProfileImageDocument().getDocumentUrl();
+        }
+
+        // Get vehicle details
+        String vehicleTypeName = null;
+        String vehicleMakeName = null;
+        String vehicleModelName = null;
+        String vehicleColor = null;
+        String vehiclePlateNumber = null;
+        DriverVehicleDetails vehicle = driverVehicleDetailsRepository
+                .findByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES)
+                .orElse(null);
+        if (vehicle != null) {
+            vehicleTypeName = vehicle.getVehicleType() != null ? vehicle.getVehicleType().getName() : null;
+            vehicleMakeName = vehicle.getVehicleMake() != null ? vehicle.getVehicleMake().getName() : null;
+            vehicleModelName = vehicle.getVehicleModel() != null ? vehicle.getVehicleModel().getName() : null;
+            vehicleColor = vehicle.getColor();
+            vehiclePlateNumber = vehicle.getRegistrationNumber();
+        }
+
+        long currentPassengers = shareRideDetailRepository.countByRideDetailIdAndStatus(ride.getId(), STATUS_ACTIVE);
+
+        return AvailableRideResponse.builder()
+                .rideDetailId(ride.getId())
+                .driverFirstName(driverUser.getFirstName())
+                .driverLastName(driverUser.getLastName())
+                .driverProfileImageUrl(driverProfileImageUrl)
+                .driverRating(driverProfile.getRatingAsDriver())
+                .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
+                .vehicleTypeName(vehicleTypeName)
+                .vehicleMakeName(vehicleMakeName)
+                .vehicleModelName(vehicleModelName)
+                .vehicleColor(vehicleColor)
+                .vehiclePlateNumber(vehiclePlateNumber)
+                .startCity(ride.getStartCity())
+                .endCity(ride.getEndCity())
+                .startLat(ride.getStartLocationLatitude())
+                .startLng(ride.getStartLocationLongitude())
+                .endLat(ride.getEndLocationLatitude())
+                .endLng(ride.getEndLocationLongitude())
+                .totalRideDistance(ride.getTotalRideDistance())
+                .totalRideCost(ride.getTotalRideCost())
+                .perKmRate(ride.getPerKmRate())
+                .availableSeats(ride.getAvailableSeats())
+                .currentPassengers(currentPassengers)
+                .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
+                .status(ride.getStatus())
+                .build();
+    }
+
+    /**
+     * Haversine formula to calculate distance between two lat/lng points in kilometers.
+     */
+    private BigDecimal haversineDistance(BigDecimal lat1, BigDecimal lng1, BigDecimal lat2, BigDecimal lng2) {
+        if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
+            return new BigDecimal("9999"); // large value so it's filtered out
+        }
+        double R = 6371.0; // Earth radius in km
+        double dLat = Math.toRadians(lat2.subtract(lat1).doubleValue());
+        double dLon = Math.toRadians(lng2.subtract(lng1).doubleValue());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1.doubleValue()))
+                * Math.cos(Math.toRadians(lat2.doubleValue()))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c;
+        return BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_UP);
+    }
+}
+

@@ -75,6 +75,13 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                             environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message");
                 });
 
+        if(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(request.getDriverProfileId(),"ACTIVE")){
+            log.warn("Validation failed: Active ride already exists for driver profile ID: {}",
+                    request.getDriverProfileId());
+            throw new ValidateRecordException(
+                    environment.getProperty(ACTIVE_RIDE_EXISTS), "errorMessage");
+        }
+
         // Create and populate ride detail
         RideDetail rideDetail = new RideDetail();
         rideDetail.setDriverProfile(driverProfile);
@@ -83,6 +90,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setStartLocationLatitude(request.getStartLocationLatitude());
         rideDetail.setEndLocationLatitude(request.getEndLocationLatitude());
         rideDetail.setStartCity(request.getStartCity());
+        rideDetail.setEndCity(request.getEndCity());
         rideDetail.setAvailableSeats(request.getAvailableSeats());
         rideDetail.setTotalRideDistance(request.getTotalRideDistance());
         rideDetail.setTripRoute(request.getTripRoute());

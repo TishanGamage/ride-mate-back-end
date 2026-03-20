@@ -130,6 +130,16 @@ public abstract class MessagePropertyBase {
     protected static final String PASSENGER_ALREADY_CONFIRMED = "passenger.already.confirmed";
     protected static final String RIDE_NO_SEATS_AVAILABLE = "ride.no.seats.available";
 
+    protected static final String ACTIVE_RIDE_EXISTS = "active.ride.exists";
+
+    // Ride request message property keys
+    protected static final String RIDE_REQUEST_NOT_FOUND = "ride.request.not.found";
+    protected static final String RIDE_REQUEST_ALREADY_PENDING = "ride.request.already.pending";
+    protected static final String RIDE_REQUEST_ALREADY_PROCESSED = "ride.request.already.processed";
+    protected static final String RIDE_REQUEST_CREATED = "ride.request.created";
+    protected static final String RIDE_REQUEST_ACCEPTED = "ride.request.accepted";
+    protected static final String RIDE_REQUEST_REJECTED = "ride.request.rejected";
+
     // Driver Wallet message property keys
     protected static final String WALLET_NOT_FOUND = "wallet.not.found";
     protected static final String WALLET_ALREADY_EXISTS = "wallet.already.exists";

@@ -41,6 +41,8 @@ public class RideDetailRequestResource {
     @NotBlank(message = "{can.not.be.blank}")
     private String startCity;
 
+    private String endCity;
+
     @NotNull(message = "{invalid.value}")
     private Long availableSeats;
 

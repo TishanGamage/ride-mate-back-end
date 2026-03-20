@@ -1,0 +1,103 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Tishan
+      changes:
+        - createTable:
+            tableName: ride_request
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: ride_detail_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ride_request_ride_detail
+                    references: driver_ride_detail(id)
+                    deleteCascade: true
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ride_request_user
+                    references: user(id)
+              - column:
+                  name: passenger_start_lat
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passenger_start_lng
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passenger_end_lat
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passenger_end_lng
+                  type: DECIMAL(10,7)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_city
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: end_city
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: passenger_ride_distance
+                  type: DECIMAL(25,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sync_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+

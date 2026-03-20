@@ -150,3 +150,17 @@ databaseChangeLog:
             tableName: driver_ride_detail
             columnName: per_km_rate
             newDataType: DECIMAL(10,2)
+
+  - changeSet:
+      id: 6
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: driver_ride_detail
+            columns:
+              - column:
+                  name: end_city
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: true
+
