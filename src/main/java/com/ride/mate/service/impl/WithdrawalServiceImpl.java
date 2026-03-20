@@ -34,7 +34,7 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 18-03-2026    N/A          N/A          Danushka          Initial Development
- * 2 20-03-2026    N/A          N/A          Tishan            Integrated wallet debit on withdrawal approval
+ * 2 20-03-2026    N/A          N/A          Danushka            Integrated wallet debit on withdrawal approval
  */@Slf4j
 @Service
 @Transactional

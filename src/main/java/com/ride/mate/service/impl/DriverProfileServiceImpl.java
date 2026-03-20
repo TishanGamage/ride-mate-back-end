@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted evaluation
  * 3 18-03-2026    N/A          N/A          Tishan          Added vehicleModel, multiple vehicle image/insurance/revenue license docs
- * 4 20-03-2026    N/A          N/A          Tishan          Added wallet initialization on new driver profile creation
+ * 4 20-03-2026    N/A          N/A          Danushka          Added wallet initialization on new driver profile creation
  */
 @Slf4j
 @Service

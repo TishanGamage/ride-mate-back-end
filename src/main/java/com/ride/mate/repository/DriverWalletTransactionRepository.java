@@ -14,13 +14,13 @@ import java.util.List;
  * DriverWalletTransactionRepository
  * Data access layer for DriverWalletTransaction entity
  *
- * @author Tishan
+ * @author Danushka
  * @version 1.0.0
  * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 20-03-2026    N/A          N/A          Tishan          Initial Development
+ * 1 20-03-2026    N/A          N/A          Danushka          Initial Development
  */
 @Repository
 public interface DriverWalletTransactionRepository extends JpaRepository<DriverWalletTransaction, Long> {

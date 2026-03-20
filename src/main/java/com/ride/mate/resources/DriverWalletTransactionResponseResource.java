@@ -11,13 +11,13 @@ import java.sql.Timestamp;
  * DriverWalletTransactionResponseResource
  * Response DTO for individual wallet transaction details
  *
- * @author Tishan
+ * @author Danushka
  * @version 1.0.0
  * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 20-03-2026    N/A          N/A          Tishan          Initial Development
+ * 1 20-03-2026    N/A          N/A          Danushka          Initial Development
  */
 @Getter
 @Setter

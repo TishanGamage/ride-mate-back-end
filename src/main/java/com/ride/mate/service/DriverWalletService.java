@@ -14,14 +14,14 @@ import java.util.List;
  * and wallet/transaction retrieval.
  * Commission percentage is configured in application.properties (ride-mate.commission.default-percentage).
  *
- * @author Tishan
+ * @author Danushka
  * @version 1.0.0
  * @since 1.0.0
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 20-03-2026    N/A          N/A          Tishan          Initial Development
- * 2 20-03-2026    N/A          N/A          Tishan          Commission percentage from application.properties
+ * 1 20-03-2026    N/A          N/A          Danushka          Initial Development
+ * 2 20-03-2026    N/A          N/A          Danushka          Commission percentage from application.properties
  */
 public interface DriverWalletService {
 

@@ -17,7 +17,7 @@ package com.ride.mate.core;
  * 5 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
  * 6 19-03-2026    N/A          N/A          Danushka          Removed PayHere config constants (moved to @Value injection)
  * 7 19-03-2026    N/A          N/A          Tishan            Added Supabase configuration property key constants
- * 8 20-03-2026    N/A          N/A          Tishan            Added Driver Wallet message constants
+ * 8 20-03-2026    N/A          N/A          Danushka            Added Driver Wallet message constants
  */
 public abstract class MessagePropertyBase {
 
