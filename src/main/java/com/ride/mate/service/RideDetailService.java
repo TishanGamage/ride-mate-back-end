@@ -50,5 +50,13 @@ public interface RideDetailService {
      * @return CostSplitResponse with updated cost breakdown
      */
     CostSplitResponse confirmPassengerRide(PassengerRideConfirmRequestResource request);
+
+    /**
+     * End an active ride by updating its status to COMPLETED
+     *
+     * @param rideDetailId Ride detail ID
+     * @return Updated RideDetail entity
+     */
+    RideDetail endRide(Long rideDetailId);
 }
 
