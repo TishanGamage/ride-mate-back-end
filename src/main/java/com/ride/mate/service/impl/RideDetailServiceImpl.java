@@ -240,5 +240,39 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
 
         return costSplit;
     }
+
+    @Override
+    public RideDetail endRide(Long rideDetailId) {
+        log.info("Processing end ride for ride detail ID: {}", rideDetailId);
+
+        RideDetail rideDetail = rideDetailRepository.findById(rideDetailId)
+                .orElseThrow(() -> {
+                    log.warn("Ride detail not found: {}", rideDetailId);
+                    return new ValidateRecordException(
+                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+                });
+
+        rideDetail.setStatus("COMPLETED");
+        rideDetail.setModifiedDate(DateUtil.getDate());
+        rideDetail.setModifiedUser(LoginAuthentication.getUserName());
+        rideDetail.setSyncTs(DateUtil.getDate());
+
+        RideDetail updatedRide = rideDetailRepository.save(rideDetail);
+        log.info("Ride ended successfully for ride detail ID: {}", rideDetailId);
+
+        return updatedRide;
+    }
+
+    @Override
+    public RideDetail getActiveRideByDriverProfileId(Long driverProfileId) {
+        log.info("Fetching active ride for driver profile ID: {}", driverProfileId);
+
+        return rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, "ACTIVE")
+                .orElseThrow(() -> {
+                    log.warn("No active ride found for driver profile ID: {}", driverProfileId);
+                    return new ValidateRecordException(
+                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+                });
+    }
 }
 

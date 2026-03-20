@@ -147,4 +147,38 @@ public class RideDetailController extends MessagePropertyBase {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    /**
+     * End an active ride by updating its status to COMPLETED
+     *
+     * @param rideDetailId The ride detail ID
+     * @return ResponseEntity with success response
+     */
+    @PutMapping("/{rideDetailId}/end")
+    public ResponseEntity<?> endRide(@PathVariable Long rideDetailId) {
+        log.info("Received request to end ride ID: {}", rideDetailId);
+
+        RideDetail rideDetail = rideDetailService.endRide(rideDetailId);
+
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(rideDetail.getId());
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Get active ride for a driver profile
+     *
+     * @param driverProfileId The driver profile ID
+     * @return ResponseEntity with active ride detail
+     */
+    @GetMapping("/driver/{driverProfileId}/active")
+    public ResponseEntity<?> getActiveRideByDriver(@PathVariable Long driverProfileId) {
+        log.info("Received request to get active ride for driver profile ID: {}", driverProfileId);
+
+        RideDetail rideDetail = rideDetailService.getActiveRideByDriverProfileId(driverProfileId);
+
+        return new ResponseEntity<>(rideDetail, HttpStatus.OK);
+    }
 }
