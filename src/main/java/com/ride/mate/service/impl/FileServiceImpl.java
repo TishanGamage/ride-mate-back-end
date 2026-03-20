@@ -120,7 +120,7 @@ public class FileServiceImpl extends MessagePropertyBase implements FileService 
             // Set headers
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + "sb_secret_Q6hBRMAsL9_Kt-Hj78KUoA_twkLhrsn");
-            headers.set("apikey", supabaseKey);
+            headers.set("apikey", "sb_secret_Q6hBRMAsL9_Kt-Hj78KUoA_twkLhrsn");
             headers.set("x-upsert", "true");
             headers.setContentType(MediaType.parseMediaType(file.getContentType() != null ? file.getContentType() : "application/octet-stream"));
 
