@@ -1,0 +1,106 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Danushka
+      changes:
+        - createTable:
+            tableName: driver_wallet_transaction
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: false
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sync_ts
+                  type: DATETIME
+              - column:
+                  name: driver_wallet_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_wallet_txn_wallet
+                    references: driver_wallet(id)
+              - column:
+                  name: ride_detail_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_wallet_txn_ride
+                    references: driver_ride_detail(id)
+              - column:
+                  name: driver_earning_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_wallet_txn_earning
+                    references: driver_earning(id)
+              - column:
+                  name: withdrawal_request_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_wallet_txn_withdrawal
+                    references: withdrawal_request(id)
+              - column:
+                  name: transaction_type
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: gross_amount
+                  type: DECIMAL(12,2)
+                  defaultValueNumeric: 0.00
+                  constraints:
+                    nullable: false
+              - column:
+                  name: commission_percentage
+                  type: DECIMAL(5,2)
+                  defaultValueNumeric: 0.00
+              - column:
+                  name: commission_amount
+                  type: DECIMAL(12,2)
+                  defaultValueNumeric: 0.00
+              - column:
+                  name: net_amount
+                  type: DECIMAL(12,2)
+                  defaultValueNumeric: 0.00
+                  constraints:
+                    nullable: false
+              - column:
+                  name: balance_after
+                  type: DECIMAL(12,2)
+                  defaultValueNumeric: 0.00
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(10)
+                  defaultValue: LKR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: created_date
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_user
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modified_date
+                  type: DATETIME
+              - column:
+                  name: modified_user
+                  type: VARCHAR(100)
+

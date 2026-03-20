@@ -19,6 +19,7 @@ import com.ride.mate.resources.DriverProfileResponse;
 import com.ride.mate.resources.DriverVehicleDetailsResponse;
 import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
 import com.ride.mate.service.DriverProfileService;
+import com.ride.mate.service.DriverWalletService;
 import com.ride.mate.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
  * 1 16-03-2026    N/A          N/A          Tishan          Initial Development
  * 2 17-03-2026    N/A          N/A          Tishan          Added driverProfileCompleted evaluation
  * 3 18-03-2026    N/A          N/A          Tishan          Added vehicleModel, multiple vehicle image/insurance/revenue license docs
+ * 4 20-03-2026    N/A          N/A          Danushka          Added wallet initialization on new driver profile creation
  */
 @Slf4j
 @Service
@@ -54,6 +56,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
     private final VehicleMakeRepository vehicleMakeRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final DocumentDetailsRepository documentDetailsRepository;
+    private final DriverWalletService driverWalletService;
     private final Environment environment;
 
     public DriverProfileServiceImpl(UserRepository userRepository,
@@ -63,6 +66,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                                     VehicleMakeRepository vehicleMakeRepository,
                                     VehicleModelRepository vehicleModelRepository,
                                     DocumentDetailsRepository documentDetailsRepository,
+                                    DriverWalletService driverWalletService,
                                     Environment environment) {
         this.userRepository = userRepository;
         this.driverProfileRepository = driverProfileRepository;
@@ -71,6 +75,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         this.vehicleMakeRepository = vehicleMakeRepository;
         this.vehicleModelRepository = vehicleModelRepository;
         this.documentDetailsRepository = documentDetailsRepository;
+        this.driverWalletService = driverWalletService;
         this.environment = environment;
     }
 
@@ -131,6 +136,12 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         // Save the driver profile
         DriverProfile savedDriverProfile = driverProfileRepository.saveAndFlush(driverProfile);
         log.info("Driver profile saved successfully with ID: {} for user ID: {}", savedDriverProfile.getId(), userId);
+
+        // Initialize wallet for new driver profiles
+        if (isNew) {
+            driverWalletService.initializeWallet(savedDriverProfile);
+            log.info("Wallet initialized for new driver profile ID: {}", savedDriverProfile.getId());
+        }
 
         // Handle vehicle details if provided
         boolean hasVehicleDetails = false;

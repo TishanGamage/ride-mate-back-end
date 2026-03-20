@@ -17,6 +17,7 @@ package com.ride.mate.core;
  * 5 18-03-2026    N/A          N/A          Danushka          Added Payment and Withdrawal constants
  * 6 19-03-2026    N/A          N/A          Danushka          Removed PayHere config constants (moved to @Value injection)
  * 7 19-03-2026    N/A          N/A          Tishan            Added Supabase configuration property key constants
+ * 8 20-03-2026    N/A          N/A          Danushka            Added Driver Wallet message constants
  */
 public abstract class MessagePropertyBase {
 
@@ -138,4 +139,13 @@ public abstract class MessagePropertyBase {
     protected static final String RIDE_REQUEST_CREATED = "ride.request.created";
     protected static final String RIDE_REQUEST_ACCEPTED = "ride.request.accepted";
     protected static final String RIDE_REQUEST_REJECTED = "ride.request.rejected";
+
+    // Driver Wallet message property keys
+    protected static final String WALLET_NOT_FOUND = "wallet.not.found";
+    protected static final String WALLET_ALREADY_EXISTS = "wallet.already.exists";
+    protected static final String WALLET_INSUFFICIENT_BALANCE = "wallet.insufficient.balance";
+    protected static final String WALLET_CREDIT_SUCCESS = "wallet.credit.success";
+    protected static final String WALLET_DEBIT_SUCCESS = "wallet.debit.success";
+    protected static final String WALLET_TRANSACTION_NOT_FOUND = "wallet.transaction.not.found";
+    protected static final String INVALID_COMMISSION_PERCENTAGE = "invalid.commission.percentage";
 }

@@ -41,3 +41,7 @@ databaseChangeLog:
       file: classpath:/mysql/ride_segment.yml
   - include:
       file: classpath:/mysql/ride_request.yml
+  - include:
+      file: classpath:/mysql/driver_wallet.yml
+  - include:
+      file: classpath:/mysql/driver_wallet_transaction.yml

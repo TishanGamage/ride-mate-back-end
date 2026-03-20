@@ -11,6 +11,7 @@ import com.ride.mate.repository.DriverEarningRepository;
 import com.ride.mate.repository.DriverProfileRepository;
 import com.ride.mate.repository.WithdrawalRequestRepository;
 import com.ride.mate.resources.WithdrawalRequestAddResource;
+import com.ride.mate.service.DriverWalletService;
 import com.ride.mate.service.WithdrawalService;
 import com.ride.mate.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 18-03-2026    N/A          N/A          Danushka          Initial Development
+ * 2 20-03-2026    N/A          N/A          Danushka            Integrated wallet debit on withdrawal approval
  */@Slf4j
 @Service
 @Transactional
@@ -41,15 +43,18 @@ public class WithdrawalServiceImpl extends MessagePropertyBase implements Withdr
     private final WithdrawalRequestRepository withdrawalRequestRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final DriverEarningRepository driverEarningRepository;
+    private final DriverWalletService driverWalletService;
     private final Environment environment;
 
     public WithdrawalServiceImpl(WithdrawalRequestRepository withdrawalRequestRepository,
                                  DriverProfileRepository driverProfileRepository,
                                  DriverEarningRepository driverEarningRepository,
+                                 DriverWalletService driverWalletService,
                                  Environment environment) {
         this.withdrawalRequestRepository = withdrawalRequestRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.driverEarningRepository = driverEarningRepository;
+        this.driverWalletService = driverWalletService;
         this.environment = environment;
     }
 
@@ -110,7 +115,7 @@ public class WithdrawalServiceImpl extends MessagePropertyBase implements Withdr
         withdrawalRequest.setModifiedDate(DateUtil.getDate());
         withdrawalRequest.setModifiedUser(SYSTEM);
 
-        // If approved, mark matching earnings as PAID
+        // If approved, mark matching earnings as PAID and debit wallet
         if (WithdrawalStatus.APPROVED.equals(status)) {
             List<DriverEarning> pendingEarnings = driverEarningRepository
                     .findByDriverProfileIdAndStatus(withdrawalRequest.getDriverProfile().getId(), PaymentStatus.PENDING);
@@ -125,6 +130,13 @@ public class WithdrawalServiceImpl extends MessagePropertyBase implements Withdr
                 remaining = remaining.subtract(earning.getAmount());
             }
             log.info("Marked earnings as PAID for driverProfileId: {}", withdrawalRequest.getDriverProfile().getId());
+
+            // Debit wallet balance
+            driverWalletService.debitWithdrawal(
+                    withdrawalRequest.getDriverProfile().getId(),
+                    withdrawalRequest.getAmount(),
+                    withdrawalRequest.getId());
+            log.info("Wallet debited for withdrawal ID: {}", withdrawalRequest.getId());
         }
 
         WithdrawalRequest updated = withdrawalRequestRepository.save(withdrawalRequest);
