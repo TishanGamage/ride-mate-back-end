@@ -262,5 +262,17 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
 
         return updatedRide;
     }
+
+    @Override
+    public RideDetail getActiveRideByDriverProfileId(Long driverProfileId) {
+        log.info("Fetching active ride for driver profile ID: {}", driverProfileId);
+
+        return rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, "ACTIVE")
+                .orElseThrow(() -> {
+                    log.warn("No active ride found for driver profile ID: {}", driverProfileId);
+                    return new ValidateRecordException(
+                            environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
+                });
+    }
 }
 
