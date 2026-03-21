@@ -27,6 +27,4 @@ public class RideDetailResponseResource {
     private String tripRoute;
     private String status;
     private String createdDate;
-    private BigDecimal currentLocationLatitude;
-    private BigDecimal currentLocationLongitude;
 }

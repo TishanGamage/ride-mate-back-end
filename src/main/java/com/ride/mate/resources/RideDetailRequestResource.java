@@ -60,7 +60,4 @@ public class RideDetailRequestResource {
     private BigDecimal perKmRate;
 
     private BigDecimal totalRideCost;
-
-    private BigDecimal currentLocationLatitude;
-    private BigDecimal currentLocationLongitude;
 }

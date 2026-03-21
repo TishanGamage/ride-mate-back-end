@@ -132,34 +132,6 @@ public class RideRequestServiceTests {
     }
 
     @Test
-    public void testGetAvailableRides_Success() {
-        // Arrange
-        when(rideDetailRepository.findByStatus("ACTIVE")).thenReturn(Collections.singletonList(mockRideDetail));
-
-        // Act
-        List<AvailableRideResponse> result = rideRequestService.getAvailableRides(null, null, null);
-
-        // Assert
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        verify(rideDetailRepository, times(1)).findByStatus("ACTIVE");
-    }
-
-    @Test
-    public void testGetAvailableRides_NoActiveRides() {
-        // Arrange
-        when(rideDetailRepository.findByStatus("ACTIVE")).thenReturn(Collections.emptyList());
-
-        // Act
-        List<AvailableRideResponse> result = rideRequestService.getAvailableRides(null, null, null);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(rideDetailRepository, times(1)).findByStatus("ACTIVE");
-    }
-
-    @Test
     public void testCreateRideRequest_Success() {
         // Arrange
         when(rideDetailRepository.findById(1L)).thenReturn(Optional.of(mockRideDetail));

@@ -77,6 +77,37 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         this.environment = environment;
     }
 
+    @Override
+    public List<AvailableRideResponse> getAvailableRides(BigDecimal endLat, BigDecimal endLng, BigDecimal radiusKm) {
+        log.info("Fetching available rides near destination ({}, {}), radius: {} km", endLat, endLng, radiusKm);
+
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+
+        if (activeRides.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
+
+        // Filter by proximity to passenger's destination if coordinates provided
+        List<RideDetail> filteredRides;
+        if (endLat != null && endLng != null) {
+            filteredRides = activeRides.stream()
+                    .filter(ride -> {
+                        BigDecimal dist = haversineDistance(
+                                endLat, endLng,
+                                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
+                        return dist.compareTo(effectiveRadius) <= 0;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            filteredRides = activeRides;
+        }
+
+        return filteredRides.stream()
+                .map(this::mapToAvailableRideResponse)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public RideRequestResponse createRideRequest(RideRequestResource resource) {
@@ -332,6 +363,25 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
                 .status(ride.getStatus())
                 .build();
+    }
+
+    /**
+     * Haversine formula to calculate distance between two lat/lng points in kilometers.
+     */
+    private BigDecimal haversineDistance(BigDecimal lat1, BigDecimal lng1, BigDecimal lat2, BigDecimal lng2) {
+        if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
+            return new BigDecimal("9999"); // large value so it's filtered out
+        }
+        double R = 6371.0; // Earth radius in km
+        double dLat = Math.toRadians(lat2.subtract(lat1).doubleValue());
+        double dLon = Math.toRadians(lng2.subtract(lng1).doubleValue());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1.doubleValue()))
+                * Math.cos(Math.toRadians(lat2.doubleValue()))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c;
+        return BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_UP);
     }
 }
 

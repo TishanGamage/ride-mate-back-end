@@ -163,23 +163,4 @@ databaseChangeLog:
                   type: VARCHAR(200)
                   constraints:
                     nullable: true
-  - changeSet:
-      id: 7
-      author: Iruni
-      changes:
-        - addColumn:
-            columns:
-              - column:
-                  name: current_location_latitude
-                  type: DECIMAL(10,7)
-                  constraints:
-                    nullable: true
-            tableName: driver_ride_detail
-        - addColumn:
-            columns:
-              - column:
-                  name: current_location_longitude
-                  type: DECIMAL(10,7)
-                  constraints:
-                    nullable: true
-            tableName: driver_ride_detail
+
