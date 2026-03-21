@@ -56,15 +56,6 @@ public class UserProfileController extends MessagePropertyBase {
      * @return ResponseEntity with created user profile ID and success message
      */
 
-    @PostMapping(value = "/create")
-    public ResponseEntity<?> createUserProfile(@Valid @RequestBody UserProfileAddResource request) {
-        log.info("Received user profile creation request for user ID: {}", request.getUserId());
-        UserProfile userProfile = userProfileService.createUserProfile(request);
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
-        response.setId(userProfile.getId());
-        response.setMessages(environment.getProperty(RECORD_CREATED));
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
 
     /**
      * Update an existing user profile
