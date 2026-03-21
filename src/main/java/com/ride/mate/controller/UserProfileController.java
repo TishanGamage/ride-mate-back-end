@@ -55,6 +55,7 @@ public class UserProfileController extends MessagePropertyBase {
      * @param request user profile creation request containing profile details
      * @return ResponseEntity with created user profile ID and success message
      */
+
     @PostMapping(value = "/create")
     public ResponseEntity<?> createUserProfile(@Valid @RequestBody UserProfileAddResource request) {
         log.info("Received user profile creation request for user ID: {}", request.getUserId());
