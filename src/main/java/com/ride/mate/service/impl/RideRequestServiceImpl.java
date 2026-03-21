@@ -12,6 +12,7 @@ import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideRequestService;
 import com.ride.mate.util.DateUtil;
+import com.ride.mate.util.RouteCorridorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final String STATUS_REJECTED = "REJECTED";
     private static final BigDecimal DEFAULT_RADIUS_KM = new BigDecimal("15");
+    private static final double DEFAULT_CORRIDOR_KM = 5.0;
 
     private final RideRequestRepository rideRequestRepository;
     private final RideDetailRepository rideDetailRepository;
@@ -78,8 +80,11 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     }
 
     @Override
-    public List<AvailableRideResponse> getAvailableRides(BigDecimal endLat, BigDecimal endLng, BigDecimal radiusKm) {
-        log.info("Fetching available rides near destination ({}, {}), radius: {} km", endLat, endLng, radiusKm);
+    public List<AvailableRideResponse> getAvailableRides(BigDecimal startLat, BigDecimal startLng,
+                                                          BigDecimal endLat, BigDecimal endLng,
+                                                          BigDecimal radiusKm) {
+        log.info("Fetching available rides — pickup ({}, {}), destination ({}, {}), radius: {} km",
+                startLat, startLng, endLat, endLng, radiusKm);
 
         List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
 
@@ -89,24 +94,25 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
 
         BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
 
-        // Filter by proximity to passenger's destination if coordinates provided
-        List<RideDetail> filteredRides;
-        if (endLat != null && endLng != null) {
-            filteredRides = activeRides.stream()
-                    .filter(ride -> {
-                        BigDecimal dist = haversineDistance(
-                                endLat, endLng,
-                                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
-                        return dist.compareTo(effectiveRadius) <= 0;
-                    })
-                    .collect(Collectors.toList());
-        } else {
-            filteredRides = activeRides;
-        }
-
-        return filteredRides.stream()
+        return activeRides.stream()
+                .filter(ride -> isDestinationNearby(ride, endLat, endLng, effectiveRadius))
+                .filter(ride -> isPickupInCorridor(ride, startLat, startLng))
                 .map(this::mapToAvailableRideResponse)
                 .collect(Collectors.toList());
+    }
+
+    private boolean isDestinationNearby(RideDetail ride, BigDecimal endLat, BigDecimal endLng,
+                                         BigDecimal radiusKm) {
+        if (endLat == null || endLng == null) return true;
+        BigDecimal dist = haversineDistance(endLat, endLng,
+                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
+        return dist.compareTo(radiusKm) <= 0;
+    }
+
+    private boolean isPickupInCorridor(RideDetail ride, BigDecimal startLat, BigDecimal startLng) {
+        if (startLat == null || startLng == null) return true;
+        return RouteCorridorUtil.isPointInCorridor(
+                ride.getTripRoute(), startLat, startLng, DEFAULT_CORRIDOR_KM);
     }
 
     @Override
@@ -311,11 +317,15 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         DriverProfile driverProfile = ride.getDriverProfile();
         User driverUser = driverProfile.getUser();
 
-        // Get driver profile image
+        // Get driver profile image and gender
         String driverProfileImageUrl = null;
+        String driverGender = null;
         UserProfile driverUserProfile = userProfileRepository.findByUserId(driverUser.getId()).orElse(null);
-        if (driverUserProfile != null && driverUserProfile.getProfileImageDocument() != null) {
-            driverProfileImageUrl = driverUserProfile.getProfileImageDocument().getDocumentUrl();
+        if (driverUserProfile != null) {
+            if (driverUserProfile.getProfileImageDocument() != null) {
+                driverProfileImageUrl = driverUserProfile.getProfileImageDocument().getDocumentUrl();
+            }
+            driverGender = driverUserProfile.getGender();
         }
 
         // Get vehicle details
@@ -341,6 +351,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .rideDetailId(ride.getId())
                 .driverFirstName(driverUser.getFirstName())
                 .driverLastName(driverUser.getLastName())
+                .driverGender(driverGender)
                 .driverProfileImageUrl(driverProfileImageUrl)
                 .driverRating(driverProfile.getRatingAsDriver())
                 .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())

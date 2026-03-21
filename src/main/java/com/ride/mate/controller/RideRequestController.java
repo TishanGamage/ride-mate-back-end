@@ -40,8 +40,12 @@ public class RideRequestController extends MessagePropertyBase {
 
     /**
      * Get all available rides for a passenger.
-     * Optionally filter by proximity to the passenger's destination.
+     * Filters by:
+     * 1. Passenger destination is within radiusKm of the driver's end point.
+     * 2. Passenger pickup point lies within the driver's route corridor.
      *
+     * @param startLat  Passenger pickup latitude (optional)
+     * @param startLng  Passenger pickup longitude (optional)
      * @param endLat    Passenger destination latitude (optional)
      * @param endLng    Passenger destination longitude (optional)
      * @param radiusKm  Search radius in km (optional, default 15)
@@ -49,13 +53,16 @@ public class RideRequestController extends MessagePropertyBase {
      */
     @GetMapping("/available-rides")
     public ResponseEntity<List<AvailableRideResponse>> getAvailableRides(
+            @RequestParam(value = "startLat", required = false) BigDecimal startLat,
+            @RequestParam(value = "startLng", required = false) BigDecimal startLng,
             @RequestParam(value = "endLat", required = false) BigDecimal endLat,
             @RequestParam(value = "endLng", required = false) BigDecimal endLng,
             @RequestParam(value = "radiusKm", required = false) BigDecimal radiusKm) {
 
-        log.info("GET /ride-requests/available-rides?endLat={}&endLng={}&radiusKm={}", endLat, endLng, radiusKm);
+        log.info("GET /ride-requests/available-rides?startLat={}&startLng={}&endLat={}&endLng={}&radiusKm={}",
+                startLat, startLng, endLat, endLng, radiusKm);
 
-        List<AvailableRideResponse> rides = rideRequestService.getAvailableRides(endLat, endLng, radiusKm);
+        List<AvailableRideResponse> rides = rideRequestService.getAvailableRides(startLat, startLng, endLat, endLng, radiusKm);
         return new ResponseEntity<>(rides, HttpStatus.OK);
     }
 

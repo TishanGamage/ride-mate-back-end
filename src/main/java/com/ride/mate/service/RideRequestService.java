@@ -22,14 +22,20 @@ import java.util.List;
 public interface RideRequestService {
 
     /**
-     * Get all available (ACTIVE) rides, optionally filtered near the passenger's destination.
+     * Get all available (ACTIVE) rides filtered by:
+     * 1. Passenger's destination is within radiusKm of the driver's end point.
+     * 2. Passenger's pickup point lies within the route corridor of the driver's trip.
      *
-     * @param endLat  Passenger's destination latitude (optional)
-     * @param endLng  Passenger's destination longitude (optional)
+     * @param startLat Passenger's pickup latitude (optional)
+     * @param startLng Passenger's pickup longitude (optional)
+     * @param endLat   Passenger's destination latitude (optional)
+     * @param endLng   Passenger's destination longitude (optional)
      * @param radiusKm Search radius in km (optional, default 15)
      * @return List of available rides
      */
-    List<AvailableRideResponse> getAvailableRides(BigDecimal endLat, BigDecimal endLng, BigDecimal radiusKm);
+    List<AvailableRideResponse> getAvailableRides(BigDecimal startLat, BigDecimal startLng,
+                                                   BigDecimal endLat, BigDecimal endLng,
+                                                   BigDecimal radiusKm);
 
     /**
      * Create a ride request (passenger requests to join a ride).
