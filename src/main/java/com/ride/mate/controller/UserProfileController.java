@@ -72,15 +72,7 @@ public class UserProfileController extends MessagePropertyBase {
      * @param request user profile update request containing profile details
      * @return ResponseEntity with updated user profile ID and success message
      */
-    @PutMapping(value = "/update/{userId}")
-    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileUpdateResource request,
-            @PathVariable Long userId) {
-        UserProfile userProfile = userProfileService.updateUserProfile(request, userId);
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
-        response.setId(userProfile.getId());
-        response.setMessages(environment.getProperty(RECORD_UPDATED));
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+
 
     /**
      * Get user profile by user ID
@@ -89,12 +81,7 @@ public class UserProfileController extends MessagePropertyBase {
      * @param userId the ID of the user
      * @return ResponseEntity with UserProfileResponse containing full profile details
      */
-    @GetMapping(value = "/user/{userId}")
-    public ResponseEntity<UserProfileResponse> getUserProfileByUserId(@PathVariable Long userId) {
-        log.info("Received get user profile request for user ID: {}", userId);
-        UserProfileResponse response = userProfileService.getUserProfileByUserId(userId);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+
 
     /**
      * Update willingToDrive field of a user profile
