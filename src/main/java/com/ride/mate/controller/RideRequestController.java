@@ -2,12 +2,12 @@ package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.resources.AvailableRideResponse;
+import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.RideRequestService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,10 +40,8 @@ public class RideRequestController extends MessagePropertyBase {
 
     private final RideRequestService rideRequestService;
 
-    public RideRequestController(RideRequestService rideRequestService,
-                                  Environment environment) {
+    public RideRequestController(RideRequestService rideRequestService) {
         this.rideRequestService = rideRequestService;
-        this.environment = environment;
     }
 
     /**

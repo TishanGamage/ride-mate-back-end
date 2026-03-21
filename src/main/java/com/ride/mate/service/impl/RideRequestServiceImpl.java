@@ -2,6 +2,8 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.DriverProfile;
+import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.domain.RideDetail;
 import com.ride.mate.domain.RideRequest;
 import com.ride.mate.domain.ShareRideDetail;
@@ -15,6 +17,8 @@ import com.ride.mate.repository.ShareRideDetailRepository;
 import com.ride.mate.repository.UserProfileRepository;
 import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.DriverProfileRepository;
+import com.ride.mate.repository.DriverVehicleDetailsRepository;
+import com.ride.mate.resources.AvailableRideResponse;
 import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
@@ -67,6 +71,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final DriverProfileRepository driverProfileRepository;
+    private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
     private final CostSplitService costSplitService;
     private final Environment environment;
 
@@ -76,6 +81,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                                   UserRepository userRepository,
                                   UserProfileRepository userProfileRepository,
                                   DriverProfileRepository driverProfileRepository,
+                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
                                   CostSplitService costSplitService,
                                   Environment environment) {
         this.rideRequestRepository = rideRequestRepository;
@@ -84,6 +90,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.driverProfileRepository = driverProfileRepository;
+        this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
         this.costSplitService = costSplitService;
         this.environment = environment;
     }

@@ -1,5 +1,6 @@
 package com.ride.mate.service;
 
+import com.ride.mate.resources.AvailableRideResponse;
 import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
