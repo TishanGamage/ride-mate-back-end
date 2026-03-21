@@ -2,8 +2,11 @@ package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.DriverProfile;
+import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.resources.DriverProfileRequestResource;
 import com.ride.mate.resources.DriverProfileResponse;
+import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
+import com.ride.mate.resources.DriverVehicleListResponse;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.DriverProfileService;
 import jakarta.validation.Valid;
@@ -58,6 +61,58 @@ public class DriverProfileController extends MessagePropertyBase {
         response.setId(driverProfile.getId());
         response.setMessages(environment.getProperty(RECORD_CREATED));
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Add a new vehicle to an existing driver profile
+     *
+     * @param driverProfileId the ID of the driver profile
+     * @param request         vehicle details request
+     * @return ResponseEntity with saved vehicle ID and success message
+     */
+    @PostMapping(value = "/{driverProfileId}/vehicle")
+    public ResponseEntity<SuccessAndErrorDetailsResource> addVehicle(
+            @PathVariable Long driverProfileId,
+            @Valid @RequestBody DriverVehicleDetailsRequestResource request) {
+        log.info("Received add vehicle request for driver profile ID: {}", driverProfileId);
+        DriverVehicleDetails vehicle = driverProfileService.addVehicle(driverProfileId, request);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(vehicle.getId());
+        response.setMessages(environment.getProperty(RECORD_CREATED));
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Update an existing vehicle's details
+     *
+     * @param vehicleId the ID of the vehicle record
+     * @param request   updated vehicle details
+     * @return ResponseEntity with updated vehicle ID and success message
+     */
+    @PutMapping(value = "/vehicle/{vehicleId}")
+    public ResponseEntity<SuccessAndErrorDetailsResource> updateVehicle(
+            @PathVariable Long vehicleId,
+            @Valid @RequestBody DriverVehicleDetailsRequestResource request) {
+        log.info("Received update vehicle request for vehicle ID: {}", vehicleId);
+        DriverVehicleDetails vehicle = driverProfileService.updateVehicle(vehicleId, request);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(vehicle.getId());
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Get all vehicles for a driver profile
+     * Response includes hasMultipleVehicles flag and totalVehicles count
+     *
+     * @param driverProfileId the ID of the driver profile
+     * @return ResponseEntity with vehicle list response
+     */
+    @GetMapping(value = "/{driverProfileId}/vehicles")
+    public ResponseEntity<?> getVehiclesByDriverProfileId(@PathVariable Long driverProfileId) {
+        log.info("Received request to get vehicles for driver profile ID: {}", driverProfileId);
+        DriverVehicleListResponse response = driverProfileService.getVehiclesByDriverProfileId(driverProfileId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
