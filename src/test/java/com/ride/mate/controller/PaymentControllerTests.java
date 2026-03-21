@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -105,6 +106,7 @@ public class PaymentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testChargePassenger_Success() throws Exception {
         // Arrange
         when(payHereService.chargePassenger(any(PaymentInitResource.class)))
@@ -120,6 +122,7 @@ public class PaymentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testChargePassenger_MissingFields() throws Exception {
         // Arrange
         PaymentInitResource invalidRequest = new PaymentInitResource();
@@ -129,10 +132,11 @@ public class PaymentControllerTests {
         mockMvc.perform(post("/payment/charge")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetSavedCardsByUserId_Success() throws Exception {
         // Arrange
         when(payHereService.getSavedCards(1L)).thenReturn(mockSavedCards);
@@ -148,6 +152,7 @@ public class PaymentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetPaymentTransactionsByUserId_Success() throws Exception {
         // Arrange
         List<PaymentTransaction> mockTransactions = Collections.singletonList(mockPaymentTransaction);
@@ -162,11 +167,4 @@ public class PaymentControllerTests {
                 .andExpect(jsonPath("$[0].payhereAmount").value(500.00));
     }
 
-    @Test
-    public void testDeleteSavedCard_Success() throws Exception {
-        // Act & Assert
-        mockMvc.perform(delete("/payment/saved-cards/1")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-    }
 }

@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -70,6 +71,7 @@ public class VehicleMakeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleMakeById_Success() throws Exception {
         // Arrange
         when(vehicleMakeService.findById(1L)).thenReturn(Optional.of(mockVehicleMake));
@@ -84,6 +86,7 @@ public class VehicleMakeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleMakeById_NotFound() throws Exception {
         // Arrange
         when(vehicleMakeService.findById(anyLong())).thenReturn(Optional.empty());
@@ -95,6 +98,7 @@ public class VehicleMakeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleMakeByStatus_Success() throws Exception {
         // Arrange
         when(vehicleMakeService.findByStatus("ACTIVE")).thenReturn(mockVehicleMakes);
@@ -110,6 +114,7 @@ public class VehicleMakeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleMakeByStatus_NotFound() throws Exception {
         // Arrange
         when(vehicleMakeService.findByStatus(anyString())).thenReturn(Arrays.asList());
