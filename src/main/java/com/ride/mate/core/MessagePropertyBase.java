@@ -139,6 +139,7 @@ public abstract class MessagePropertyBase {
     protected static final String RIDE_REQUEST_CREATED = "ride.request.created";
     protected static final String RIDE_REQUEST_ACCEPTED = "ride.request.accepted";
     protected static final String RIDE_REQUEST_REJECTED = "ride.request.rejected";
+    protected static final String RIDE_REQUEST_CANCELLED = "ride.request.cancelled";
 
     // Driver Wallet message property keys
     protected static final String WALLET_NOT_FOUND = "wallet.not.found";

@@ -13,13 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Share Ride Detail Controller
- * Handles REST API endpoints for shared ride pooling operations
+ * Handles REST API endpoints for shared ride pooling operations.
+ *
+ * This controller owns ride discovery — GET /shared-ride/available calls the ML service
+ * to rank active rides by driver acceptance probability before returning them to the passenger.
  *
  * @author Iruni
  * @version 1.0.0
@@ -28,6 +29,8 @@ import java.util.Map;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Iruni           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Removed /search and /request-with-matching duplicates;
+ *                                                            /available now accepts passengerRideDistance for accurate cost
  */
 @Slf4j
 @RestController
@@ -45,16 +48,67 @@ public class ShareRideDetailController extends MessagePropertyBase {
         this.environment = environment;
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  STEP 2 — Passenger discovers available rides (ML-ranked)
+    // ═══════════════════════════════════════════════════════════════════
+
     /**
-     * Join a shared ride pool
+     * Get available rides for a passenger, ranked by ML acceptance probability.
+     *
+     * Flow:
+     *   1. Fetch all ACTIVE rides within the given radius of the passenger's start point
+     *   2. Call ML service to rank drivers by predicted acceptance rate
+     *   3. Compute estimatedCostPerPassenger using max(60/N,20)% with the
+     *      actual passengerRideDistance supplied by the caller
+     *   4. Return list sorted best-match first
+     *
+     * GET /shared-ride/available?startLat={}&startLng={}&endLat={}&endLng={}
+     *                            &passengerRideDistance={}&radius={}
+     *
+     * @param startLat              Passenger pickup latitude
+     * @param startLng              Passenger pickup longitude
+     * @param endLat                Passenger dropoff latitude
+     * @param endLng                Passenger dropoff longitude
+     * @param passengerRideDistance Passenger's route distance in km (used for accurate cost estimate)
+     * @param radius                Search radius in km around passenger start (default 15)
+     * @return ML-ranked list of available ride pools with per-passenger estimated cost
+     */
+    @GetMapping(value = "/available")
+    public ResponseEntity<?> getAvailableRidePools(
+            @RequestParam BigDecimal startLat,
+            @RequestParam BigDecimal startLng,
+            @RequestParam BigDecimal endLat,
+            @RequestParam BigDecimal endLng,
+            @RequestParam BigDecimal passengerRideDistance,
+            @RequestParam(defaultValue = "15") BigDecimal radius) {
+
+        log.info("GET /shared-ride/available — ({},{})→({},{}), dist={}km, radius={}km",
+                startLat, startLng, endLat, endLng, passengerRideDistance, radius);
+
+        List<SharedRidePoolResponse> pools = shareRideDetailService.getAvailableRidePools(
+                startLat, startLng, endLat, endLng, passengerRideDistance, radius);
+
+        log.info("Returning {} ML-ranked ride pools", pools.size());
+        return ResponseEntity.ok(pools);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  STEP 3 — Passenger joins a ride (after driver accepts request)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Join a shared ride — creates a ShareRideDetail record for the passenger.
+     * Called by the system after the driver accepts a ride request
+     * (see PUT /ride-requests/{id}/accept which triggers cost recalculation).
+     *
      * POST /shared-ride/join
      *
-     * @param request Join shared ride request
-     * @return ResponseEntity with shared ride details
+     * @param request Passenger location, ride ID, distance
+     * @return Created ShareRideDetail ID and success message
      */
     @PostMapping(value = "/join")
     public ResponseEntity<?> joinSharedRide(@Valid @RequestBody ShareRideDetailAddResource request) {
-        log.info("Received request to join shared ride for user ID: {}", request.getUserId());
+        log.info("POST /shared-ride/join — user: {}, ride: {}", request.getUserId(), request.getRideDetailId());
 
         ShareRideDetail shareRideDetail = shareRideDetailService.joinSharedRide(request);
 
@@ -65,181 +119,88 @@ public class ShareRideDetailController extends MessagePropertyBase {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    /**
-     * Search for available ride pools near passenger location
-     * GET /shared-ride/search?startLat={}&startLng={}&endLat={}&endLng={}
-     *
-     * @param startLat Passenger start latitude
-     * @param startLng Passenger start longitude
-     * @param endLat Passenger end latitude
-     * @param endLng Passenger end longitude
-     * @return List of available ride pools
-     */
-    @GetMapping(value = "/search")
-    public ResponseEntity<?> searchNearbyRides(
-            @RequestParam BigDecimal startLat,
-            @RequestParam BigDecimal startLng,
-            @RequestParam BigDecimal endLat,
-            @RequestParam BigDecimal endLng) {
-        log.info("Searching for nearby shared rides");
-
-        List<SharedRidePoolResponse> pools = shareRideDetailService.searchNearbyRides(
-                startLat, startLng, endLat, endLng);
-
-        log.info("Found {} available ride pools", pools.size());
-        return ResponseEntity.ok(pools);
-    }
+    // ═══════════════════════════════════════════════════════════════════
+    //  Ride info & history
+    // ═══════════════════════════════════════════════════════════════════
 
     /**
-     * Get available ride pools with custom radius
-     * GET /shared-ride/available?startLat={}&startLng={}&endLat={}&endLng={}&radius={}
-     *
-     * @param startLat Passenger start latitude
-     * @param startLng Passenger start longitude
-     * @param endLat Passenger end latitude
-     * @param endLng Passenger end longitude
-     * @param radius Search radius in kilometers
-     * @return List of available ride pools
-     */
-    @GetMapping(value = "/available")
-    public ResponseEntity<?> getAvailableRidePools(
-            @RequestParam BigDecimal startLat,
-            @RequestParam BigDecimal startLng,
-            @RequestParam BigDecimal endLat,
-            @RequestParam BigDecimal endLng,
-            @RequestParam(defaultValue = "15") BigDecimal radius) {
-        log.info("Getting available ride pools within {} km radius", radius);
-
-        List<SharedRidePoolResponse> pools = shareRideDetailService.getAvailableRidePools(
-                startLat, startLng, endLat, endLng, radius);
-
-        log.info("Found {} available ride pools", pools.size());
-        return ResponseEntity.ok(pools);
-    }
-
-    /**
-     * Get all passengers in a shared ride
+     * Get all passengers currently on a shared ride.
      * GET /shared-ride/passengers/{rideDetailId}
-     *
-     * @param rideDetailId Ride detail ID
-     * @return List of passengers in the ride
      */
     @GetMapping(value = "/passengers/{rideDetailId}")
     public ResponseEntity<?> getRidePassengers(@PathVariable Long rideDetailId) {
-        log.info("Fetching passengers for ride ID: {}", rideDetailId);
-
+        log.info("GET /shared-ride/passengers/{}", rideDetailId);
         List<ShareRideDetailResponse> passengers = shareRideDetailService.getRidePassengers(rideDetailId);
-
-        log.info("Found {} passengers for ride ID: {}", passengers.size(), rideDetailId);
         return ResponseEntity.ok(passengers);
     }
 
     /**
-     * Get passenger's shared ride history
+     * Get a passenger's completed ride history.
      * GET /shared-ride/history/{userId}
-     *
-     * @param userId User ID
-     * @return List of completed shared rides
      */
     @GetMapping(value = "/history/{userId}")
     public ResponseEntity<?> getPassengerRideHistory(@PathVariable Long userId) {
-        log.info("Fetching ride history for user ID: {}", userId);
-
+        log.info("GET /shared-ride/history/{}", userId);
         List<ShareRideDetailResponse> history = shareRideDetailService.getPassengerRideHistory(userId);
-
-        log.info("Found {} completed rides for user ID: {}", history.size(), userId);
         return ResponseEntity.ok(history);
     }
 
     /**
-     * Get detailed shared ride information
+     * Get detailed info for a single shared-ride record.
      * GET /shared-ride/details/{shareRideDetailId}
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @return Detailed shared ride information
      */
     @GetMapping(value = "/details/{shareRideDetailId}")
     public ResponseEntity<?> getSharedRideDetails(@PathVariable Long shareRideDetailId) {
-        log.info("Fetching detailed shared ride information for ID: {}", shareRideDetailId);
-
+        log.info("GET /shared-ride/details/{}", shareRideDetailId);
         ShareRideDetailResponse details = shareRideDetailService.getSharedRideDetails(shareRideDetailId);
-
         return ResponseEntity.ok(details);
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  Status management
+    // ═══════════════════════════════════════════════════════════════════
+
     /**
-     * Confirm/accept a shared ride
+     * Mark a shared ride as CONFIRMED (driver on the way to pickup).
      * PUT /shared-ride/{shareRideDetailId}/confirm
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @return Updated shared ride details
      */
     @PutMapping(value = "/{shareRideDetailId}/confirm")
     public ResponseEntity<?> confirmSharedRide(@PathVariable Long shareRideDetailId) {
-        log.info("Confirming shared ride ID: {}", shareRideDetailId);
+        log.info("PUT /shared-ride/{}/confirm", shareRideDetailId);
 
-        ShareRideDetail updated = shareRideDetailService.updateShareRideStatus(
-                shareRideDetailId, "CONFIRMED");
+        ShareRideDetail updated = shareRideDetailService.updateShareRideStatus(shareRideDetailId, "CONFIRMED");
 
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(updated.getId());
         response.setMessages(environment.getProperty(SHARED_RIDE_CONFIRMED));
-
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Cancel a shared ride
+     * Cancel a shared ride (passenger cancels after joining).
      * PUT /shared-ride/{shareRideDetailId}/cancel
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @return Updated shared ride details
      */
     @PutMapping(value = "/{shareRideDetailId}/cancel")
     public ResponseEntity<?> cancelSharedRide(@PathVariable Long shareRideDetailId) {
-        log.info("Cancelling shared ride ID: {}", shareRideDetailId);
+        log.info("PUT /shared-ride/{}/cancel", shareRideDetailId);
 
         ShareRideDetail updated = shareRideDetailService.cancelSharedRide(shareRideDetailId);
 
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(updated.getId());
         response.setMessages(environment.getProperty(SHARED_RIDE_CANCELLED));
-
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Calculate pooled cost for a ride
-     * GET /shared-ride/cost/{rideDetailId}
-     *
-     * @param rideDetailId Ride detail ID
-     * @return Pooled cost per passenger
-     */
-    @GetMapping(value = "/cost/{rideDetailId}")
-    public ResponseEntity<?> calculatePooledCost(@PathVariable Long rideDetailId) {
-        log.info("Calculating pooled cost for ride ID: {}", rideDetailId);
-
-        BigDecimal costPerPassenger = shareRideDetailService.calculatePooledCost(rideDetailId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("costPerPassenger", costPerPassenger);
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Update shared ride execution status
+     * Generic status update for a shared ride record.
      * PUT /shared-ride/{shareRideDetailId}/status
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @param request Status update request
-     * @return Updated shared ride details
      */
     @PutMapping(value = "/{shareRideDetailId}/status")
     public ResponseEntity<?> updateRideStatus(
             @PathVariable Long shareRideDetailId,
             @Valid @RequestBody StatusUpdateRequest request) {
-        log.info("Updating ride status to: {} for ID: {}", request.getStatus(), shareRideDetailId);
+        log.info("PUT /shared-ride/{}/status → {}", shareRideDetailId, request.getStatus());
 
         ShareRideDetail updated = shareRideDetailService.updateShareRideStatus(
                 shareRideDetailId, request.getStatus());
@@ -247,28 +208,6 @@ public class ShareRideDetailController extends MessagePropertyBase {
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(updated.getId());
         response.setMessages(environment.getProperty(RECORD_UPDATED));
-
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Request shared ride with ML-based driver matching
-     * POST /shared-ride/request-with-matching
-     *
-     * @param request Shared ride request
-     * @return Created shared ride after matching
-     */
-    @PostMapping(value = "/request-with-matching")
-    public ResponseEntity<?> requestSharedRideWithMatching(
-            @Valid @RequestBody ShareRideDetailAddResource request) {
-        log.info("Processing shared ride request with ML-based matching");
-
-        ShareRideDetail shareRideDetail = shareRideDetailService.requestSharedRideWithMatching(request);
-
-        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
-        response.setId(shareRideDetail.getId());
-        response.setMessages(environment.getProperty(SHARED_RIDE_CREATED));
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

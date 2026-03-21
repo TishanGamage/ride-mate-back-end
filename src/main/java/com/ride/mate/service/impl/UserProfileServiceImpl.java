@@ -27,6 +27,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 /**
  * UserProfileServiceImpl
@@ -162,6 +164,10 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
 
         User user = userProfile.getUser();
 
+        // Fetch identification details
+        List<UserIdentificationDetails> identificationList = userIdentificationDetailsRepository.findByUserId(userId);
+        UserIdentificationDetails identification = identificationList.isEmpty() ? null : identificationList.get(0);
+
         return UserProfileResponse.builder()
                 .id(userProfile.getId())
                 .userId(user.getId())
@@ -190,22 +196,28 @@ public class UserProfileServiceImpl extends MessagePropertyBase implements UserP
                 .profileImageUrl(userProfile.getProfileImageDocument() != null ? userProfile.getProfileImageDocument().getDocumentUrl() : null)
                 .userVerificationImageDocumentId(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getId() : null)
                 .userVerificationImageUrl(userProfile.getUserVerificationImageDocument() != null ? userProfile.getUserVerificationImageDocument().getDocumentUrl() : null)
+                .identificationTypeId(identification != null && identification.getIdentificationType() != null ? identification.getIdentificationType().getId() : null)
+                .identificationTypeName(identification != null && identification.getIdentificationType() != null ? identification.getIdentificationType().getName() : null)
+                .identificationNumber(identification != null ? identification.getIdentificationNumber() : null)
+                .identificationFrontImageUrl(identification != null && identification.getFrontImageDocument() != null ? identification.getFrontImageDocument().getDocumentUrl() : null)
+                .identificationBackImageUrl(identification != null && identification.getBackImageDocument() != null ? identification.getBackImageDocument().getDocumentUrl() : null)
                 .createdDate(userProfile.getCreatedDate() != null ? userProfile.getCreatedDate().toString() : null)
                 .modifiedDate(userProfile.getModifiedDate() != null ? userProfile.getModifiedDate().toString() : null)
                 .build();
     }
 
     @Override
-    public UserProfile updateUserProfile(UserProfileUpdateResource request,Long id) {
+    public UserProfile updateUserProfile(UserProfileUpdateResource request, Long userId) {
 
-        // Find existing profile
-        UserProfile userProfile = userProfileRepository.findById(id)
+        // Find existing profile by user ID
+        UserProfile userProfile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> {
+                    log.warn("User profile update failed: Profile not found for user ID - {}", userId);
                     return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
                 });
 
-        // Check optimistic locking version
-        if (!userProfile.getVersion().equals(request.getVersion())) {
+        // Check optimistic locking version (skip if not provided)
+        if (request.getVersion() != null && !userProfile.getVersion().equals(request.getVersion())) {
             throw new ValidateRecordException(environment.getProperty(RECORD_VERSION_MISMATCH), "errorMessage");
         }
 

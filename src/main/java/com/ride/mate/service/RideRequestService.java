@@ -1,6 +1,6 @@
 package com.ride.mate.service;
 
-import com.ride.mate.resources.AvailableRideResponse;
+import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 
@@ -9,7 +9,10 @@ import java.util.List;
 
 /**
  * Ride Request Service Interface
- * Business logic for managing ride requests between passengers and drivers
+ * Business logic for managing ride requests between passengers and drivers.
+ *
+ * Ride discovery is handled by ShareRideDetailService.getAvailableRidePools()
+ * which uses the ML service to rank available rides.
  *
  * @author Tishan
  * @version 1.0.0
@@ -18,6 +21,8 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added cancelRideRequest and estimatePassengerCost
+ * 3 21-03-2026    N/A          N/A          Tishan           Removed getAvailableRides (moved to ShareRideDetailService)
  */
 public interface RideRequestService {
 
@@ -39,42 +44,47 @@ public interface RideRequestService {
 
     /**
      * Create a ride request (passenger requests to join a ride).
-     *
-     * @param resource Ride request details
-     * @return Created ride request response
      */
     RideRequestResponse createRideRequest(RideRequestResource resource);
 
     /**
      * Get all pending requests for a driver's active rides.
-     *
-     * @param driverProfileId Driver profile ID
-     * @return List of pending ride requests
      */
     List<RideRequestResponse> getPendingRequestsForDriver(Long driverProfileId);
 
     /**
      * Accept a ride request — creates the SharedRideDetail and recalculates cost.
-     *
-     * @param rideRequestId Ride request ID
-     * @return Updated ride request response
      */
     RideRequestResponse acceptRideRequest(Long rideRequestId);
 
     /**
      * Reject a ride request.
-     *
-     * @param rideRequestId Ride request ID
-     * @return Updated ride request response
      */
     RideRequestResponse rejectRideRequest(Long rideRequestId);
 
     /**
+     * Cancel a ride request (passenger withdraws a PENDING or ACCEPTED request).
+     * If the request was ACCEPTED, removes from ShareRideDetail and recalculates cost.
+     */
+    RideRequestResponse cancelRideRequest(Long rideRequestId);
+
+    /**
      * Get all ride requests for a passenger.
-     *
-     * @param userId User ID
-     * @return List of ride requests
      */
     List<RideRequestResponse> getRequestsByPassenger(Long userId);
+
+    /**
+     * Estimate the cost a passenger would pay for a specific ride before requesting.
+     * Uses max(60/N, 20)% algorithm where N = currentPassengers + 1.
+     *
+     * @param rideDetailId          The target ride
+     * @param passengerRideDistance The passenger's route distance in km
+     * @return PassengerEstimatedCostResponse with estimated cost and pricing breakdown
+     */
+    PassengerEstimatedCostResponse estimatePassengerCost(Long rideDetailId, BigDecimal passengerRideDistance);
 }
+
+
+
+
 

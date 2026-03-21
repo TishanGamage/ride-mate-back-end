@@ -1,0 +1,541 @@
+{
+  "info": {
+    "name": "RideMate - Full Ride Share Flow",
+    "description": "Complete API collection for the RideMate ride-sharing app.\n\nFlow:\n1. Auth — Register & Login (get JWT token)\n2. Driver — Create ride\n3. Passenger — Browse ML-ranked rides, estimate cost, send request\n4. Driver — View pending requests, accept/reject\n5. Cost Split — View segment-by-segment breakdown\n6. Passenger — Cancel request (optional)\n7. Driver — End ride\n\nSet the 'token' collection variable after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",          "value": "http://localhost:8080/ride-mate",  "type": "string" },
+    { "key": "token",            "value": "",                                  "type": "string", "description": "JWT Bearer token — set after login" },
+    { "key": "driverUserId",     "value": "1",                                 "type": "string" },
+    { "key": "passengerUserId",  "value": "2",                                 "type": "string" },
+    { "key": "driverProfileId",  "value": "1",                                 "type": "string" },
+    { "key": "rideDetailId",     "value": "1",                                 "type": "string" },
+    { "key": "rideRequestId",    "value": "1",                                 "type": "string" },
+    { "key": "shareRideDetailId","value": "1",                                 "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "01 — Auth",
+      "description": "Register users and login to get the JWT token. After login, copy the token into the 'token' collection variable.",
+      "item": [
+        {
+          "name": "Register Driver",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/register", "host": ["{{baseUrl}}"], "path": ["users", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Kasun\",\n  \"lastName\": \"Perera\",\n  \"email\": \"kasun.driver@example.com\",\n  \"password\": \"Password123\",\n  \"phoneNumber\": \"0771234567\",\n  \"role\": \"DRIVER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Passenger",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/register", "host": ["{{baseUrl}}"], "path": ["users", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Nimal\",\n  \"lastName\": \"Silva\",\n  \"email\": \"nimal.passenger@example.com\",\n  \"password\": \"Password123\",\n  \"phoneNumber\": \"0779876543\",\n  \"role\": \"PASSENGER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Driver)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kasun.driver@example.com\",\n  \"password\": \"Password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Passenger)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nimal.passenger@example.com\",\n  \"password\": \"Password123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Driver: Post a Ride",
+      "description": "Driver calculates price then creates a ride. Copy the returned ride ID into the 'rideDetailId' collection variable.",
+      "item": [
+        {
+          "name": "Calculate Ride Price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/calculate-price?driverProfileId={{driverProfileId}}&totalDistance=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "calculate-price"],
+              "query": [
+                { "key": "driverProfileId", "value": "{{driverProfileId}}" },
+                { "key": "totalDistance",   "value": "30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Ride (Driver Posts Route)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "    pm.collectionVariables.set('rideDetailId', json.id);",
+                  "    console.log('rideDetailId saved:', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/ride-details/addRide", "host": ["{{baseUrl}}"], "path": ["ride-details", "addRide"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"driverProfileId\": {{driverProfileId}},\n  \"startLocationLatitude\": 7.0873,\n  \"startLocationLongitude\": 79.9991,\n  \"endLocationLatitude\": 6.9271,\n  \"endLocationLongitude\": 79.8612,\n  \"startCity\": \"Gampaha\",\n  \"endCity\": \"Colombo\",\n  \"availableSeats\": 3,\n  \"totalRideDistance\": 30.00,\n  \"perKmRate\": 50.00,\n  \"totalRideCost\": 1500.00,\n  \"startTime\": \"2026-03-21 07:30:00\",\n  \"tripRoute\": \"Gampaha -> Kadawatha -> Kiribathgoda -> Colombo\",\n  \"status\": \"ACTIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Active Ride (Driver)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/driver/{{driverProfileId}}/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "driver", "{{driverProfileId}}", "active"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Passenger: Discover & Estimate",
+      "description": "Passenger browses ML-ranked rides with their pickup/dropoff coordinates and sees an estimated cost before requesting.",
+      "item": [
+        {
+          "name": "Get Available Rides (ML-Ranked)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/available?startLat=7.0600&startLng=79.9900&endLat=6.9271&endLng=79.8612&passengerRideDistance=18.5&radius=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "available"],
+              "query": [
+                { "key": "startLat",               "value": "7.0600",   "description": "Passenger pickup latitude" },
+                { "key": "startLng",               "value": "79.9900",  "description": "Passenger pickup longitude" },
+                { "key": "endLat",                 "value": "6.9271",   "description": "Passenger dropoff latitude" },
+                { "key": "endLng",                 "value": "79.8612",  "description": "Passenger dropoff longitude" },
+                { "key": "passengerRideDistance",  "value": "18.5",     "description": "Passenger route distance in km (used for cost estimate)" },
+                { "key": "radius",                 "value": "15",       "description": "Search radius in km" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estimate My Cost Before Requesting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideDetailId}}/estimate-cost?passengerRideDistance=18.5",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideDetailId}}", "estimate-cost"],
+              "query": [
+                { "key": "passengerRideDistance", "value": "18.5", "description": "Passenger route distance in km" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Passenger: Send Ride Request",
+      "description": "Passenger sends a join request to the driver. Copy the returned request ID into 'rideRequestId'.",
+      "item": [
+        {
+          "name": "Create Ride Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "    pm.collectionVariables.set('rideRequestId', json.id);",
+                  "    console.log('rideRequestId saved:', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/ride-requests", "host": ["{{baseUrl}}"], "path": ["ride-requests"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rideDetailId\": {{rideDetailId}},\n  \"userId\": {{passengerUserId}},\n  \"passengerStartLat\": 7.0600,\n  \"passengerStartLng\": 79.9900,\n  \"passengerEndLat\": 6.9271,\n  \"passengerEndLng\": 79.8612,\n  \"passengerRideDistance\": 18.5,\n  \"startCity\": \"Kadawatha\",\n  \"endCity\": \"Colombo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Requests (Passenger)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/passenger/{{passengerUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "passenger", "{{passengerUserId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Driver: Accept or Reject",
+      "description": "Driver views pending requests and accepts or rejects them. On accept, a ShareRideDetail is created and cost is recalculated. The response includes estimatedCost for the passenger.",
+      "item": [
+        {
+          "name": "Get Pending Requests (Driver)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/driver/{{driverProfileId}}/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "driver", "{{driverProfileId}}", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Accept Ride Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "console.log('Passenger estimated cost after accept:', json.estimatedCost);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideRequestId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideRequestId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Reject Ride Request",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideRequestId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideRequestId}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Cost Split",
+      "description": "View the full segment-by-segment cost split. Shows MAIN vs SIDE_TRIP segments, share%, cost per rider, and each passenger's total.",
+      "item": [
+        {
+          "name": "Get Cost Split for Ride",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/{{rideDetailId}}/cost-split",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "{{rideDetailId}}", "cost-split"]
+            }
+          }
+        },
+        {
+          "name": "Recalculate Cost Split (Manual Trigger)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/{{rideDetailId}}/cost-split/recalculate",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "{{rideDetailId}}", "cost-split", "recalculate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Shared Ride Info",
+      "description": "View passengers on the ride, individual shared ride details, and ride history.",
+      "item": [
+        {
+          "name": "Get All Passengers on Ride",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/passengers/{{rideDetailId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "passengers", "{{rideDetailId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Shared Ride Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/details/{{shareRideDetailId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "details", "{{shareRideDetailId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Passenger Ride History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/history/{{passengerUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "history", "{{passengerUserId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — Passenger: Cancel Request",
+      "description": "Passenger cancels a PENDING or ACCEPTED request. If ACCEPTED, removes from ShareRideDetail and triggers cost recalculation for remaining passengers.",
+      "item": [
+        {
+          "name": "Cancel Ride Request",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideRequestId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideRequestId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Shared Ride (After Join)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/{{shareRideDetailId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "{{shareRideDetailId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 — Shared Ride Status Updates",
+      "description": "Driver or system updates the status of a shared ride record.",
+      "item": [
+        {
+          "name": "Confirm Shared Ride",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/{{shareRideDetailId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "{{shareRideDetailId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Update Shared Ride Status (Generic)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/shared-ride/{{shareRideDetailId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["shared-ride", "{{shareRideDetailId}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 — Driver: End Ride",
+      "description": "Driver marks the ride as COMPLETED. After this, passengers can view the final cost split.",
+      "item": [
+        {
+          "name": "End Ride",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/{{rideDetailId}}/end",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "{{rideDetailId}}", "end"]
+            }
+          }
+        },
+        {
+          "name": "Get Driver Ride History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/driver/{{driverProfileId}}?status=COMPLETED",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "driver", "{{driverProfileId}}"],
+              "query": [{ "key": "status", "value": "COMPLETED" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 — Multi-Passenger Scenario",
+      "description": "Test the cost split with 3 passengers joining one by one. Watch estimatedCost change: P1=60%, P2=40%, P3=30%.",
+      "item": [
+        {
+          "name": "Passenger 2 — Request Ride",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/ride-requests", "host": ["{{baseUrl}}"], "path": ["ride-requests"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rideDetailId\": {{rideDetailId}},\n  \"userId\": 3,\n  \"passengerStartLat\": 7.0400,\n  \"passengerStartLng\": 79.9700,\n  \"passengerEndLat\": 6.9271,\n  \"passengerEndLng\": 79.8612,\n  \"passengerRideDistance\": 20.0,\n  \"startCity\": \"Kiribathgoda\",\n  \"endCity\": \"Colombo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Passenger 3 — Request Ride",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/ride-requests", "host": ["{{baseUrl}}"], "path": ["ride-requests"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rideDetailId\": {{rideDetailId}},\n  \"userId\": 4,\n  \"passengerStartLat\": 7.0200,\n  \"passengerStartLng\": 79.9500,\n  \"passengerEndLat\": 6.9271,\n  \"passengerEndLng\": 79.8612,\n  \"passengerRideDistance\": 22.5,\n  \"startCity\": \"Wattala\",\n  \"endCity\": \"Colombo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Accept P2 Request (expect 40% share)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideRequestId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideRequestId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Accept P3 Request (expect 30% share)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-requests/{{rideRequestId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-requests", "{{rideRequestId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Cost Split — All 3 Passengers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ride-details/{{rideDetailId}}/cost-split",
+              "host": ["{{baseUrl}}"],
+              "path": ["ride-details", "{{rideDetailId}}", "cost-split"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

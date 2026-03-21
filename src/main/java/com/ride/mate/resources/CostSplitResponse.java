@@ -7,11 +7,12 @@ import java.util.List;
 
 /**
  * Cost Split Response
- * Complete response containing segment-based cost breakdown for a ride.
+ * Complete response containing the cost breakdown for a shared ride.
  *
- * The algorithm divides the route into segments based on all pickup/dropoff
- * waypoints. Each segment's cost is split equally among all riders present
- * on that segment (driver + passengers who are on-board).
+ * Algorithm (from costsplittinglogic.md):
+ *   - MAIN segment with N passengers: each passenger pays max(60/N, 20)% of segment cost
+ *   - SIDE_TRIP segment (detour for one passenger): that passenger pays 60%, driver absorbs 40%
+ *   - Driver alone segment: no charge to anyone
  *
  * @author Tishan
  * @version 1.0.0
@@ -20,6 +21,7 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added segmentType and sharePercentage fields
  */
 @Getter
 @Setter
@@ -53,6 +55,10 @@ public class CostSplitResponse {
         private String endLabel;
         private BigDecimal distanceKm;
         private int riderCount;
+        /** MAIN or SIDE_TRIP */
+        private String segmentType;
+        /** Percentage each passenger on this segment pays (e.g. 60.00, 40.00, 30.00) */
+        private BigDecimal sharePercentage;
         private BigDecimal segmentCost;
         private BigDecimal costPerRider;
     }
@@ -89,6 +95,10 @@ public class CostSplitResponse {
         private String endLabel;
         private BigDecimal distanceKm;
         private int riderCount;
+        /** MAIN or SIDE_TRIP */
+        private String segmentType;
+        /** Share percentage applied for this passenger on this segment */
+        private BigDecimal sharePercentage;
         private BigDecimal passengerShareForSegment;
     }
 }
