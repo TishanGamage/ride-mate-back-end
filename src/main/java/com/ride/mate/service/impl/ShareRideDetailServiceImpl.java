@@ -30,41 +30,38 @@ import java.util.stream.Collectors;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Iruni           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           getAvailableRidePools now uses max(60/N,20)% cost;
+ *                                                            removed searchNearbyRides and requestSharedRideWithMatching
  */
 @Slf4j
 @Service
 @Transactional
 public class ShareRideDetailServiceImpl extends MessagePropertyBase implements ShareRideDetailService {
 
+    private static final String STATUS_ACTIVE    = "ACTIVE";
     private static final String STATUS_CONFIRMED = "CONFIRMED";
     private static final String STATUS_COMPLETED = "COMPLETED";
     private static final String STATUS_CANCELLED = "CANCELLED";
-    private static final String STATUS_PENDING = "PENDING";
-    private static final BigDecimal DEFAULT_RADIUS_KM = new BigDecimal("15");
+    private static final String STATUS_PENDING   = "PENDING";
+
+    /** Base share % for a single passenger: max(60/N, 20) */
+    private static final BigDecimal BASE_SHARE_PCT = new BigDecimal("60");
+    private static final BigDecimal MIN_SHARE_PCT  = new BigDecimal("20");
 
     private final ShareRideDetailRepository shareRideDetailRepository;
     private final RideDetailRepository rideDetailRepository;
-    private final RideRequestRepository rideRequestRepository;
     private final UserRepository userRepository;
-    private final UserProfileRepository userProfileRepository;
-    private final DriverProfileRepository driverProfileRepository;
     private final MLService mlService;
     private final Environment environment;
 
     public ShareRideDetailServiceImpl(ShareRideDetailRepository shareRideDetailRepository,
-                                     RideDetailRepository rideDetailRepository,
-                                     RideRequestRepository rideRequestRepository,
-                                     UserRepository userRepository,
-                                     UserProfileRepository userProfileRepository,
-                                     DriverProfileRepository driverProfileRepository,
-                                     MLService mlService,
-                                     Environment environment) {
+                                      RideDetailRepository rideDetailRepository,
+                                      UserRepository userRepository,
+                                      MLService mlService,
+                                      Environment environment) {
         this.shareRideDetailRepository = shareRideDetailRepository;
         this.rideDetailRepository = rideDetailRepository;
-        this.rideRequestRepository = rideRequestRepository;
         this.userRepository = userRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.driverProfileRepository = driverProfileRepository;
         this.mlService = mlService;
         this.environment = environment;
     }
@@ -139,18 +136,17 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
             BigDecimal passengerStartLng,
             BigDecimal passengerEndLat,
             BigDecimal passengerEndLng,
+            BigDecimal passengerRideDistance,
             BigDecimal radiusKm) {
         log.info("Searching for available ride pools within {} km radius", radiusKm);
 
-        // Get all active rides
-        List<RideDetail> activeRides = rideDetailRepository.findByStatus("ACTIVE");
-        
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+
         if (activeRides.isEmpty()) {
             log.info("No active rides found");
             return Collections.emptyList();
         }
 
-        // Filter rides within radius and with valid route overlap
         List<RideDetail> candidateRides = activeRides.stream()
                 .filter(ride -> isWithinRadius(
                         passengerStartLat, passengerStartLng,
@@ -166,81 +162,66 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
 
         log.info("Found {} candidate rides, calling ML service for ranking", candidateRides.size());
 
-        // Use ML service to rank drivers by acceptance probability
         if (mlService.isMLServiceAvailable()) {
             return rankRidesByMLPrediction(candidateRides, passengerStartLat, passengerStartLng,
-                    passengerEndLat, passengerEndLng);
+                    passengerEndLat, passengerEndLng, passengerRideDistance);
         } else {
-            log.warn("ML service unavailable, returning non-ranked pool");
+            log.warn("ML service unavailable, returning unranked pool");
             return candidateRides.stream()
-                    .map(ride -> buildPoolResponse(ride, passengerStartLat, passengerStartLng,
-                            passengerEndLat, passengerEndLng))
+                    .map(ride -> buildPoolResponse(ride, passengerRideDistance))
                     .collect(Collectors.toList());
         }
     }
 
     /**
-     * Rank available rides using ML model predictions
-     * Extracts driver features and calls ML service for acceptance rate predictions
+     * Rank available rides using ML model predictions.
+     * Uses passengerRideDistance for accurate cost estimates via max(60/N,20)%.
      */
     private List<SharedRidePoolResponse> rankRidesByMLPrediction(
             List<RideDetail> candidateRides,
             BigDecimal passengerStartLat,
             BigDecimal passengerStartLng,
             BigDecimal passengerEndLat,
-            BigDecimal passengerEndLng) {
-        
-        log.info("ML-based ranking: Processing {} rides for passenger", candidateRides.size());
+            BigDecimal passengerEndLng,
+            BigDecimal passengerRideDistance) {
 
-        // Build ML request with driver features for each ride
+        log.info("ML-based ranking: processing {} rides", candidateRides.size());
+
         List<MLDriverPredictionRequest.DriverInput> driverInputs = new ArrayList<>();
         Map<String, RideDetail> driverIdToRide = new HashMap<>();
 
         for (RideDetail ride : candidateRides) {
             try {
                 DriverProfile driverProfile = ride.getDriverProfile();
-                if (driverProfile == null) {
-                    log.warn("Driver profile missing for ride ID: {}", ride.getId());
-                    continue;
-                }
+                if (driverProfile == null) continue;
 
-                // Extract ML features from ride and driver data
                 float routeDeviation = calculateRouteDeviation(ride, passengerStartLat, passengerStartLng);
-                int zoneDensity = estimateZoneDensity(ride.getStartLocationLatitude(),
-                        ride.getStartLocationLongitude());
+                int zoneDensity = estimateZoneDensity(ride.getStartLocationLatitude(), ride.getStartLocationLongitude());
                 float tripDistance = ride.getTotalRideDistance().floatValue();
-                float headingAngle = calculateHeadingAngle(ride.getStartLocationLatitude(),
-                        ride.getStartLocationLongitude(), ride.getEndLocationLatitude(),
-                        ride.getEndLocationLongitude());
+                float headingAngle = calculateHeadingAngle(
+                        ride.getStartLocationLatitude(), ride.getStartLocationLongitude(),
+                        ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
 
-                MLDriverPredictionRequest.DriverInput driverInput =
-                        MLDriverPredictionRequest.DriverInput.builder()
-                                .driverId(String.valueOf(driverProfile.getId()))
-                                .routeDeviationPct((double) routeDeviation)
-                                .zoneDensity(zoneDensity)
-                                .tripDistanceKm((double) tripDistance)
-                                .headingAngleDeg((double) headingAngle)
-                                .build();
+                driverInputs.add(MLDriverPredictionRequest.DriverInput.builder()
+                        .driverId(String.valueOf(driverProfile.getId()))
+                        .routeDeviationPct((double) routeDeviation)
+                        .zoneDensity(zoneDensity)
+                        .tripDistanceKm((double) tripDistance)
+                        .headingAngleDeg((double) headingAngle)
+                        .build());
 
-                driverInputs.add(driverInput);
                 driverIdToRide.put(String.valueOf(driverProfile.getId()), ride);
-
-                log.debug("Driver {} features - Deviation: {}%, Zone: {}, Distance: {}km, Heading: {}°",
-                        driverProfile.getId(), routeDeviation, zoneDensity, tripDistance, headingAngle);
             } catch (Exception e) {
-                log.error("Error extracting features for ride {}: {}", ride.getId(), e.getMessage());
+                log.error("Error extracting ML features for ride {}: {}", ride.getId(), e.getMessage());
             }
         }
 
         if (driverInputs.isEmpty()) {
-            log.warn("No valid driver inputs extracted for ML prediction");
             return candidateRides.stream()
-                    .map(ride -> buildPoolResponse(ride, passengerStartLat, passengerStartLng,
-                            passengerEndLat, passengerEndLng))
+                    .map(ride -> buildPoolResponse(ride, passengerRideDistance))
                     .collect(Collectors.toList());
         }
 
-        // Call ML service for predictions
         try {
             MLDriverPredictionRequest mlRequest = new MLDriverPredictionRequest();
             mlRequest.setPassengerId("passenger_" + System.currentTimeMillis());
@@ -248,40 +229,26 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
 
             MLDriverPredictionResponse mlResponse = mlService.predictDriverAcceptance(mlRequest);
 
-            if (mlResponse == null || mlResponse.getRankedDrivers() == null || mlResponse.getRankedDrivers().isEmpty()) {
-                log.warn("No ML predictions received, returning non-ranked results");
+            if (mlResponse == null || mlResponse.getRankedDrivers() == null
+                    || mlResponse.getRankedDrivers().isEmpty()) {
+                log.warn("No ML predictions received — returning unranked results");
                 return candidateRides.stream()
-                        .map(ride -> buildPoolResponse(ride, passengerStartLat, passengerStartLng,
-                                passengerEndLat, passengerEndLng))
+                        .map(ride -> buildPoolResponse(ride, passengerRideDistance))
                         .collect(Collectors.toList());
             }
 
-            log.info("ML prediction successful. Top driver ID: {} with acceptance rate: {}",
+            log.info("ML prediction successful. Top driver: {}, acceptance: {}",
                     mlResponse.getTopDriverId(),
                     mlResponse.getRankedDrivers().get(0).getPredictedAcceptanceRate());
 
-            // Build response list in ML-ranked order
             List<SharedRidePoolResponse> rankedResults = new ArrayList<>();
-            double prevAcceptanceRate = 1.0;
-
-            for (MLDriverPredictionResponse.RankedDriver rankedDriver : mlResponse.getRankedDrivers()) {
-                RideDetail ride = driverIdToRide.get(rankedDriver.getDriverId());
+            for (MLDriverPredictionResponse.RankedDriver ranked : mlResponse.getRankedDrivers()) {
+                RideDetail ride = driverIdToRide.get(ranked.getDriverId());
                 if (ride != null) {
-                    SharedRidePoolResponse response = buildPoolResponse(ride, passengerStartLat,
-                            passengerStartLng, passengerEndLat, passengerEndLng);
-                    
-                    // Attach ML prediction score for transparency
-                    response.setMlAcceptanceProbability(rankedDriver.getPredictedAcceptanceRate());
-                    response.setMlRank(rankedDriver.getRank());
-                    
-                    rankedResults.add(response);
-                    
-                    log.debug("Ranked ride #{}: Driver {} - Acceptance: {:.2f}%, Cost: {}",
-                            rankedDriver.getRank(), rankedDriver.getDriverId(),
-                            rankedDriver.getPredictedAcceptanceRate() * 100,
-                            response.getTotalRideCost());
-
-                    prevAcceptanceRate = rankedDriver.getPredictedAcceptanceRate();
+                    SharedRidePoolResponse resp = buildPoolResponse(ride, passengerRideDistance);
+                    resp.setMlAcceptanceProbability(ranked.getPredictedAcceptanceRate());
+                    resp.setMlRank(ranked.getRank());
+                    rankedResults.add(resp);
                 }
             }
 
@@ -289,10 +256,9 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
             return rankedResults;
 
         } catch (Exception e) {
-            log.error("ML service call failed, returning non-ranked results: {}", e.getMessage(), e);
+            log.error("ML service call failed — returning unranked results: {}", e.getMessage(), e);
             return candidateRides.stream()
-                    .map(ride -> buildPoolResponse(ride, passengerStartLat, passengerStartLng,
-                            passengerEndLat, passengerEndLng))
+                    .map(ride -> buildPoolResponse(ride, passengerRideDistance))
                     .collect(Collectors.toList());
         }
     }
@@ -309,9 +275,9 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
                     ride.getStartLocationLongitude().doubleValue(),
                     passengerLat.doubleValue(),
                     passengerLng.doubleValue());
-            
+
             double rideDistance = ride.getTotalRideDistance().doubleValue();
-            
+
             if (directDistance > 0) {
                 float deviation = (float) ((rideDistance - directDistance) / directDistance * 100);
                 return Math.max(0, Math.min(100, deviation)); // Clamp 0-100
@@ -329,7 +295,7 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
     private int estimateZoneDensity(BigDecimal startLat, BigDecimal startLng) {
         try {
             BigDecimal searchRadius = new BigDecimal("2"); // 2km zone
-            long nearbyRides = (long) rideDetailRepository.findByStatus("ACTIVE").stream()
+            long nearbyRides = rideDetailRepository.findByStatus("ACTIVE").stream()
                     .filter(ride -> isWithinRadius(startLat, startLng,
                             ride.getStartLocationLatitude(), ride.getStartLocationLongitude(),
                             searchRadius))
@@ -364,7 +330,7 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
 
             float bearing = (float) Math.toDegrees(Math.atan2(y, x));
             bearing = (bearing + 360) % 360; // Normalize to 0-360
-            
+
             log.debug("Heading angle calculated: {}°", bearing);
             return bearing;
         } catch (Exception e) {
@@ -457,88 +423,45 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
         return mapToResponse(shareRideDetail);
     }
 
-    @Override
-    public ShareRideDetail requestSharedRideWithMatching(ShareRideDetailAddResource request) {
-        log.info("Processing shared ride request with matching for user ID: {}", request.getUserId());
-        // For now, just create the shared ride
-        // In production, this would call ML service for driver acceptance prediction
-        return joinSharedRide(request);
-    }
-
-    @Override
-    public List<SharedRidePoolResponse> searchNearbyRides(
-            BigDecimal passengerStartLat,
-            BigDecimal passengerStartLng,
-            BigDecimal passengerEndLat,
-            BigDecimal passengerEndLng) {
-        log.info("Searching for nearby rides with default radius: {}", DEFAULT_RADIUS_KM);
-        return getAvailableRidePools(passengerStartLat, passengerStartLng,
-                passengerEndLat, passengerEndLng, DEFAULT_RADIUS_KM);
-    }
-
     // ============ Helper Methods ============
 
     /**
      * Calculate cost for a single passenger based on their ride distance
      */
     private BigDecimal calculatePassengerCost(RideDetail rideDetail, BigDecimal passengerDistance) {
-        if (rideDetail.getPerKmRate() == null || rideDetail.getPerKmRate().equals(BigDecimal.ZERO)) {
-            // If no per km rate, split total cost equally
-            long confirmedPassengers = shareRideDetailRepository
+        BigDecimal perKmRate = rideDetail.getPerKmRate();
+
+        if (perKmRate == null || perKmRate.compareTo(BigDecimal.ZERO) <= 0) {
+            // Fallback: equal split of total cost
+            long confirmed = shareRideDetailRepository
                     .countByRideDetailIdAndStatus(rideDetail.getId(), STATUS_CONFIRMED);
-            long totalPassengers = confirmedPassengers + 1; // Include current passenger
+            long totalAfterJoin = confirmed + 1;
             return rideDetail.getTotalRideCost()
-                    .divide(new BigDecimal(totalPassengers), 2, RoundingMode.HALF_UP);
+                    .divide(new BigDecimal(totalAfterJoin), 2, RoundingMode.HALF_UP);
         }
 
-        // Calculate based on passenger's distance
-        return passengerDistance.multiply(rideDetail.getPerKmRate())
+        // Current ACTIVE+CONFIRMED passengers (before this one joins)
+        long currentN = shareRideDetailRepository.countByRideDetailIdAndStatus(
+                rideDetail.getId(), STATUS_CONFIRMED);
+        long projectedN = currentN + 1;
+
+        // share% = max(60 / projectedN, 20)
+        BigDecimal sharePct = BASE_SHARE_PCT
+                .divide(BigDecimal.valueOf(projectedN), 4, RoundingMode.HALF_UP)
+                .max(MIN_SHARE_PCT)
                 .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal segmentCost = passengerDistance.multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
+        return segmentCost.multiply(sharePct)
+                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
     }
 
     /**
-     * Check if a point is within a given radius
-     */
-    private boolean isWithinRadius(BigDecimal lat1, BigDecimal lng1,
-                                   BigDecimal lat2, BigDecimal lng2, BigDecimal radiusKm) {
-        double distance = calculateDistance(
-                lat1.doubleValue(), lng1.doubleValue(),
-                lat2.doubleValue(), lng2.doubleValue()
-        );
-        return distance <= radiusKm.doubleValue();
-    }
-
-    /**
-     * Calculate distance between two coordinates using Haversine formula
-     */
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Earth's radius in kilometers
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
-
-    /**
-     * Check if ride has available seats
-     */
-    private boolean hasAvailableSeats(RideDetail rideDetail) {
-        long confirmedPassengers = shareRideDetailRepository
-                .countByRideDetailIdAndStatus(rideDetail.getId(), STATUS_CONFIRMED);
-        return confirmedPassengers < rideDetail.getAvailableSeats();
-    }
-
-    /**
-     * Build pool response from ride detail
+     * Build pool response from ride detail.
+     * Uses real passengerRideDistance for an accurate cost estimate.
      */
     private SharedRidePoolResponse buildPoolResponse(RideDetail rideDetail,
-                                                      BigDecimal passengerStartLat,
-                                                      BigDecimal passengerStartLng,
-                                                      BigDecimal passengerEndLat,
-                                                      BigDecimal passengerEndLng) {
+                                                      BigDecimal passengerRideDistance) {
         SharedRidePoolResponse response = new SharedRidePoolResponse();
         response.setRideDetailId(rideDetail.getId());
         response.setDriverProfileId(rideDetail.getDriverProfile().getId());
@@ -554,20 +477,53 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
                 .countByRideDetailIdAndStatus(rideDetail.getId(), STATUS_CONFIRMED);
         response.setCurrentPassengers(confirmedPassengers);
         response.setAvailableSeats(rideDetail.getAvailableSeats() - confirmedPassengers);
-
         response.setTotalRideDistance(rideDetail.getTotalRideDistance());
         response.setTotalRideCost(rideDetail.getTotalRideCost());
         response.setPerKmRate(rideDetail.getPerKmRate());
 
-        // Calculate estimated cost for this passenger
-        BigDecimal estimatedCost = calculatePassengerCost(rideDetail,
-                new BigDecimal("5")); // Estimate with 5km distance
+        // Accurate cost estimate using the passenger's actual route distance
+        BigDecimal estimatedCost = calculatePassengerCost(rideDetail, passengerRideDistance);
         response.setEstimatedCostPerPassenger(estimatedCost);
 
         response.setDriverRating(rideDetail.getDriverProfile().getRatingAsDriver());
         response.setTotalRidesAsDriver(rideDetail.getDriverProfile().getTotalRidesAsDriver());
 
         return response;
+    }
+
+    /**
+     * Check if a point is within a given radius using Haversine distance.
+     */
+    private boolean isWithinRadius(BigDecimal lat1, BigDecimal lng1,
+                                    BigDecimal lat2, BigDecimal lng2,
+                                    BigDecimal radiusKm) {
+        double distance = calculateDistance(
+                lat1.doubleValue(), lng1.doubleValue(),
+                lat2.doubleValue(), lng2.doubleValue());
+        return distance <= radiusKm.doubleValue();
+    }
+
+    /**
+     * Check if a ride has available seats (confirmed passengers < total seats).
+     */
+    private boolean hasAvailableSeats(RideDetail rideDetail) {
+        long confirmedPassengers = shareRideDetailRepository
+                .countByRideDetailIdAndStatus(rideDetail.getId(), STATUS_CONFIRMED);
+        return confirmedPassengers < rideDetail.getAvailableSeats();
+    }
+
+    /**
+     * Haversine formula to calculate the great-circle distance between two points (in km).
+     */
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Earth's radius in kilometres
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     /**

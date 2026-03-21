@@ -2,11 +2,20 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
-import com.ride.mate.domain.*;
+import com.ride.mate.domain.RideDetail;
+import com.ride.mate.domain.RideRequest;
+import com.ride.mate.domain.ShareRideDetail;
+import com.ride.mate.domain.User;
+import com.ride.mate.domain.UserProfile;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
-import com.ride.mate.repository.*;
-import com.ride.mate.resources.AvailableRideResponse;
+import com.ride.mate.repository.RideDetailRepository;
+import com.ride.mate.repository.RideRequestRepository;
+import com.ride.mate.repository.ShareRideDetailRepository;
+import com.ride.mate.repository.UserProfileRepository;
+import com.ride.mate.repository.UserRepository;
+import com.ride.mate.repository.DriverProfileRepository;
+import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.CostSplitService;
@@ -22,6 +31,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +45,8 @@ import java.util.stream.Collectors;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added cancelRideRequest and estimatePassengerCost
+ * 3 21-03-2026    N/A          N/A          Tishan           Removed getAvailableRides (moved to ShareRideDetailService)
  */
 @Slf4j
 @Service
@@ -45,7 +57,6 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private static final String STATUS_PENDING = "PENDING";
     private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final String STATUS_REJECTED = "REJECTED";
-    private static final BigDecimal DEFAULT_RADIUS_KM = new BigDecimal("15");
 
     private final RideRequestRepository rideRequestRepository;
     private final RideDetailRepository rideDetailRepository;
@@ -53,7 +64,6 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final DriverProfileRepository driverProfileRepository;
-    private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
     private final CostSplitService costSplitService;
     private final Environment environment;
 
@@ -63,7 +73,6 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                                   UserRepository userRepository,
                                   UserProfileRepository userProfileRepository,
                                   DriverProfileRepository driverProfileRepository,
-                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
                                   CostSplitService costSplitService,
                                   Environment environment) {
         this.rideRequestRepository = rideRequestRepository;
@@ -72,42 +81,10 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.driverProfileRepository = driverProfileRepository;
-        this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
         this.costSplitService = costSplitService;
         this.environment = environment;
     }
 
-    @Override
-    public List<AvailableRideResponse> getAvailableRides(BigDecimal endLat, BigDecimal endLng, BigDecimal radiusKm) {
-        log.info("Fetching available rides near destination ({}, {}), radius: {} km", endLat, endLng, radiusKm);
-
-        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
-
-        if (activeRides.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
-
-        // Filter by proximity to passenger's destination if coordinates provided
-        List<RideDetail> filteredRides;
-        if (endLat != null && endLng != null) {
-            filteredRides = activeRides.stream()
-                    .filter(ride -> {
-                        BigDecimal dist = haversineDistance(
-                                endLat, endLng,
-                                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
-                        return dist.compareTo(effectiveRadius) <= 0;
-                    })
-                    .collect(Collectors.toList());
-        } else {
-            filteredRides = activeRides;
-        }
-
-        return filteredRides.stream()
-                .map(this::mapToAvailableRideResponse)
-                .collect(Collectors.toList());
-    }
 
     @Override
     public RideRequestResponse createRideRequest(RideRequestResource resource) {
@@ -277,6 +254,116 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
 
     // ─── Helper methods ─────────────────────────────────────────────
 
+    @Override
+    public RideRequestResponse cancelRideRequest(Long rideRequestId) {
+        log.info("Cancelling ride request ID: {}", rideRequestId);
+
+        RideRequest rideRequest = rideRequestRepository.findById(rideRequestId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RIDE_REQUEST_NOT_FOUND), "message"));
+
+        // Only PENDING or ACCEPTED requests can be cancelled by the passenger
+        if (STATUS_REJECTED.equals(rideRequest.getStatus())
+                || "CANCELLED".equals(rideRequest.getStatus())) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_REQUEST_ALREADY_PROCESSED), "message");
+        }
+
+        boolean wasAccepted = STATUS_ACCEPTED.equals(rideRequest.getStatus());
+
+        // Mark request as cancelled
+        rideRequest.setStatus("CANCELLED");
+        rideRequest.setModifiedDate(DateUtil.getDate());
+        rideRequest.setModifiedUser(LoginAuthentication.getUserName());
+        rideRequestRepository.save(rideRequest);
+
+        // If the passenger was already accepted (ShareRideDetail exists), remove them
+        // and recalculate cost split for remaining passengers
+        if (wasAccepted) {
+            List<ShareRideDetail> shareRideDetails = shareRideDetailRepository
+                    .findByRideDetailIdAndStatus(rideRequest.getRideDetail().getId(), STATUS_ACTIVE);
+
+            shareRideDetails.stream()
+                    .filter(srd -> Objects.equals(srd.getRequestId(), rideRequest.getId()))
+                    .findFirst()
+                    .ifPresent(srd -> {
+                        srd.setStatus("CANCELLED");
+                        srd.setModifiedDate(DateUtil.getDate());
+                        srd.setModifiedUser(LoginAuthentication.getUserName());
+                        shareRideDetailRepository.save(srd);
+                        log.info("ShareRideDetail ID {} marked CANCELLED for request ID {}",
+                                srd.getId(), rideRequestId);
+                    });
+
+            // Recalculate cost for the remaining passengers
+            costSplitService.calculateCostSplit(rideRequest.getRideDetail().getId());
+            log.info("Cost recalculated after passenger cancelled accepted ride request {}", rideRequestId);
+        }
+
+        log.info("Ride request {} cancelled", rideRequestId);
+        return mapToRideRequestResponse(rideRequest);
+    }
+
+    @Override
+    public PassengerEstimatedCostResponse estimatePassengerCost(Long rideDetailId,
+                                                                 BigDecimal passengerRideDistance) {
+        log.info("Estimating cost for ride ID: {}, passenger distance: {} km",
+                rideDetailId, passengerRideDistance);
+
+        RideDetail rideDetail = rideDetailRepository.findById(rideDetailId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message"));
+
+        if (!STATUS_ACTIVE.equals(rideDetail.getStatus())) {
+            throw new ValidateRecordException(
+                    environment.getProperty(RIDE_NOT_AVAILABLE), "message");
+        }
+
+        BigDecimal perKmRate = rideDetail.getPerKmRate();
+        if (perKmRate == null || perKmRate.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidateRecordException(
+                    environment.getProperty(VEHICLE_TYPE_RATE_NOT_CONFIGURED), "message");
+        }
+
+        // Current passenger count (ACTIVE in ShareRideDetail)
+        int currentPassengers = (int) shareRideDetailRepository
+                .countByRideDetailIdAndStatus(rideDetailId, STATUS_ACTIVE);
+
+        // After this passenger joins, N = currentPassengers + 1
+        int projectedN = currentPassengers + 1;
+
+        // Share % = max(60 / N, 20)
+        BigDecimal sharePct = new BigDecimal("60")
+                .divide(BigDecimal.valueOf(projectedN), 4, RoundingMode.HALF_UP)
+                .max(new BigDecimal("20"))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        // Estimated cost = passengerDistance × perKmRate × (sharePct / 100)
+        BigDecimal segmentCost = passengerRideDistance.multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal estimatedCost = segmentCost
+                .multiply(sharePct)
+                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+        String note = String.format(
+                "You are passenger #%d on this ride. You pay %.0f%% of your segment cost " +
+                "(formula: max(60/%d, 20)%%). Driver is a daily commuter — you share running costs only.",
+                projectedN, sharePct.doubleValue(), projectedN);
+
+        log.info("Estimated cost for ride {} with {} projected passengers: {} ({}%)",
+                rideDetailId, projectedN, estimatedCost, sharePct);
+
+        return PassengerEstimatedCostResponse.builder()
+                .rideDetailId(rideDetailId)
+                .currentPassengerCount(currentPassengers)
+                .projectedPassengerCount(projectedN)
+                .perKmRate(perKmRate)
+                .passengerRideDistance(passengerRideDistance)
+                .sharePercentage(sharePct)
+                .estimatedCost(estimatedCost)
+                .pricingNote(note)
+                .build();
+    }
+
     private RideRequestResponse mapToRideRequestResponse(RideRequest rideRequest) {
         User user = rideRequest.getUser();
         UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElse(null);
@@ -284,6 +371,18 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         String profileImageUrl = null;
         if (profile != null && profile.getProfileImageDocument() != null) {
             profileImageUrl = profile.getProfileImageDocument().getDocumentUrl();
+        }
+
+        // If the request is ACCEPTED, pull the actual calculated cost from ShareRideDetail
+        BigDecimal estimatedCost = null;
+        if (STATUS_ACCEPTED.equals(rideRequest.getStatus())) {
+            List<ShareRideDetail> shareRideDetails = shareRideDetailRepository
+                    .findByRideDetailIdAndStatus(rideRequest.getRideDetail().getId(), STATUS_ACTIVE);
+            estimatedCost = shareRideDetails.stream()
+                    .filter(srd -> Objects.equals(srd.getRequestId(), rideRequest.getId()))
+                    .map(ShareRideDetail::getPassengerCost)
+                    .findFirst()
+                    .orElse(null);
         }
 
         return RideRequestResponse.builder()
@@ -302,86 +401,10 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .startCity(rideRequest.getStartCity())
                 .endCity(rideRequest.getEndCity())
                 .passengerRideDistance(rideRequest.getPassengerRideDistance())
+                .estimatedCost(estimatedCost)
                 .status(rideRequest.getStatus())
                 .createdDate(rideRequest.getCreatedDate() != null ? rideRequest.getCreatedDate().toString() : null)
                 .build();
-    }
-
-    private AvailableRideResponse mapToAvailableRideResponse(RideDetail ride) {
-        DriverProfile driverProfile = ride.getDriverProfile();
-        User driverUser = driverProfile.getUser();
-
-        // Get driver profile image
-        String driverProfileImageUrl = null;
-        UserProfile driverUserProfile = userProfileRepository.findByUserId(driverUser.getId()).orElse(null);
-        if (driverUserProfile != null && driverUserProfile.getProfileImageDocument() != null) {
-            driverProfileImageUrl = driverUserProfile.getProfileImageDocument().getDocumentUrl();
-        }
-
-        // Get vehicle details
-        String vehicleTypeName = null;
-        String vehicleMakeName = null;
-        String vehicleModelName = null;
-        String vehicleColor = null;
-        String vehiclePlateNumber = null;
-        DriverVehicleDetails vehicle = driverVehicleDetailsRepository
-                .findByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES)
-                .orElse(null);
-        if (vehicle != null) {
-            vehicleTypeName = vehicle.getVehicleType() != null ? vehicle.getVehicleType().getName() : null;
-            vehicleMakeName = vehicle.getVehicleMake() != null ? vehicle.getVehicleMake().getName() : null;
-            vehicleModelName = vehicle.getVehicleModel() != null ? vehicle.getVehicleModel().getName() : null;
-            vehicleColor = vehicle.getColor();
-            vehiclePlateNumber = vehicle.getRegistrationNumber();
-        }
-
-        long currentPassengers = shareRideDetailRepository.countByRideDetailIdAndStatus(ride.getId(), STATUS_ACTIVE);
-
-        return AvailableRideResponse.builder()
-                .rideDetailId(ride.getId())
-                .driverFirstName(driverUser.getFirstName())
-                .driverLastName(driverUser.getLastName())
-                .driverProfileImageUrl(driverProfileImageUrl)
-                .driverRating(driverProfile.getRatingAsDriver())
-                .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
-                .vehicleTypeName(vehicleTypeName)
-                .vehicleMakeName(vehicleMakeName)
-                .vehicleModelName(vehicleModelName)
-                .vehicleColor(vehicleColor)
-                .vehiclePlateNumber(vehiclePlateNumber)
-                .startCity(ride.getStartCity())
-                .endCity(ride.getEndCity())
-                .startLat(ride.getStartLocationLatitude())
-                .startLng(ride.getStartLocationLongitude())
-                .endLat(ride.getEndLocationLatitude())
-                .endLng(ride.getEndLocationLongitude())
-                .totalRideDistance(ride.getTotalRideDistance())
-                .totalRideCost(ride.getTotalRideCost())
-                .perKmRate(ride.getPerKmRate())
-                .availableSeats(ride.getAvailableSeats())
-                .currentPassengers(currentPassengers)
-                .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
-                .status(ride.getStatus())
-                .build();
-    }
-
-    /**
-     * Haversine formula to calculate distance between two lat/lng points in kilometers.
-     */
-    private BigDecimal haversineDistance(BigDecimal lat1, BigDecimal lng1, BigDecimal lat2, BigDecimal lng2) {
-        if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
-            return new BigDecimal("9999"); // large value so it's filtered out
-        }
-        double R = 6371.0; // Earth radius in km
-        double dLat = Math.toRadians(lat2.subtract(lat1).doubleValue());
-        double dLon = Math.toRadians(lng2.subtract(lng1).doubleValue());
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1.doubleValue()))
-                * Math.cos(Math.toRadians(lat2.doubleValue()))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = R * c;
-        return BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_UP);
     }
 }
 
