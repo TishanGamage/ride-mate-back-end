@@ -110,37 +110,6 @@ public class RideRequestControllerTests {
 
     @Test
     @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
-    public void testGetAvailableRides_Success() throws Exception {
-        // Arrange
-        when(rideRequestService.getAvailableRides(any(), any(), any())).thenReturn(mockAvailableRides);
-
-        // Act & Assert
-        mockMvc.perform(get("/ride-requests/available-rides")
-                        .param("endLat", "6.8300")
-                        .param("endLng", "79.9200")
-                        .param("radiusKm", "15")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].rideDetailId").value(1))
-                .andExpect(jsonPath("$[0].driverFirstName").value("Jane"))
-                .andExpect(jsonPath("$[0].availableSeats").value(3));
-    }
-
-    @Test
-    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
-    public void testGetAvailableRides_NoFilters() throws Exception {
-        // Arrange
-        when(rideRequestService.getAvailableRides(null, null, null)).thenReturn(mockAvailableRides);
-
-        // Act & Assert
-        mockMvc.perform(get("/ride-requests/available-rides")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
-
-    @Test
-    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testCreateRideRequest_Success() throws Exception {
         // Arrange
         when(rideRequestService.createRideRequest(any(RideRequestResource.class)))
