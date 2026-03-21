@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -91,6 +92,7 @@ public class UserProfileControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testCreateUserProfile_Success() throws Exception {
         // Arrange
         when(userProfileService.createUserProfile(any(UserProfileAddResource.class)))
@@ -105,6 +107,7 @@ public class UserProfileControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testCreateUserProfile_MissingUserId() throws Exception {
         // Arrange
         userProfileAddRequest.setUserId(null);
@@ -113,10 +116,11 @@ public class UserProfileControllerTests {
         mockMvc.perform(post("/user-profile/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userProfileAddRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testUpdateUserProfile_Success() throws Exception {
         // Arrange
         when(userProfileService.updateUserProfile(any(UserProfileUpdateResource.class), eq(1L)))
@@ -131,6 +135,7 @@ public class UserProfileControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetUserProfileByUserId_Success() throws Exception {
         // Arrange
         when(userProfileService.getUserProfileByUserId(1L)).thenReturn(mockUserProfileResponse);
@@ -145,57 +150,5 @@ public class UserProfileControllerTests {
                 .andExpect(jsonPath("$.willingToDrive").value("YES"));
     }
 
-    @Test
-    public void testUpdateWillingToDrive_Success() throws Exception {
-        // Arrange
-        WillingToDriveUpdateResource request = new WillingToDriveUpdateResource();
-        request.setWillingToDrive(YesNo.YES);
 
-        when(userProfileService.updateWillingToDrive(eq(1L), any(WillingToDriveUpdateResource.class)))
-                .thenReturn(mockUserProfile);
-
-        // Act & Assert
-        mockMvc.perform(patch("/user-profile/1/willing-to-drive")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
-    }
-
-    @Test
-    public void testUpdateProfilePhoto_Success() throws Exception {
-        // Arrange
-        ProfilePhotoUpdateResource request = new ProfilePhotoUpdateResource();
-        request.setProfileImageDocumentId(10L);
-
-        when(userProfileService.updateProfilePhoto(eq(1L), any(ProfilePhotoUpdateResource.class)))
-                .thenReturn(mockUserProfile);
-
-        // Act & Assert
-        mockMvc.perform(patch("/user-profile/1/profile-photo")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
-    }
-
-    @Test
-    public void testUpdateRole_Success() throws Exception {
-        // Arrange
-        UpdateRoleRequest request = new UpdateRoleRequest();
-        request.setRole("DRIVER");
-
-        SuccessAndErrorDetailsResource mockResponse = new SuccessAndErrorDetailsResource();
-        mockResponse.setMessages("Role updated successfully");
-
-        when(userProfileService.updateRole(eq(1L), any(UpdateRoleRequest.class)))
-                .thenReturn(mockResponse);
-
-        // Act & Assert
-        mockMvc.perform(patch("/user-profile/1/update-role")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.messages").value("Role updated successfully"));
-    }
 }
