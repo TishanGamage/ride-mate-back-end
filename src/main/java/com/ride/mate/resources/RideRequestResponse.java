@@ -15,6 +15,7 @@ import java.math.BigDecimal;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added estimatedCost field
  */
 @Getter
 @Setter
@@ -38,6 +39,8 @@ public class RideRequestResponse {
     private String startCity;
     private String endCity;
     private BigDecimal passengerRideDistance;
+    /** Estimated cost for this passenger (calculated on accept using max(60/N,20)% algorithm) */
+    private BigDecimal estimatedCost;
     private String status;
     private String createdDate;
 }
