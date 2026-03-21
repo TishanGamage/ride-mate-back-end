@@ -72,10 +72,10 @@ public class UserProfileController extends MessagePropertyBase {
      * @param request user profile update request containing profile details
      * @return ResponseEntity with updated user profile ID and success message
      */
-    @PutMapping(value = "/update/{id}")
-    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileUpdateResource request
-            , @PathVariable Long id) {
-        UserProfile userProfile = userProfileService.updateUserProfile(request,id);
+    @PutMapping(value = "/update/{userId}")
+    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileUpdateResource request,
+            @PathVariable Long userId) {
+        UserProfile userProfile = userProfileService.updateUserProfile(request, userId);
         SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
         response.setId(userProfile.getId());
         response.setMessages(environment.getProperty(RECORD_UPDATED));
