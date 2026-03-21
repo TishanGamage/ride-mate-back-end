@@ -37,28 +37,6 @@ public class RideRequestController extends MessagePropertyBase {
     public RideRequestController(RideRequestService rideRequestService) {
         this.rideRequestService = rideRequestService;
     }
-
-    /**
-     * Get all available rides for a passenger.
-     * Optionally filter by proximity to the passenger's destination.
-     *
-     * @param endLat    Passenger destination latitude (optional)
-     * @param endLng    Passenger destination longitude (optional)
-     * @param radiusKm  Search radius in km (optional, default 15)
-     * @return List of available rides
-     */
-    @GetMapping("/available-rides")
-    public ResponseEntity<List<AvailableRideResponse>> getAvailableRides(
-            @RequestParam(value = "endLat", required = false) BigDecimal endLat,
-            @RequestParam(value = "endLng", required = false) BigDecimal endLng,
-            @RequestParam(value = "radiusKm", required = false) BigDecimal radiusKm) {
-
-        log.info("GET /ride-requests/available-rides?endLat={}&endLng={}&radiusKm={}", endLat, endLng, radiusKm);
-
-        List<AvailableRideResponse> rides = rideRequestService.getAvailableRides(endLat, endLng, radiusKm);
-        return new ResponseEntity<>(rides, HttpStatus.OK);
-    }
-
     /**
      * Create a ride request (passenger requests to join a ride).
      *

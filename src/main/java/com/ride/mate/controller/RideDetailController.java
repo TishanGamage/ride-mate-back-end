@@ -10,6 +10,7 @@ import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.resources.SuccessAndErrorDetailsResource;
 import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideDetailService;
+import com.ride.mate.util.RedisLocationUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -43,13 +44,16 @@ public class RideDetailController extends MessagePropertyBase {
     private final RideDetailService rideDetailService;
     private final CostSplitService costSplitService;
     private final Environment environment;
+    private final RedisLocationUtil redisLocationUtil;
 
     public RideDetailController(RideDetailService rideDetailService,
                                 CostSplitService costSplitService,
-                                Environment environment) {
+                                Environment environment,
+                                RedisLocationUtil redisLocationUtil) {
         this.rideDetailService = rideDetailService;
         this.costSplitService = costSplitService;
         this.environment = environment;
+        this.redisLocationUtil = redisLocationUtil;
     }
 
     /**
@@ -197,5 +201,66 @@ public class RideDetailController extends MessagePropertyBase {
         log.info("Received request to get rides for driver profile ID: {}, status: {}", driverProfileId, status);
 
         return new ResponseEntity<>(rideDetailService.getRidesByDriverProfileId(driverProfileId, status), HttpStatus.OK);
+    }
+
+    /**
+     * Update driver's current location for a ride
+     * Used by FE to update driver's real-time location (Uber/PickMe style)
+     *
+     * @param rideDetailId Ride detail ID
+     * @param latitude Current latitude
+     * @param longitude Current longitude
+     * @return ResponseEntity with success response
+     */
+    @PutMapping("/{rideDetailId}/location")
+    public ResponseEntity<?> updateDriverCurrentLocation(
+            @PathVariable Long rideDetailId,
+            @RequestParam("latitude") BigDecimal latitude,
+            @RequestParam("longitude") BigDecimal longitude) {
+        log.info("Received request to update driver location for ride ID: {} to lat: {}, lng: {}", rideDetailId, latitude, longitude);
+        RideDetail rideDetail = rideDetailService.updateDriverCurrentLocation(rideDetailId, latitude, longitude);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(rideDetail.getId());
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Update driver's current location in Redis for a ride
+     * Used for real-time location tracking
+     *
+     * @param rideDetailId Ride detail ID
+     * @param latitude Current latitude
+     * @param longitude Current longitude
+     * @return ResponseEntity with success response
+     */
+    @PutMapping("/{rideDetailId}/redis-location")
+    public ResponseEntity<?> updateDriverLocationRedis(
+            @PathVariable Long rideDetailId,
+            @RequestParam("latitude") BigDecimal latitude,
+            @RequestParam("longitude") BigDecimal longitude) {
+        log.info("Received request to update driver location in Redis for ride ID: {} to lat: {}, lng: {}", rideDetailId, latitude, longitude);
+        redisLocationUtil.setDriverLocation(rideDetailId, latitude, longitude);
+        SuccessAndErrorDetailsResource response = new SuccessAndErrorDetailsResource();
+        response.setId(rideDetailId);
+        response.setMessages(environment.getProperty(RECORD_UPDATED));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Get driver's current location from Redis for a ride
+     * Used for real-time location polling
+     *
+     * @param rideDetailId Ride detail ID
+     * @return ResponseEntity with lat/lng array
+     */
+    @GetMapping("/{rideDetailId}/redis-location")
+    public ResponseEntity<?> getDriverLocationRedis(@PathVariable Long rideDetailId) {
+        log.info("Received request to get driver location from Redis for ride ID: {}", rideDetailId);
+        BigDecimal[] location = redisLocationUtil.getDriverLocation(rideDetailId);
+        if (location == null) {
+            return new ResponseEntity<>("Location not found", HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(location, HttpStatus.OK);
     }
 }

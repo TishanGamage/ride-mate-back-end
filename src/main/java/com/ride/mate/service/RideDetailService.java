@@ -76,5 +76,14 @@ public interface RideDetailService {
      * @return List of RideDetailResponseResource
      */
     java.util.List<RideDetailResponseResource> getRidesByDriverProfileId(Long driverProfileId, String status);
-}
 
+    /**
+     * Update driver's current location for a ride
+     *
+     * @param rideDetailId Ride detail ID
+     * @param latitude Current latitude
+     * @param longitude Current longitude
+     * @return Updated RideDetail entity
+     */
+    RideDetail updateDriverCurrentLocation(Long rideDetailId, BigDecimal latitude, BigDecimal longitude);
+}

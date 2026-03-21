@@ -312,5 +312,20 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                 .createdDate(ride.getCreatedDate() != null ? ride.getCreatedDate().toString() : null)
                 .build();
     }
+
+    @Override
+    public RideDetail updateDriverCurrentLocation(Long rideDetailId, BigDecimal latitude, BigDecimal longitude) {
+        log.info("Updating driver's current location for ride ID: {} to lat: {}, lng: {}", rideDetailId, latitude, longitude);
+        RideDetail rideDetail = rideDetailRepository.findById(rideDetailId)
+                .orElseThrow(() -> new ValidateRecordException(
+                        environment.getProperty(RECORD_NOT_FOUND), "message"));
+        rideDetail.setCurrentLocationLatitude(latitude);
+        rideDetail.setCurrentLocationLongitude(longitude);
+        rideDetail.setModifiedDate(DateUtil.getDate());
+        rideDetail.setModifiedUser("SYSTEM");
+        RideDetail updated = rideDetailRepository.save(rideDetail);
+        log.info("Driver location updated successfully for ride ID: {}", updated.getId());
+        return updated;
+    }
 }
 

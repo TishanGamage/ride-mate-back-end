@@ -85,4 +85,10 @@ public class RideDetail extends BaseEntity implements Serializable {
 
     @Column(name = "modified_user", length = 100)
     private String modifiedUser;
+
+    @Column(name = "current_location_latitude", precision = 10, scale = 7)
+    private BigDecimal currentLocationLatitude;
+
+    @Column(name = "current_location_longitude", precision = 10, scale = 7)
+    private BigDecimal currentLocationLongitude;
 }
