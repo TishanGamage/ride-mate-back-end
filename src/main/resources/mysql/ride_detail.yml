@@ -163,4 +163,3 @@ databaseChangeLog:
                   type: VARCHAR(200)
                   constraints:
                     nullable: true
-

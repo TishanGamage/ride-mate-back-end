@@ -1,12 +1,13 @@
 package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
-import com.ride.mate.resources.AvailableRideResponse;
+import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.RideRequestService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,10 @@ import java.util.List;
 
 /**
  * Ride Request Controller
- * REST API endpoints for the ride request/accept/reject flow
+ * REST API endpoints for the ride request/accept/reject/cancel flow.
+ *
+ * Ride discovery (browsing available rides) is handled by ShareRideDetailController
+ * which uses the ML service via GET /shared-ride/available.
  *
  * @author Tishan
  * @version 1.0.0
@@ -25,6 +29,8 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added cancel and estimate-cost endpoints
+ * 3 21-03-2026    N/A          N/A          Tishan           Removed getAvailableRides (use /shared-ride/available)
  */
 @Slf4j
 @RestController
@@ -33,30 +39,32 @@ import java.util.List;
 public class RideRequestController extends MessagePropertyBase {
 
     private final RideRequestService rideRequestService;
+    private final Environment environment;
 
-    public RideRequestController(RideRequestService rideRequestService) {
+    public RideRequestController(RideRequestService rideRequestService,
+                                  Environment environment) {
         this.rideRequestService = rideRequestService;
+        this.environment = environment;
     }
 
     /**
-     * Get all available rides for a passenger.
-     * Optionally filter by proximity to the passenger's destination.
+     * Estimate the cost a passenger would pay before submitting a request.
+     * Uses max(60/N, 20)% algorithm where N = current passengers + 1.
      *
-     * @param endLat    Passenger destination latitude (optional)
-     * @param endLng    Passenger destination longitude (optional)
-     * @param radiusKm  Search radius in km (optional, default 15)
-     * @return List of available rides
+     * @param rideDetailId          The target ride ID
+     * @param passengerRideDistance The passenger's route distance in km
+     * @return Estimated cost with share percentage and pricing note
      */
-    @GetMapping("/available-rides")
-    public ResponseEntity<List<AvailableRideResponse>> getAvailableRides(
-            @RequestParam(value = "endLat", required = false) BigDecimal endLat,
-            @RequestParam(value = "endLng", required = false) BigDecimal endLng,
-            @RequestParam(value = "radiusKm", required = false) BigDecimal radiusKm) {
+    @GetMapping("/{rideDetailId}/estimate-cost")
+    public ResponseEntity<PassengerEstimatedCostResponse> estimatePassengerCost(
+            @PathVariable Long rideDetailId,
+            @RequestParam("passengerRideDistance") BigDecimal passengerRideDistance) {
 
-        log.info("GET /ride-requests/available-rides?endLat={}&endLng={}&radiusKm={}", endLat, endLng, radiusKm);
+        log.info("GET /ride-requests/{}/estimate-cost?passengerRideDistance={}", rideDetailId, passengerRideDistance);
 
-        List<AvailableRideResponse> rides = rideRequestService.getAvailableRides(endLat, endLng, radiusKm);
-        return new ResponseEntity<>(rides, HttpStatus.OK);
+        PassengerEstimatedCostResponse response = rideRequestService.estimatePassengerCost(
+                rideDetailId, passengerRideDistance);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -93,9 +101,10 @@ public class RideRequestController extends MessagePropertyBase {
 
     /**
      * Accept a ride request — passenger officially joins the ride.
+     * Automatically recalculates cost split and returns the passenger's calculated cost.
      *
      * @param id Ride request ID
-     * @return Updated ride request response
+     * @return Updated ride request response with estimatedCost populated
      */
     @PutMapping("/{id}/accept")
     public ResponseEntity<RideRequestResponse> acceptRideRequest(@PathVariable Long id) {
@@ -122,6 +131,23 @@ public class RideRequestController extends MessagePropertyBase {
     }
 
     /**
+     * Cancel a ride request (passenger withdraws).
+     * Works for PENDING (before driver acts) and ACCEPTED (passenger already joined).
+     * If ACCEPTED, removes from ride and cost is recalculated for remaining passengers.
+     *
+     * @param id Ride request ID
+     * @return Updated ride request response with CANCELLED status
+     */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<RideRequestResponse> cancelRideRequest(@PathVariable Long id) {
+
+        log.info("PUT /ride-requests/{}/cancel", id);
+
+        RideRequestResponse response = rideRequestService.cancelRideRequest(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
      * Get all ride requests for a passenger.
      *
      * @param userId User ID
@@ -136,4 +162,3 @@ public class RideRequestController extends MessagePropertyBase {
         return new ResponseEntity<>(requests, HttpStatus.OK);
     }
 }
-

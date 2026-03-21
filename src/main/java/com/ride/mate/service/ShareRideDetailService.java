@@ -19,107 +19,55 @@ import java.util.List;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Iruni           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Added passengerRideDistance to getAvailableRidePools;
+ *                                                            removed searchNearbyRides and requestSharedRideWithMatching
  */
 public interface ShareRideDetailService {
 
     /**
-     * Join a shared ride - Create a new shared ride detail record for a passenger
-     *
-     * @param request Share ride detail request resource
-     * @return Created ShareRideDetail entity
+     * Join a shared ride — create a ShareRideDetail record for a passenger.
+     * The passenger cost is calculated using max(60/N,20)% of their segment cost.
      */
     ShareRideDetail joinSharedRide(ShareRideDetailAddResource request);
 
     /**
-     * Get available rides for pooling based on passenger location and destination
-     * Uses ML model to rank drivers by acceptance rate
+     * Get available rides for pooling, ranked by ML acceptance probability.
      *
-     * @param passengerStartLat Passenger start latitude
-     * @param passengerStartLng Passenger start longitude
-     * @param passengerEndLat Passenger end latitude
-     * @param passengerEndLng Passenger end longitude
-     * @param radiusKm Search radius in kilometers
-     * @return List of available ride pools with matched passengers
+     * @param passengerStartLat     Passenger pickup latitude
+     * @param passengerStartLng     Passenger pickup longitude
+     * @param passengerEndLat       Passenger dropoff latitude
+     * @param passengerEndLng       Passenger dropoff longitude
+     * @param passengerRideDistance Passenger's route distance in km — used for accurate cost estimate
+     * @param radiusKm              Search radius in km
+     * @return ML-ranked list of available ride pools with estimated cost per passenger
      */
     List<SharedRidePoolResponse> getAvailableRidePools(
             BigDecimal passengerStartLat,
             BigDecimal passengerStartLng,
             BigDecimal passengerEndLat,
             BigDecimal passengerEndLng,
+            BigDecimal passengerRideDistance,
             BigDecimal radiusKm
     );
 
-    /**
-     * Get shared ride details for a specific ride (all passengers)
-     *
-     * @param rideDetailId Ride detail ID
-     * @return List of shared ride details
-     */
+    /** Get all passengers on a ride. */
     List<ShareRideDetailResponse> getRidePassengers(Long rideDetailId);
 
-    /**
-     * Get shared ride history for a passenger
-     *
-     * @param userId User ID
-     * @return List of shared ride details for the passenger
-     */
+    /** Get ride history for a passenger. */
     List<ShareRideDetailResponse> getPassengerRideHistory(Long userId);
 
-    /**
-     * Update shared ride status
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @param status New status (CONFIRMED, COMPLETED, CANCELLED)
-     * @return Updated ShareRideDetail
-     */
+    /** Update a shared ride's status (CONFIRMED, COMPLETED, CANCELLED). */
     ShareRideDetail updateShareRideStatus(Long shareRideDetailId, String status);
 
-    /**
-     * Cancel shared ride by passenger
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @return Updated ShareRideDetail with CANCELLED status
-     */
+    /** Cancel a shared ride by passenger. */
     ShareRideDetail cancelSharedRide(Long shareRideDetailId);
 
     /**
-     * Calculate pooled cost for passengers
-     * Returns cost split among all passengers in the ride
-     *
-     * @param rideDetailId Ride detail ID
-     * @return Cost per passenger after split
+     * Calculate pooled cost for a ride using max(60/N,20)% algorithm.
+     * Returns the cost per passenger based on current confirmed passenger count.
      */
     BigDecimal calculatePooledCost(Long rideDetailId);
 
-    /**
-     * Get ride details with all passengers and pooled cost information
-     *
-     * @param shareRideDetailId Shared ride detail ID
-     * @return Complete ride details with cost information
-     */
+    /** Get detailed info for a single shared-ride record. */
     ShareRideDetailResponse getSharedRideDetails(Long shareRideDetailId);
-
-    /**
-     * Request to join a shared ride with matching (calls ML service for driver acceptance prediction)
-     *
-     * @param request Share ride request with matching parameters
-     * @return Created ShareRideDetail after ML-based matching
-     */
-    ShareRideDetail requestSharedRideWithMatching(ShareRideDetailAddResource request);
-
-    /**
-     * Get available shared rides near passenger location
-     *
-     * @param passengerStartLat Start latitude
-     * @param passengerStartLng Start longitude
-     * @param passengerEndLat End latitude
-     * @param passengerEndLng End longitude
-     * @return List of available ride pools
-     */
-    List<SharedRidePoolResponse> searchNearbyRides(
-            BigDecimal passengerStartLat,
-            BigDecimal passengerStartLng,
-            BigDecimal passengerEndLat,
-            BigDecimal passengerEndLng
-    );
 }
