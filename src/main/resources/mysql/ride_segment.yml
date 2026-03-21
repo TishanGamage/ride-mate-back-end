@@ -108,3 +108,23 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: ride_segment
+            columns:
+              - column:
+                  name: segment_type
+                  type: VARCHAR(20)
+                  defaultValue: "MAIN"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: share_percentage
+                  type: DECIMAL(5,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
