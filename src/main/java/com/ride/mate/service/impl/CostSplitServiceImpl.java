@@ -25,36 +25,59 @@ import java.util.stream.Collectors;
 /**
  * Cost Split Service Implementation
  *
- * Segment-based cost-splitting algorithm for ride-sharing:
+ * Daily commuter ride-share cost algorithm (from costsplittinglogic.md):
  *
- * Example scenario:
- *   Driver: Gampaha → Colombo (30 km, Rs.50/km = Rs.1500 total)
- *   Route passes through: Gampaha → Kadawatha (10km) → Kiribathgoda (5km) → Colombo (15km)
- *   Passenger A: Kadawatha → Colombo (joins at Kadawatha)
- *   Passenger B: Kiribathgoda → Colombo (joins at Kiribathgoda)
+ * The driver is already travelling this route for their own purpose — the route is NOT
+ * created for passengers.  Passengers pay a fair share of running costs, not a full
+ * private-hire fee.
  *
- *   Segment 1: Gampaha → Kadawatha (10km) — Driver only (1 rider)
- *     Cost = 10 × 50 = Rs.500, Driver pays Rs.500
+ * MAIN segments (driver's regular commute road):
+ *   N = number of passengers currently in the car
+ *   Share % per passenger = max(60 / N, 20)
+ *     N=1 → 60%,  N=2 → 40%,  N=3 → 30%,  N=4 → 25%,  N≥5 → 20% (floor)
+ *   Driver alone (N=0) → no charge to anyone
  *
- *   Segment 2: Kadawatha → Kiribathgoda (5km) — Driver + Passenger A (2 riders)
- *     Cost = 5 × 50 = Rs.250, each pays Rs.125
+ * SIDE_TRIP segments (detour off main road to pick up / drop off one passenger):
+ *   That passenger pays 60% of the detour cost.
+ *   Driver absorbs 40% (goodwill).
+ *   No other passenger is charged for the detour.
  *
- *   Segment 3: Kiribathgoda → Colombo (15km) — Driver + Passenger A + Passenger B (3 riders)
- *     Cost = 15 × 50 = Rs.750, each pays Rs.250
- *
- *   Passenger A total: Rs.125 + Rs.250 = Rs.375
- *   Passenger B total: Rs.250
- *   Driver effective cost: Rs.1500 - Rs.375 - Rs.250 = Rs.875
- *     (or: Rs.500 + Rs.125 + Rs.250 = Rs.875)
+ * Example (cost = Rs.1/km):
+ *   Driver alone (5 km)                    → Rs.0   for passengers
+ *   P1 side-trip pickup (10 km)             → P1 = Rs.6
+ *   Driver + P1 (10 km)                     → P1 = Rs.6        (60%)
+ *   P2 side-trip pickup (16 km)             → P2 = Rs.9.60
+ *   Driver + P1 + P2 (15 km)               → P1 = Rs.6, P2 = Rs.6  (40% each)
+ *   Driver + P1 + P2 + P3 (40 km)          → each Rs.12.00         (30% each)
  *
  * @author Tishan
  * @version 1.0.0
  * @since 1.0.0
+ *
+ * # Date       Story Point    Task No      Author           Description
+ * ---------------------------------------------------------------------------
+ * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 21-03-2026    N/A          N/A          Tishan           Replaced equal-split with max(60/N,20)% algorithm
  */
 @Slf4j
 @Service
 @Transactional
 public class CostSplitServiceImpl extends MessagePropertyBase implements CostSplitService {
+
+    /** Segment type constant: driver's regular commute road */
+    private static final String SEGMENT_TYPE_MAIN = "MAIN";
+
+    /** Segment type constant: detour off main road for one passenger */
+    private static final String SEGMENT_TYPE_SIDE_TRIP = "SIDE_TRIP";
+
+    /** Share % a single passenger pays on a SIDE_TRIP segment */
+    private static final BigDecimal SIDE_TRIP_PASSENGER_SHARE_PCT = new BigDecimal("60");
+
+    /** Minimum share % any passenger ever pays on a MAIN segment */
+    private static final BigDecimal MIN_SHARE_PCT = new BigDecimal("20");
+
+    /** Base share % for a single passenger on a MAIN segment */
+    private static final BigDecimal BASE_SHARE_PCT = new BigDecimal("60");
 
     private final RideDetailRepository rideDetailRepository;
     private final ShareRideDetailRepository shareRideDetailRepository;
@@ -70,6 +93,10 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         this.rideSegmentRepository = rideSegmentRepository;
         this.environment = environment;
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  Public API
+    // ═══════════════════════════════════════════════════════════════════
 
     @Override
     public CostSplitResponse calculateCostSplit(Long rideDetailId) {
@@ -93,10 +120,9 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         // 2. Fetch all active passengers for this ride
         List<ShareRideDetail> passengers = shareRideDetailRepository
                 .findByRideDetailIdAndStatus(rideDetailId, "ACTIVE");
-
         log.info("Found {} active passengers for ride {}", passengers.size(), rideDetailId);
 
-        // 3. If no passengers, the driver pays everything — return simple response
+        // 3. No passengers → driver pays everything
         if (passengers.isEmpty()) {
             return buildNoPassengerResponse(rideDetail, perKmRate);
         }
@@ -104,96 +130,160 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         // 4. Build ordered waypoints along the route
         List<Waypoint> waypoints = buildOrderedWaypoints(rideDetail, passengers);
 
-        // 5. Delete old segments and recalculate
+        // 5. Delete previously persisted segments so we start fresh
         rideSegmentRepository.deleteByRideDetailId(rideDetailId);
 
         // 6. Build segments between consecutive waypoints
-        List<RideSegment> segments = new ArrayList<>();
+        List<RideSegment> persistedSegments = new ArrayList<>();
         List<CostSplitResponse.SegmentDetail> segmentDetails = new ArrayList<>();
 
+        // Per-passenger running cost accumulators
+        Map<Long, BigDecimal> passengerTotals = new LinkedHashMap<>();
+        Map<Long, List<CostSplitResponse.PassengerSegmentCost>> passengerSegmentBreakdowns = new LinkedHashMap<>();
+        for (ShareRideDetail p : passengers) {
+            passengerTotals.put(p.getId(), BigDecimal.ZERO);
+            passengerSegmentBreakdowns.put(p.getId(), new ArrayList<>());
+        }
+
         for (int i = 0; i < waypoints.size() - 1; i++) {
-            Waypoint start = waypoints.get(i);
-            Waypoint end = waypoints.get(i + 1);
+            Waypoint segStart = waypoints.get(i);
+            Waypoint segEnd   = waypoints.get(i + 1);
 
-            // Calculate distance for this segment
-            BigDecimal segmentDistance = calculateSegmentDistance(start, end, rideDetail, waypoints);
+            BigDecimal segmentDistance = calculateSegmentDistance(segStart, segEnd, rideDetail, waypoints);
 
-            // Determine who is riding on this segment
-            // The driver is always on every segment.
-            // A passenger is on a segment if the segment falls between their pickup and dropoff.
-            int riderCount = 1; // driver always counts
-            for (ShareRideDetail p : passengers) {
-                if (isPassengerOnSegment(p, start, end, waypoints)) {
-                    riderCount++;
+            // Skip zero-distance segments
+            if (segmentDistance.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+
+            BigDecimal segmentCost = segmentDistance.multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
+
+            // ── Determine segment type ──────────────────────────────────
+            // A SIDE_TRIP segment is the round-trip detour to pick up or drop off exactly
+            // one passenger whose pickup/dropoff waypoint is the END of this segment and
+            // the waypoint is NOT on the driver's direct line between start and final destination.
+            // In this implementation we mark a segment as SIDE_TRIP when its end waypoint is
+            // a passenger pickup or dropoff that is the ONLY passenger boundary at that point
+            // AND the next waypoint backtracks (returns to where we came from).
+            //
+            // Practical approach: the front-end / ML service supplies a detour distance in
+            // the ShareRideDetail.  If a passenger has a non-zero detour distance stored,
+            // their pickup & dropoff are treated as SIDE_TRIP segments; otherwise MAIN.
+            // For now we classify as SIDE_TRIP only when the end waypoint is a solo
+            // passenger boundary (pickup or dropoff) AND the waypoint after it goes back
+            // in the direction of the previous waypoint (i.e., it's an out-and-back detour).
+
+            String segmentType = classifySegmentType(segStart, segEnd, waypoints, i);
+            Long sideTripPassengerId = (SEGMENT_TYPE_SIDE_TRIP.equals(segmentType))
+                    ? getSideTripPassengerId(segEnd)
+                    : null;
+
+            // ── Passengers present on this segment ──────────────────────
+            // For MAIN: all passengers whose ride range includes this segment.
+            // For SIDE_TRIP: only the one passenger this detour is for.
+            List<ShareRideDetail> passengersOnSegment;
+            if (SEGMENT_TYPE_SIDE_TRIP.equals(segmentType) && sideTripPassengerId != null) {
+                final Long stpId = sideTripPassengerId;
+                passengersOnSegment = passengers.stream()
+                        .filter(p -> p.getId().equals(stpId))
+                        .collect(Collectors.toList());
+            } else {
+                passengersOnSegment = passengers.stream()
+                        .filter(p -> isPassengerOnSegment(p, segStart, segEnd, waypoints))
+                        .collect(Collectors.toList());
+            }
+
+            int passengerCount = passengersOnSegment.size();
+
+            // ── Share percentage ─────────────────────────────────────────
+            BigDecimal sharePct;
+            BigDecimal costPerRider;
+
+            if (SEGMENT_TYPE_SIDE_TRIP.equals(segmentType)) {
+                // Detour: that one passenger pays 60%, driver absorbs 40%
+                sharePct    = SIDE_TRIP_PASSENGER_SHARE_PCT;
+                costPerRider = segmentCost
+                        .multiply(sharePct)
+                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            } else {
+                if (passengerCount == 0) {
+                    // Driver alone — no passenger charge
+                    sharePct     = BigDecimal.ZERO;
+                    costPerRider = BigDecimal.ZERO;
+                } else {
+                    // max(60 / N, 20) %
+                    sharePct = BASE_SHARE_PCT
+                            .divide(BigDecimal.valueOf(passengerCount), 4, RoundingMode.HALF_UP)
+                            .max(MIN_SHARE_PCT)
+                            .setScale(2, RoundingMode.HALF_UP);
+                    costPerRider = segmentCost
+                            .multiply(sharePct)
+                            .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
                 }
             }
 
-            BigDecimal segmentCost = segmentDistance.multiply(perKmRate);
-            BigDecimal costPerRider = segmentCost.divide(
-                    BigDecimal.valueOf(riderCount), 2, RoundingMode.HALF_UP);
+            int riderCount = passengerCount;
 
-            // Persist segment
+            // ── Persist segment ─────────────────────────────────────────
             RideSegment segment = new RideSegment();
             segment.setRideDetail(rideDetail);
             segment.setSegmentOrder(i + 1);
-            segment.setStartLatitude(start.latitude);
-            segment.setStartLongitude(start.longitude);
-            segment.setEndLatitude(end.latitude);
-            segment.setEndLongitude(end.longitude);
-            segment.setStartLabel(start.label);
-            segment.setEndLabel(end.label);
+            segment.setStartLatitude(segStart.latitude);
+            segment.setStartLongitude(segStart.longitude);
+            segment.setEndLatitude(segEnd.latitude);
+            segment.setEndLongitude(segEnd.longitude);
+            segment.setStartLabel(segStart.label);
+            segment.setEndLabel(segEnd.label);
             segment.setDistanceKm(segmentDistance);
             segment.setRiderCount(riderCount);
             segment.setSegmentCost(segmentCost);
             segment.setCostPerRider(costPerRider);
+            segment.setSegmentType(segmentType);
+            segment.setSharePercentage(sharePct);
             segment.setCreatedDate(DateUtil.getDate());
             segment.setCreatedUser(LoginAuthentication.getUserName());
             segment.setSyncTs(DateUtil.getDate());
-
-            segments.add(segment);
+            persistedSegments.add(segment);
 
             segmentDetails.add(CostSplitResponse.SegmentDetail.builder()
                     .segmentOrder(i + 1)
-                    .startLabel(start.label)
-                    .endLabel(end.label)
+                    .startLabel(segStart.label)
+                    .endLabel(segEnd.label)
                     .distanceKm(segmentDistance)
                     .riderCount(riderCount)
+                    .segmentType(segmentType)
+                    .sharePercentage(sharePct)
                     .segmentCost(segmentCost)
                     .costPerRider(costPerRider)
                     .build());
+
+            // ── Accumulate per-passenger costs ───────────────────────────
+            for (ShareRideDetail p : passengersOnSegment) {
+                passengerTotals.merge(p.getId(), costPerRider, BigDecimal::add);
+                passengerSegmentBreakdowns.get(p.getId()).add(
+                        CostSplitResponse.PassengerSegmentCost.builder()
+                                .segmentOrder(i + 1)
+                                .startLabel(segStart.label)
+                                .endLabel(segEnd.label)
+                                .distanceKm(segmentDistance)
+                                .riderCount(riderCount)
+                                .segmentType(segmentType)
+                                .sharePercentage(sharePct)
+                                .passengerShareForSegment(costPerRider)
+                                .build());
+            }
         }
 
-        rideSegmentRepository.saveAll(segments);
+        rideSegmentRepository.saveAll(persistedSegments);
 
-        // 7. Calculate per-passenger costs
+        // 7. Build passenger cost details and persist updated costs
         List<CostSplitResponse.PassengerCostDetail> passengerCosts = new ArrayList<>();
         BigDecimal totalPassengerPayments = BigDecimal.ZERO;
 
         for (ShareRideDetail passenger : passengers) {
-            BigDecimal passengerTotal = BigDecimal.ZERO;
-            List<CostSplitResponse.PassengerSegmentCost> passengerSegments = new ArrayList<>();
+            BigDecimal passengerTotal = passengerTotals.getOrDefault(passenger.getId(), BigDecimal.ZERO);
 
-            for (int i = 0; i < waypoints.size() - 1; i++) {
-                Waypoint start = waypoints.get(i);
-                Waypoint end = waypoints.get(i + 1);
-
-                if (isPassengerOnSegment(passenger, start, end, waypoints)) {
-                    RideSegment seg = segments.get(i);
-                    BigDecimal share = seg.getCostPerRider();
-                    passengerTotal = passengerTotal.add(share);
-
-                    passengerSegments.add(CostSplitResponse.PassengerSegmentCost.builder()
-                            .segmentOrder(i + 1)
-                            .startLabel(start.label)
-                            .endLabel(end.label)
-                            .distanceKm(seg.getDistanceKm())
-                            .riderCount(seg.getRiderCount())
-                            .passengerShareForSegment(share)
-                            .build());
-                }
-            }
-
-            // Update the passenger's cost in the database
+            // Persist updated cost back to shared_ride_detail
             passenger.setPassengerCost(passengerTotal);
             passenger.setModifiedDate(DateUtil.getDate());
             passenger.setModifiedUser(LoginAuthentication.getUserName());
@@ -208,15 +298,17 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
                     .endCity(passenger.getEndCity())
                     .passengerRideDistance(passenger.getPassengerRideDistance())
                     .totalPassengerCost(passengerTotal)
-                    .segmentBreakdown(passengerSegments)
+                    .segmentBreakdown(passengerSegmentBreakdowns.getOrDefault(
+                            passenger.getId(), Collections.emptyList()))
                     .build());
         }
 
-        // 8. Driver effective cost = total - all passenger payments
-        BigDecimal totalRideCost = rideDetail.getTotalRideDistance().multiply(perKmRate);
+        // 8. Driver effective cost = total ride cost − total passenger payments
+        BigDecimal totalRideCost = rideDetail.getTotalRideDistance()
+                .multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal driverEffectiveCost = totalRideCost.subtract(totalPassengerPayments);
 
-        log.info("Cost split calculated: totalCost={}, driverPays={}, passengers={}",
+        log.info("Cost split calculated — totalCost={}, driverPays={}, passengers={}",
                 totalRideCost, driverEffectiveCost, passengers.size());
 
         return CostSplitResponse.builder()
@@ -234,11 +326,10 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
 
     @Override
     public CostSplitResponse getCostSplit(Long rideDetailId) {
-        // Check if segments already exist
+        // If no segments persisted yet, calculate fresh
         List<RideSegment> existingSegments = rideSegmentRepository
                 .findByRideDetailIdOrderBySegmentOrder(rideDetailId);
 
-        // If no segments exist, calculate fresh
         if (existingSegments.isEmpty()) {
             return calculateCostSplit(rideDetailId);
         }
@@ -252,9 +343,10 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
                 .findByRideDetailIdAndStatus(rideDetailId, "ACTIVE");
 
         BigDecimal perKmRate = rideDetail.getPerKmRate();
-        BigDecimal totalRideCost = rideDetail.getTotalRideDistance().multiply(perKmRate);
+        BigDecimal totalRideCost = rideDetail.getTotalRideDistance()
+                .multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
 
-        // Build segment details from persisted data
+        // Build segment details from persisted data (includes segmentType + sharePercentage)
         List<CostSplitResponse.SegmentDetail> segmentDetails = existingSegments.stream()
                 .map(seg -> CostSplitResponse.SegmentDetail.builder()
                         .segmentOrder(seg.getSegmentOrder())
@@ -262,33 +354,34 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
                         .endLabel(seg.getEndLabel())
                         .distanceKm(seg.getDistanceKm())
                         .riderCount(seg.getRiderCount())
+                        .segmentType(seg.getSegmentType())
+                        .sharePercentage(seg.getSharePercentage())
                         .segmentCost(seg.getSegmentCost())
                         .costPerRider(seg.getCostPerRider())
                         .build())
                 .collect(Collectors.toList());
 
-        // Build passenger cost details from persisted data
+        // Build passenger cost details from persisted passenger records
         BigDecimal totalPassengerPayments = BigDecimal.ZERO;
         List<CostSplitResponse.PassengerCostDetail> passengerCosts = new ArrayList<>();
 
         for (ShareRideDetail passenger : passengers) {
-            // Build segment breakdown for this passenger from persisted segments
-            List<CostSplitResponse.PassengerSegmentCost> segBreakdown = new ArrayList<>();
-            BigDecimal passengerTotal = passenger.getPassengerCost();
+            BigDecimal passengerTotal = passenger.getPassengerCost() != null
+                    ? passenger.getPassengerCost() : BigDecimal.ZERO;
 
-            for (RideSegment seg : existingSegments) {
-                // Re-check if this passenger was on this segment
-                if (isPassengerOnPersistedSegment(passenger, seg)) {
-                    segBreakdown.add(CostSplitResponse.PassengerSegmentCost.builder()
+            List<CostSplitResponse.PassengerSegmentCost> segBreakdown = existingSegments.stream()
+                    .filter(seg -> isPassengerOnPersistedSegment(passenger, seg))
+                    .map(seg -> CostSplitResponse.PassengerSegmentCost.builder()
                             .segmentOrder(seg.getSegmentOrder())
                             .startLabel(seg.getStartLabel())
                             .endLabel(seg.getEndLabel())
                             .distanceKm(seg.getDistanceKm())
                             .riderCount(seg.getRiderCount())
+                            .segmentType(seg.getSegmentType())
+                            .sharePercentage(seg.getSharePercentage())
                             .passengerShareForSegment(seg.getCostPerRider())
-                            .build());
-                }
-            }
+                            .build())
+                    .collect(Collectors.toList());
 
             totalPassengerPayments = totalPassengerPayments.add(passengerTotal);
 
@@ -318,13 +411,65 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
                 .build();
     }
 
-    // ─── Private Helper Methods ─────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    //  Algorithm Helpers
+    // ═══════════════════════════════════════════════════════════════════
 
     /**
-     * Simple response when there are no passengers — driver pays full cost.
+     * Classify a segment as MAIN or SIDE_TRIP.
+     *
+     * A segment is a SIDE_TRIP when its END waypoint is a lone passenger boundary
+     * (pickup or dropoff) AND the very next waypoint in the list reverses direction —
+     * i.e., it is closer to the CURRENT segment's START than to the segment's END.
+     * This identifies classic out-and-back detours.
+     */
+    private String classifySegmentType(Waypoint segStart, Waypoint segEnd,
+                                        List<Waypoint> waypoints, int segEndIndex) {
+        // End waypoint must be a passenger pickup or dropoff
+        if (segEnd.type != WaypointType.PASSENGER_PICKUP
+                && segEnd.type != WaypointType.PASSENGER_DROPOFF) {
+            return SEGMENT_TYPE_MAIN;
+        }
+
+        // There must be a waypoint after the end to check for backtracking
+        int nextIndex = segEndIndex + 2; // segEndIndex is the index of segStart; segEnd is +1
+        if (nextIndex >= waypoints.size()) {
+            return SEGMENT_TYPE_MAIN;
+        }
+
+        Waypoint nextWaypoint = waypoints.get(nextIndex);
+
+        // If the next waypoint is closer to segStart than to segEnd, it's a backtrack → SIDE_TRIP
+        double distToStart = haversineDistance(
+                segEnd.latitude.doubleValue(), segEnd.longitude.doubleValue(),
+                segStart.latitude.doubleValue(), segStart.longitude.doubleValue());
+        double distToNext = haversineDistance(
+                segEnd.latitude.doubleValue(), segEnd.longitude.doubleValue(),
+                nextWaypoint.latitude.doubleValue(), nextWaypoint.longitude.doubleValue());
+
+        // If the next waypoint is very close to segStart (within 10% of the detour distance),
+        // this is an out-and-back detour
+        return (distToNext < distToStart * 1.1) ? SEGMENT_TYPE_SIDE_TRIP : SEGMENT_TYPE_MAIN;
+    }
+
+    /**
+     * Return the shareRideDetailId of the passenger this SIDE_TRIP segment belongs to.
+     * The benefiting passenger is identified by the end waypoint of the detour.
+     */
+    private Long getSideTripPassengerId(Waypoint endWaypoint) {
+        return endWaypoint.shareRideDetailId;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  Waypoint Helpers
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Response when there are no passengers — driver bears full cost.
      */
     private CostSplitResponse buildNoPassengerResponse(RideDetail rideDetail, BigDecimal perKmRate) {
-        BigDecimal totalCost = rideDetail.getTotalRideDistance().multiply(perKmRate);
+        BigDecimal totalCost = rideDetail.getTotalRideDistance()
+                .multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
         return CostSplitResponse.builder()
                 .rideDetailId(rideDetail.getId())
                 .totalRideCost(totalCost)
@@ -340,79 +485,67 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
 
     /**
      * Build an ordered list of waypoints along the driver's route.
-     * Waypoints include: driver start, all passenger pickups, all passenger dropoffs, driver end.
-     * They are ordered by their projected distance along the route.
+     * Order: driver start → passenger pickups/dropoffs sorted by distance from start → driver end.
      */
     private List<Waypoint> buildOrderedWaypoints(RideDetail rideDetail, List<ShareRideDetail> passengers) {
         List<Waypoint> waypoints = new ArrayList<>();
 
-        // Driver start
         waypoints.add(new Waypoint(
                 rideDetail.getStartLocationLatitude(),
                 rideDetail.getStartLocationLongitude(),
                 rideDetail.getStartCity() != null ? rideDetail.getStartCity() : "Start",
-                WaypointType.DRIVER_START,
-                null
-        ));
+                WaypointType.DRIVER_START, null));
 
-        // Driver end
-        waypoints.add(new Waypoint(
-                rideDetail.getEndLocationLatitude(),
-                rideDetail.getEndLocationLongitude(),
-                "Destination",
-                WaypointType.DRIVER_END,
-                null
-        ));
-
-        // Passenger pickups and dropoffs
         for (ShareRideDetail p : passengers) {
             waypoints.add(new Waypoint(
                     p.getStartLocationLatitude(),
                     p.getStartLocationLongitude(),
                     p.getStartCity() != null ? p.getStartCity() : "Pickup",
-                    WaypointType.PASSENGER_PICKUP,
-                    p.getId()
-            ));
+                    WaypointType.PASSENGER_PICKUP, p.getId()));
+
             waypoints.add(new Waypoint(
                     p.getEndLocationLatitude(),
                     p.getEndLocationLongitude(),
                     p.getEndCity() != null ? p.getEndCity() : "Dropoff",
-                    WaypointType.PASSENGER_DROPOFF,
-                    p.getId()
-            ));
+                    WaypointType.PASSENGER_DROPOFF, p.getId()));
         }
 
-        // Order waypoints by their distance from the driver's start point along the route.
-        // We project each waypoint onto the driver's route using straight-line distance
-        // from the start as a proxy for route position.
-        BigDecimal driverStartLat = rideDetail.getStartLocationLatitude();
-        BigDecimal driverStartLng = rideDetail.getStartLocationLongitude();
+        waypoints.add(new Waypoint(
+                rideDetail.getEndLocationLatitude(),
+                rideDetail.getEndLocationLongitude(),
+                rideDetail.getEndCity() != null ? rideDetail.getEndCity() : "Destination",
+                WaypointType.DRIVER_END, null));
 
-        waypoints.sort((a, b) -> {
-            double distA = haversineDistance(
-                    driverStartLat.doubleValue(), driverStartLng.doubleValue(),
-                    a.latitude.doubleValue(), a.longitude.doubleValue());
-            double distB = haversineDistance(
-                    driverStartLat.doubleValue(), driverStartLng.doubleValue(),
-                    b.latitude.doubleValue(), b.longitude.doubleValue());
-            return Double.compare(distA, distB);
-        });
+        // Sort by straight-line distance from driver's start (proxy for route order)
+        final BigDecimal startLat = rideDetail.getStartLocationLatitude();
+        final BigDecimal startLng = rideDetail.getStartLocationLongitude();
 
-        // Remove duplicate waypoints (same lat/lng within tolerance)
-        waypoints = deduplicateWaypoints(waypoints);
+        waypoints.sort(Comparator.comparingDouble(wp ->
+                haversineDistance(startLat.doubleValue(), startLng.doubleValue(),
+                        wp.latitude.doubleValue(), wp.longitude.doubleValue())));
 
-        return waypoints;
+        // Ensure driver start is always first and driver end always last
+        waypoints.removeIf(wp -> wp.type == WaypointType.DRIVER_START || wp.type == WaypointType.DRIVER_END);
+        waypoints.add(0, new Waypoint(
+                rideDetail.getStartLocationLatitude(),
+                rideDetail.getStartLocationLongitude(),
+                rideDetail.getStartCity() != null ? rideDetail.getStartCity() : "Start",
+                WaypointType.DRIVER_START, null));
+        waypoints.add(new Waypoint(
+                rideDetail.getEndLocationLatitude(),
+                rideDetail.getEndLocationLongitude(),
+                rideDetail.getEndCity() != null ? rideDetail.getEndCity() : "Destination",
+                WaypointType.DRIVER_END, null));
+
+        return deduplicateWaypoints(waypoints);
     }
 
     /**
-     * Calculate the distance of a segment.
-     * Uses proportional allocation of the total ride distance based on
-     * the fraction of route distance this segment represents.
+     * Proportionally allocate the total ride distance to a segment using straight-line ratios.
      */
     private BigDecimal calculateSegmentDistance(Waypoint start, Waypoint end,
-                                                RideDetail rideDetail,
-                                                List<Waypoint> allWaypoints) {
-        // Calculate total straight-line distance across all waypoints
+                                                 RideDetail rideDetail,
+                                                 List<Waypoint> allWaypoints) {
         double totalStraightLine = 0;
         for (int i = 0; i < allWaypoints.size() - 1; i++) {
             totalStraightLine += haversineDistance(
@@ -423,94 +556,79 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         }
 
         if (totalStraightLine <= 0) {
-            // Fallback: divide total distance equally among segments
-            return rideDetail.getTotalRideDistance().divide(
-                    BigDecimal.valueOf(allWaypoints.size() - 1), 2, RoundingMode.HALF_UP);
+            return rideDetail.getTotalRideDistance()
+                    .divide(BigDecimal.valueOf(allWaypoints.size() - 1), 2, RoundingMode.HALF_UP);
         }
 
-        // This segment's straight-line distance
-        double segmentStraightLine = haversineDistance(
+        double segStraightLine = haversineDistance(
                 start.latitude.doubleValue(), start.longitude.doubleValue(),
                 end.latitude.doubleValue(), end.longitude.doubleValue());
 
-        // Proportional share of actual road distance
-        double fraction = segmentStraightLine / totalStraightLine;
+        double fraction = segStraightLine / totalStraightLine;
         return rideDetail.getTotalRideDistance()
                 .multiply(BigDecimal.valueOf(fraction))
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
-     * Check if a passenger is riding on a given segment.
-     * A passenger is on a segment if:
-     *   - The segment starts at or after the passenger's pickup waypoint index
-     *   - The segment ends at or before the passenger's dropoff waypoint index
+     * A passenger is present on a MAIN segment when the segment lies entirely within
+     * [their pickup waypoint index, their dropoff waypoint index].
      */
-    private boolean isPassengerOnSegment(ShareRideDetail passenger, Waypoint segStart,
-                                          Waypoint segEnd, List<Waypoint> waypoints) {
-        int pickupIndex = -1;
-        int dropoffIndex = -1;
-        int segStartIndex = -1;
-        int segEndIndex = -1;
+    private boolean isPassengerOnSegment(ShareRideDetail passenger,
+                                          Waypoint segStart, Waypoint segEnd,
+                                          List<Waypoint> waypoints) {
+        int pickupIdx  = -1;
+        int dropoffIdx = -1;
+        int startIdx   = -1;
+        int endIdx     = -1;
 
         for (int i = 0; i < waypoints.size(); i++) {
             Waypoint wp = waypoints.get(i);
-
             if (wp.type == WaypointType.PASSENGER_PICKUP
-                    && Objects.equals(wp.shareRideDetailId, passenger.getId())) {
-                pickupIndex = i;
-            }
+                    && Objects.equals(wp.shareRideDetailId, passenger.getId())) pickupIdx = i;
             if (wp.type == WaypointType.PASSENGER_DROPOFF
-                    && Objects.equals(wp.shareRideDetailId, passenger.getId())) {
-                dropoffIndex = i;
-            }
-            if (wp == segStart) segStartIndex = i;
-            if (wp == segEnd) segEndIndex = i;
+                    && Objects.equals(wp.shareRideDetailId, passenger.getId())) dropoffIdx = i;
+            if (wp == segStart) startIdx = i;
+            if (wp == segEnd)   endIdx   = i;
         }
 
-        if (pickupIndex == -1 || dropoffIndex == -1 || segStartIndex == -1 || segEndIndex == -1) {
+        if (pickupIdx == -1 || dropoffIdx == -1 || startIdx == -1 || endIdx == -1) {
             return false;
         }
-
-        // Passenger is on this segment if:
-        // segment starts at or after pickup AND segment ends at or before dropoff
-        return segStartIndex >= pickupIndex && segEndIndex <= dropoffIndex;
+        return startIdx >= pickupIdx && endIdx <= dropoffIdx;
     }
 
     /**
-     * Check if a passenger was on a persisted segment (for reading cached results).
-     * Uses coordinate comparison.
+     * For the read-back path: determine whether a passenger rode a persisted segment
+     * by checking whether the segment midpoint falls within the passenger's coordinate range.
      */
     private boolean isPassengerOnPersistedSegment(ShareRideDetail passenger, RideSegment segment) {
-        // Check if segment midpoint falls within passenger's ride range
-        double segMidLat = (segment.getStartLatitude().doubleValue() + segment.getEndLatitude().doubleValue()) / 2;
-        double segMidLng = (segment.getStartLongitude().doubleValue() + segment.getEndLongitude().doubleValue()) / 2;
+        // SIDE_TRIP segments: check via coordinate proximity to passenger start/end
+        double segMidLat = (segment.getStartLatitude().doubleValue()
+                + segment.getEndLatitude().doubleValue()) / 2.0;
+        double segMidLng = (segment.getStartLongitude().doubleValue()
+                + segment.getEndLongitude().doubleValue()) / 2.0;
 
-        double pickupToSegMid = haversineDistance(
+        double pickupToMid = haversineDistance(
                 passenger.getStartLocationLatitude().doubleValue(),
                 passenger.getStartLocationLongitude().doubleValue(),
                 segMidLat, segMidLng);
-
-        double dropoffToSegMid = haversineDistance(
+        double dropoffToMid = haversineDistance(
                 passenger.getEndLocationLatitude().doubleValue(),
                 passenger.getEndLocationLongitude().doubleValue(),
                 segMidLat, segMidLng);
-
-        double passengerRideDist = haversineDistance(
+        double passengerDist = haversineDistance(
                 passenger.getStartLocationLatitude().doubleValue(),
                 passenger.getStartLocationLongitude().doubleValue(),
                 passenger.getEndLocationLatitude().doubleValue(),
                 passenger.getEndLocationLongitude().doubleValue());
 
-        // If the sum of distances from pickup and dropoff to segment midpoint
-        // is approximately equal to the passenger's total ride distance,
-        // the segment midpoint lies between pickup and dropoff
-        return (pickupToSegMid + dropoffToSegMid) <= (passengerRideDist * 1.1 + 0.5);
+        // Midpoint is "between" pickup and dropoff if triangle inequality holds within 10% tolerance
+        return (pickupToMid + dropoffToMid) <= (passengerDist * 1.1 + 0.5);
     }
 
     /**
-     * Remove waypoints that are too close together (within 100m).
-     * Keeps the first occurrence, merging labels.
+     * Remove waypoints closer than 100 m to their predecessor.
      */
     private List<Waypoint> deduplicateWaypoints(List<Waypoint> waypoints) {
         if (waypoints.size() <= 2) return waypoints;
@@ -521,45 +639,38 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         for (int i = 1; i < waypoints.size(); i++) {
             Waypoint prev = result.get(result.size() - 1);
             Waypoint curr = waypoints.get(i);
-
             double dist = haversineDistance(
                     prev.latitude.doubleValue(), prev.longitude.doubleValue(),
                     curr.latitude.doubleValue(), curr.longitude.doubleValue());
 
-            if (dist < 0.1) { // Less than 100 meters apart — merge
-                // Keep the one with the more meaningful type
+            if (dist < 0.1) {
+                // Prefer driver waypoints if merging
                 if (curr.type == WaypointType.DRIVER_START || curr.type == WaypointType.DRIVER_END) {
-                    // Driver waypoints take precedence — replace
                     result.set(result.size() - 1, curr);
                 }
-                // Otherwise keep prev (already in list)
             } else {
                 result.add(curr);
             }
         }
-
         return result;
     }
 
     /**
-     * Haversine formula to calculate the great-circle distance between two points (in km).
+     * Haversine great-circle distance in kilometres.
      */
     private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
-        final double R = 6371.0; // Earth's radius in kilometers
-
+        final double R = 6371.0;
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
-
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // ─── Internal Data Structures ───────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    //  Internal Data Structures
+    // ═══════════════════════════════════════════════════════════════════
 
     private enum WaypointType {
         DRIVER_START,
@@ -573,14 +684,15 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         final BigDecimal longitude;
         final String label;
         final WaypointType type;
-        final Long shareRideDetailId; // null for driver waypoints
+        /** null for driver waypoints */
+        final Long shareRideDetailId;
 
         Waypoint(BigDecimal latitude, BigDecimal longitude, String label,
                  WaypointType type, Long shareRideDetailId) {
-            this.latitude = latitude;
-            this.longitude = longitude;
-            this.label = label;
-            this.type = type;
+            this.latitude        = latitude;
+            this.longitude       = longitude;
+            this.label           = label;
+            this.type            = type;
             this.shareRideDetailId = shareRideDetailId;
         }
     }
