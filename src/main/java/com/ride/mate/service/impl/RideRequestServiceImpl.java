@@ -95,8 +95,19 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
 
         return activeRides.stream()
-                .filter(ride -> isDestinationNearby(ride, endLat, endLng, effectiveRadius))
-                .filter(ride -> isPickupInCorridor(ride, startLat, startLng))
+                .filter(ride -> {
+                    boolean destOk = isDestinationNearby(ride, endLat, endLng, effectiveRadius);
+                    log.info("Ride {} ({}->{}) destination check: {} (passenger end {},{} vs ride end {},{} radius {}km)",
+                            ride.getId(), ride.getStartCity(), ride.getEndCity(), destOk,
+                            endLat, endLng, ride.getEndLocationLatitude(), ride.getEndLocationLongitude(), effectiveRadius);
+                    return destOk;
+                })
+                .filter(ride -> {
+                    boolean corridorOk = isPickupInCorridor(ride, startLat, startLng);
+                    log.info("Ride {} corridor check: {} (passenger pickup {},{} tripRoute present: {})",
+                            ride.getId(), corridorOk, startLat, startLng, ride.getTripRoute() != null);
+                    return corridorOk;
+                })
                 .map(this::mapToAvailableRideResponse)
                 .collect(Collectors.toList());
     }
@@ -111,8 +122,12 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
 
     private boolean isPickupInCorridor(RideDetail ride, BigDecimal startLat, BigDecimal startLng) {
         if (startLat == null || startLng == null) return true;
-        return RouteCorridorUtil.isPointInCorridor(
+        if (ride.getTripRoute() == null || ride.getTripRoute().isBlank()) return true;
+        boolean result = RouteCorridorUtil.isPointInCorridor(
                 ride.getTripRoute(), startLat, startLng, DEFAULT_CORRIDOR_KM);
+        // If tripRoute is not valid JSON array, fall back to showing the ride
+        if (!result && !ride.getTripRoute().trim().startsWith("[")) return true;
+        return result;
     }
 
     @Override
@@ -335,7 +350,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         String vehicleColor = null;
         String vehiclePlateNumber = null;
         DriverVehicleDetails vehicle = driverVehicleDetailsRepository
-                .findByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES)
+                .findFirstByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES)
                 .orElse(null);
         if (vehicle != null) {
             vehicleTypeName = vehicle.getVehicleType() != null ? vehicle.getVehicleType().getName() : null;
