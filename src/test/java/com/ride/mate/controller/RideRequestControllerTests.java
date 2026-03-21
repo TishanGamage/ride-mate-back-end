@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -108,6 +109,38 @@ public class RideRequestControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
+    public void testGetAvailableRides_Success() throws Exception {
+        // Arrange
+        when(rideRequestService.getAvailableRides(any(), any(), any())).thenReturn(mockAvailableRides);
+
+        // Act & Assert
+        mockMvc.perform(get("/ride-requests/available-rides")
+                        .param("endLat", "6.8300")
+                        .param("endLng", "79.9200")
+                        .param("radiusKm", "15")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].rideDetailId").value(1))
+                .andExpect(jsonPath("$[0].driverFirstName").value("Jane"))
+                .andExpect(jsonPath("$[0].availableSeats").value(3));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
+    public void testGetAvailableRides_NoFilters() throws Exception {
+        // Arrange
+        when(rideRequestService.getAvailableRides(null, null, null)).thenReturn(mockAvailableRides);
+
+        // Act & Assert
+        mockMvc.perform(get("/ride-requests/available-rides")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testCreateRideRequest_Success() throws Exception {
         // Arrange
         when(rideRequestService.createRideRequest(any(RideRequestResource.class)))
@@ -125,6 +158,7 @@ public class RideRequestControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testCreateRideRequest_MissingFields() throws Exception {
         // Arrange - Missing required fields
         rideRequestResource.setRideDetailId(null);
@@ -134,10 +168,11 @@ public class RideRequestControllerTests {
         mockMvc.perform(post("/ride-requests")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rideRequestResource)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetPendingRequestsForDriver_Success() throws Exception {
         // Arrange
         List<RideRequestResponse> mockPendingRequests = Arrays.asList(mockRideRequestResponse);
@@ -152,6 +187,7 @@ public class RideRequestControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testAcceptRideRequest_Success() throws Exception {
         // Arrange
         mockRideRequestResponse.setStatus("ACCEPTED");
@@ -166,6 +202,7 @@ public class RideRequestControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testRejectRideRequest_Success() throws Exception {
         // Arrange
         mockRideRequestResponse.setStatus("REJECTED");

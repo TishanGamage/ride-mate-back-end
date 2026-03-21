@@ -56,6 +56,13 @@ public class UserProfileResponse {
     private Long userVerificationImageDocumentId;
     private String userVerificationImageUrl;
 
+    // Identification details
+    private Long identificationTypeId;
+    private String identificationTypeName;
+    private String identificationNumber;
+    private String identificationFrontImageUrl;
+    private String identificationBackImageUrl;
+
     // Audit fields
     private String createdDate;
     private String modifiedDate;

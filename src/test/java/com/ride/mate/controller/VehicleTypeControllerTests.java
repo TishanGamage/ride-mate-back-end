@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -75,6 +76,7 @@ public class VehicleTypeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleTypeById_Success() throws Exception {
         // Arrange
         when(vehicleTypeService.findById(1L)).thenReturn(Optional.of(mockVehicleType));
@@ -90,6 +92,7 @@ public class VehicleTypeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleTypeById_NotFound() throws Exception {
         // Arrange
         when(vehicleTypeService.findById(anyLong())).thenReturn(Optional.empty());
@@ -101,6 +104,7 @@ public class VehicleTypeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleTypeByStatus_Success() throws Exception {
         // Arrange
         when(vehicleTypeService.findByStatus("ACTIVE")).thenReturn(mockVehicleTypes);
@@ -118,6 +122,7 @@ public class VehicleTypeControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "test@example.com", roles = {"DRIVER"})
     public void testGetVehicleTypeByStatus_NotFound() throws Exception {
         // Arrange
         when(vehicleTypeService.findByStatus(anyString())).thenReturn(Arrays.asList());
