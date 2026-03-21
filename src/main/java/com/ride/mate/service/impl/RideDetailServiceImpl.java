@@ -138,7 +138,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
 
         // Step 2: Get driver's primary vehicle details (or any active vehicle)
         DriverVehicleDetails vehicleDetails = driverVehicleDetailsRepository
-                .findByDriverProfileIdAndIsPrimary(driverProfileId, YesNo.YES)
+                .findFirstByDriverProfileIdAndIsPrimary(driverProfileId, YesNo.YES)
                 .orElseThrow(() -> {
                     log.warn("Validation failed: No primary vehicle found for driver profile ID: {}",
                             driverProfileId);
