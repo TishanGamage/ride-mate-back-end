@@ -25,7 +25,7 @@ public class UserFeedbackController extends MessagePropertyBase {
     public UserFeedbackController(UserFeedbackService userFeedbackService) {
         this.userFeedbackService = userFeedbackService;
     }
-    @PostMapping
+    @PostMapping("/feedback")
     public ResponseEntity<UserFeedbackResponse> submitFeedback(
             @Valid @RequestBody UserFeedbackRequestResource resource) {
         log.info("POST /user-feedback - userId: {}, rating: {}", resource.getUserId(), resource.getRating());

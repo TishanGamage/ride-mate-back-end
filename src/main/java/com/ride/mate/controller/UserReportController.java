@@ -25,7 +25,7 @@ public class UserReportController extends MessagePropertyBase {
     public UserReportController(UserReportService userReportService) {
         this.userReportService = userReportService;
     }
-    @PostMapping
+    @PostMapping("/report")
     public ResponseEntity<UserReportResponse> submitReport(
             @Valid @RequestBody UserReportRequestResource resource) {
         log.info("POST /user-reports - userId: {}", resource.getUserId());
