@@ -158,4 +158,12 @@ public abstract class MessagePropertyBase {
     protected static final String SHARED_RIDE_COMPLETED = "shared.ride.completed";
     protected static final String RIDE_NOT_ACTIVE = "ride.not.active";
     protected static final String USER_NOT_FOUND = "user.not.found";
+
+    // User Report message property keys
+    protected static final String USER_REPORT_NOT_FOUND = "user.report.not.found";
+    protected static final String USER_REPORT_SUBMITTED = "user.report.submitted";
+
+    // User Feedback message property keys
+    protected static final String USER_FEEDBACK_NOT_FOUND = "user.feedback.not.found";
+    protected static final String USER_FEEDBACK_SUBMITTED = "user.feedback.submitted";
 }

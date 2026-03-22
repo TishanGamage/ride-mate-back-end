@@ -45,3 +45,7 @@ databaseChangeLog:
       file: classpath:/mysql/driver_wallet.yml
   - include:
       file: classpath:/mysql/driver_wallet_transaction.yml
+  - include:
+      file: classpath:/mysql/user_report.yml
+  - include:
+      file: classpath:/mysql/user_feedback.yml
