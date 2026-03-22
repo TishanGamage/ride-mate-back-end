@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
  * 2 21-03-2026    N/A          N/A          Tishan           Added cancelRideRequest and estimatePassengerCost
  * 3 21-03-2026    N/A          N/A          Tishan           Removed getAvailableRides (moved to ShareRideDetailService)
+ * 4 22-03-2026    N/A          N/A          Tishan           Save estimatedCost on ride request creation
  */
 @Slf4j
 @Service
@@ -193,6 +194,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         rideRequest.setStartCity(resource.getStartCity());
         rideRequest.setEndCity(resource.getEndCity());
         rideRequest.setPassengerRideDistance(resource.getPassengerRideDistance());
+        rideRequest.setEstimatedCost(resource.getEstimatedCost());
         rideRequest.setStatus(STATUS_PENDING);
         rideRequest.setCreatedDate(DateUtil.getDate());
         rideRequest.setCreatedUser(LoginAuthentication.getUserName());
@@ -433,7 +435,8 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
             profileImageUrl = profile.getProfileImageDocument().getDocumentUrl();
         }
 
-        // If the request is ACCEPTED, pull the actual calculated cost from ShareRideDetail
+        // If the request is ACCEPTED, pull the actual calculated cost from ShareRideDetail;
+        // otherwise fall back to the estimated cost stored on the request itself (from estimate-cost API)
         BigDecimal estimatedCost = null;
         if (STATUS_ACCEPTED.equals(rideRequest.getStatus())) {
             List<ShareRideDetail> shareRideDetails = shareRideDetailRepository
@@ -442,7 +445,9 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                     .filter(srd -> Objects.equals(srd.getRequestId(), rideRequest.getId()))
                     .map(ShareRideDetail::getPassengerCost)
                     .findFirst()
-                    .orElse(null);
+                    .orElse(rideRequest.getEstimatedCost());
+        } else {
+            estimatedCost = rideRequest.getEstimatedCost();
         }
 
         return RideRequestResponse.builder()

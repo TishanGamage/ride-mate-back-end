@@ -101,3 +101,16 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: ride_request
+            columns:
+              - column:
+                  name: estimated_cost
+                  type: DECIMAL(25,2)
+                  constraints:
+                    nullable: true
+
