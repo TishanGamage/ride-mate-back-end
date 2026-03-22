@@ -20,6 +20,7 @@ import java.sql.Timestamp;
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
  * 1 20-03-2026    N/A          N/A          Tishan           Initial Development
+ * 2 22-03-2026    N/A          N/A          Tishan           Added estimatedCost field
  */
 @Getter
 @Setter
@@ -55,6 +56,9 @@ public class RideRequest extends BaseEntity implements Serializable {
 
     @Column(name = "passenger_ride_distance", precision = 25, scale = 2)
     private BigDecimal passengerRideDistance;
+
+    @Column(name = "estimated_cost", precision = 25, scale = 2)
+    private BigDecimal estimatedCost;
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
