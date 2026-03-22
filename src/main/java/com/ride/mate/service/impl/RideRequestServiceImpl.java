@@ -270,11 +270,29 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         shareRideDetail.setCreatedUser(LoginAuthentication.getUserName());
         shareRideDetail.setSyncTs(DateUtil.getDate());
 
-        shareRideDetailRepository.save(shareRideDetail);
+        // Use saveAndFlush so the new passenger is immediately visible to
+        // the cost-split query that runs inside calculateCostSplit below.
+        shareRideDetailRepository.saveAndFlush(shareRideDetail);
         log.info("ShareRideDetail created for accepted request ID: {}", rideRequestId);
 
-        // Recalculate cost split
+        // Recalculate cost split (all active passengers including the one just added)
         costSplitService.calculateCostSplit(rideDetail.getId());
+
+        // After recalculation, persist the final cost back onto each accepted RideRequest
+        // so that GET /ride-requests/passenger/{userId} shows the correct amount.
+        List<ShareRideDetail> allActivePassengers = shareRideDetailRepository
+                .findByRideDetailIdAndStatus(rideDetail.getId(), STATUS_ACTIVE);
+        for (ShareRideDetail srd : allActivePassengers) {
+            if (srd.getPassengerCost() != null
+                    && srd.getPassengerCost().compareTo(BigDecimal.ZERO) > 0) {
+                rideRequestRepository.findById(srd.getRequestId()).ifPresent(req -> {
+                    req.setEstimatedCost(srd.getPassengerCost());
+                    req.setModifiedDate(DateUtil.getDate());
+                    req.setModifiedUser(LoginAuthentication.getUserName());
+                    rideRequestRepository.save(req);
+                });
+            }
+        }
 
         log.info("Ride request {} accepted, passenger {} joined ride {}",
                 rideRequestId, rideRequest.getUser().getId(), rideDetail.getId());

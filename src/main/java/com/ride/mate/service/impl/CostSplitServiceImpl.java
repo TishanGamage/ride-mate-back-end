@@ -130,8 +130,10 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         // 4. Build ordered waypoints along the route
         List<Waypoint> waypoints = buildOrderedWaypoints(rideDetail, passengers);
 
-        // 5. Delete previously persisted segments so we start fresh
+        // 5. Delete previously persisted segments so we start fresh, then flush so
+        //    the deleteByRideDetailId is visible within this same transaction before saveAll.
         rideSegmentRepository.deleteByRideDetailId(rideDetailId);
+        rideSegmentRepository.flush();
 
         // 6. Build segments between consecutive waypoints
         List<RideSegment> persistedSegments = new ArrayList<>();
@@ -145,33 +147,21 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
             passengerSegmentBreakdowns.put(p.getId(), new ArrayList<>());
         }
 
+        int segmentOrder = 0; // incremented only for non-zero-distance segments
+
         for (int i = 0; i < waypoints.size() - 1; i++) {
             Waypoint segStart = waypoints.get(i);
             Waypoint segEnd   = waypoints.get(i + 1);
 
             BigDecimal segmentDistance = calculateSegmentDistance(segStart, segEnd, rideDetail, waypoints);
 
-            // Skip zero-distance segments
+            // Skip zero-distance segments (e.g. two passengers at the same location)
             if (segmentDistance.compareTo(BigDecimal.ZERO) == 0) {
                 continue;
             }
 
+            segmentOrder++;
             BigDecimal segmentCost = segmentDistance.multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
-
-            // ── Determine segment type ──────────────────────────────────
-            // A SIDE_TRIP segment is the round-trip detour to pick up or drop off exactly
-            // one passenger whose pickup/dropoff waypoint is the END of this segment and
-            // the waypoint is NOT on the driver's direct line between start and final destination.
-            // In this implementation we mark a segment as SIDE_TRIP when its end waypoint is
-            // a passenger pickup or dropoff that is the ONLY passenger boundary at that point
-            // AND the next waypoint backtracks (returns to where we came from).
-            //
-            // Practical approach: the front-end / ML service supplies a detour distance in
-            // the ShareRideDetail.  If a passenger has a non-zero detour distance stored,
-            // their pickup & dropoff are treated as SIDE_TRIP segments; otherwise MAIN.
-            // For now we classify as SIDE_TRIP only when the end waypoint is a solo
-            // passenger boundary (pickup or dropoff) AND the waypoint after it goes back
-            // in the direction of the previous waypoint (i.e., it's an out-and-back detour).
 
             String segmentType = classifySegmentType(segStart, segEnd, waypoints, i);
             Long sideTripPassengerId = (SEGMENT_TYPE_SIDE_TRIP.equals(segmentType))
@@ -227,7 +217,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
             // ── Persist segment ─────────────────────────────────────────
             RideSegment segment = new RideSegment();
             segment.setRideDetail(rideDetail);
-            segment.setSegmentOrder(i + 1);
+            segment.setSegmentOrder(segmentOrder);
             segment.setStartLatitude(segStart.latitude);
             segment.setStartLongitude(segStart.longitude);
             segment.setEndLatitude(segEnd.latitude);
@@ -246,7 +236,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
             persistedSegments.add(segment);
 
             segmentDetails.add(CostSplitResponse.SegmentDetail.builder()
-                    .segmentOrder(i + 1)
+                    .segmentOrder(segmentOrder)
                     .startLabel(segStart.label)
                     .endLabel(segEnd.label)
                     .distanceKm(segmentDistance)
@@ -262,7 +252,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
                 passengerTotals.merge(p.getId(), costPerRider, BigDecimal::add);
                 passengerSegmentBreakdowns.get(p.getId()).add(
                         CostSplitResponse.PassengerSegmentCost.builder()
-                                .segmentOrder(i + 1)
+                                .segmentOrder(segmentOrder)
                                 .startLabel(segStart.label)
                                 .endLabel(segEnd.label)
                                 .distanceKm(segmentDistance)
@@ -342,6 +332,19 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         List<ShareRideDetail> passengers = shareRideDetailRepository
                 .findByRideDetailIdAndStatus(rideDetailId, "ACTIVE");
 
+        // If the current passenger count differs from the max riderCount in persisted
+        // segments, the segments are stale (e.g. a 2nd passenger was added after the
+        // segments were last saved). Recalculate from scratch so the data is always fresh.
+        int maxPersistedRiderCount = existingSegments.stream()
+                .mapToInt(RideSegment::getRiderCount)
+                .max()
+                .orElse(0);
+        if (passengers.size() != maxPersistedRiderCount) {
+            log.info("Stale segments detected for ride {} (persisted maxRiders={}, activePassengers={}). Recalculating.",
+                    rideDetailId, maxPersistedRiderCount, passengers.size());
+            return calculateCostSplit(rideDetailId);
+        }
+
         BigDecimal perKmRate = rideDetail.getPerKmRate();
         BigDecimal totalRideCost = rideDetail.getTotalRideDistance()
                 .multiply(perKmRate).setScale(2, RoundingMode.HALF_UP);
@@ -418,16 +421,37 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
     /**
      * Classify a segment as MAIN or SIDE_TRIP.
      *
-     * A segment is a SIDE_TRIP when its END waypoint is a lone passenger boundary
-     * (pickup or dropoff) AND the very next waypoint in the list reverses direction —
-     * i.e., it is closer to the CURRENT segment's START than to the segment's END.
-     * This identifies classic out-and-back detours.
+     * A segment is a SIDE_TRIP ONLY when ALL of the following are true:
+     *  1. The end waypoint is a passenger pickup or dropoff.
+     *  2. EXACTLY ONE distinct passenger has a waypoint at that endpoint
+     *     (if two passengers share the same coordinates, it is a shared MAIN segment).
+     *  3. The very next waypoint in the list backtracks to within 200 m of segStart —
+     *     a true out-and-back detour.
+     *
+     * Any other case is MAIN.
      */
     private String classifySegmentType(Waypoint segStart, Waypoint segEnd,
                                         List<Waypoint> waypoints, int segEndIndex) {
         // End waypoint must be a passenger pickup or dropoff
         if (segEnd.type != WaypointType.PASSENGER_PICKUP
                 && segEnd.type != WaypointType.PASSENGER_DROPOFF) {
+            return SEGMENT_TYPE_MAIN;
+        }
+
+        // Count how many distinct passenger waypoints share this endpoint location (within 50 m).
+        // If more than one passenger is at this point it is a shared MAIN segment.
+        long passengersAtEndpoint = waypoints.stream()
+                .filter(wp -> (wp.type == WaypointType.PASSENGER_PICKUP
+                        || wp.type == WaypointType.PASSENGER_DROPOFF)
+                        && haversineDistance(
+                                wp.latitude.doubleValue(), wp.longitude.doubleValue(),
+                                segEnd.latitude.doubleValue(), segEnd.longitude.doubleValue()) < 0.05)
+                .map(wp -> wp.shareRideDetailId)
+                .distinct()
+                .count();
+
+        if (passengersAtEndpoint > 1) {
+            // Multiple passengers share this waypoint — classify as MAIN so all get charged
             return SEGMENT_TYPE_MAIN;
         }
 
@@ -439,17 +463,12 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
 
         Waypoint nextWaypoint = waypoints.get(nextIndex);
 
-        // If the next waypoint is closer to segStart than to segEnd, it's a backtrack → SIDE_TRIP
-        double distToStart = haversineDistance(
-                segEnd.latitude.doubleValue(), segEnd.longitude.doubleValue(),
+        // A true out-and-back detour: the next waypoint returns to within 200 m of segStart.
+        double nextToStart = haversineDistance(
+                nextWaypoint.latitude.doubleValue(), nextWaypoint.longitude.doubleValue(),
                 segStart.latitude.doubleValue(), segStart.longitude.doubleValue());
-        double distToNext = haversineDistance(
-                segEnd.latitude.doubleValue(), segEnd.longitude.doubleValue(),
-                nextWaypoint.latitude.doubleValue(), nextWaypoint.longitude.doubleValue());
 
-        // If the next waypoint is very close to segStart (within 10% of the detour distance),
-        // this is an out-and-back detour
-        return (distToNext < distToStart * 1.1) ? SEGMENT_TYPE_SIDE_TRIP : SEGMENT_TYPE_MAIN;
+        return (nextToStart < 0.2) ? SEGMENT_TYPE_SIDE_TRIP : SEGMENT_TYPE_MAIN;
     }
 
     /**
@@ -599,36 +618,63 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
     }
 
     /**
-     * For the read-back path: determine whether a passenger rode a persisted segment
-     * by checking whether the segment midpoint falls within the passenger's coordinate range.
+     * For the read-back path: determine whether a passenger rode a persisted segment.
+     *
+     * A passenger is on a segment if the segment starts at or after the passenger's
+     * pickup location AND ends at or before the passenger's dropoff location —
+     * measured by comparing coordinates with a small tolerance (0.5 km).
+     *
+     * This avoids the midpoint triangle-inequality approach which breaks when two
+     * passengers share identical pickup/dropoff coordinates.
      */
     private boolean isPassengerOnPersistedSegment(ShareRideDetail passenger, RideSegment segment) {
-        // SIDE_TRIP segments: check via coordinate proximity to passenger start/end
-        double segMidLat = (segment.getStartLatitude().doubleValue()
-                + segment.getEndLatitude().doubleValue()) / 2.0;
-        double segMidLng = (segment.getStartLongitude().doubleValue()
-                + segment.getEndLongitude().doubleValue()) / 2.0;
+        final double TOLERANCE_KM = 0.5;
 
-        double pickupToMid = haversineDistance(
-                passenger.getStartLocationLatitude().doubleValue(),
-                passenger.getStartLocationLongitude().doubleValue(),
-                segMidLat, segMidLng);
-        double dropoffToMid = haversineDistance(
-                passenger.getEndLocationLatitude().doubleValue(),
-                passenger.getEndLocationLongitude().doubleValue(),
-                segMidLat, segMidLng);
-        double passengerDist = haversineDistance(
-                passenger.getStartLocationLatitude().doubleValue(),
-                passenger.getStartLocationLongitude().doubleValue(),
-                passenger.getEndLocationLatitude().doubleValue(),
-                passenger.getEndLocationLongitude().doubleValue());
+        double pickupLat  = passenger.getStartLocationLatitude().doubleValue();
+        double pickupLng  = passenger.getStartLocationLongitude().doubleValue();
+        double dropoffLat = passenger.getEndLocationLatitude().doubleValue();
+        double dropoffLng = passenger.getEndLocationLongitude().doubleValue();
 
-        // Midpoint is "between" pickup and dropoff if triangle inequality holds within 10% tolerance
-        return (pickupToMid + dropoffToMid) <= (passengerDist * 1.1 + 0.5);
+        double segStartLat = segment.getStartLatitude().doubleValue();
+        double segStartLng = segment.getStartLongitude().doubleValue();
+        double segEndLat   = segment.getEndLatitude().doubleValue();
+        double segEndLng   = segment.getEndLongitude().doubleValue();
+
+        // Distance from passenger pickup to segment start
+        double pickupToSegStart = haversineDistance(pickupLat, pickupLng, segStartLat, segStartLng);
+        // Distance from passenger dropoff to segment end
+        double dropoffToSegEnd  = haversineDistance(dropoffLat, dropoffLng, segEndLat, segEndLng);
+        // Passenger's straight-line travel distance
+        double passengerDist    = haversineDistance(pickupLat, pickupLng, dropoffLat, dropoffLng);
+
+        // The segment's start must be within [pickup ... dropoff] corridor.
+        // We accept the segment if:
+        //   1. The segment start is at, or "after", the passenger's pickup (within tolerance), AND
+        //   2. The segment end is at, or "before", the passenger's dropoff (within tolerance).
+        //
+        // "At or after pickup" means the distance from pickup to segment-start is < passenger's total distance + tolerance
+        // "At or before dropoff" means dropoffToSegEnd < tolerance OR segment end ≈ dropoff
+        //
+        // Simplest reliable check: segment start is within passenger trip distance from pickup,
+        // AND segment end is within passenger trip distance from dropoff.
+        boolean startAfterPickup  = pickupToSegStart <= passengerDist + TOLERANCE_KM;
+        boolean endBeforeDropoff  = dropoffToSegEnd  <= passengerDist + TOLERANCE_KM;
+
+        // Also ensure segment start is not beyond the passenger dropoff
+        double pickupToSegEnd = haversineDistance(pickupLat, pickupLng, segEndLat, segEndLng);
+        boolean segEndWithinTrip = pickupToSegEnd <= passengerDist + TOLERANCE_KM;
+
+        return startAfterPickup && endBeforeDropoff && segEndWithinTrip;
     }
 
     /**
-     * Remove waypoints closer than 100 m to their predecessor.
+     * Remove duplicate waypoints that are within 100 m of their predecessor,
+     * BUT only when they belong to the same passenger or are both driver waypoints.
+     *
+     * Two passengers who share identical pickup/dropoff coordinates must NOT be merged
+     * because the segment algorithm identifies passengers by their specific waypoint
+     * object references. Merging them would make one passenger's waypoints invisible,
+     * causing the segment to appear as a one-person SIDE_TRIP instead of a shared MAIN.
      */
     private List<Waypoint> deduplicateWaypoints(List<Waypoint> waypoints) {
         if (waypoints.size() <= 2) return waypoints;
@@ -639,14 +685,28 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
         for (int i = 1; i < waypoints.size(); i++) {
             Waypoint prev = result.get(result.size() - 1);
             Waypoint curr = waypoints.get(i);
+
             double dist = haversineDistance(
                     prev.latitude.doubleValue(), prev.longitude.doubleValue(),
                     curr.latitude.doubleValue(), curr.longitude.doubleValue());
 
             if (dist < 0.1) {
-                // Prefer driver waypoints if merging
-                if (curr.type == WaypointType.DRIVER_START || curr.type == WaypointType.DRIVER_END) {
-                    result.set(result.size() - 1, curr);
+                // Only merge when it is safe: both are driver waypoints, or exact same passenger
+                boolean bothDriver = (prev.type == WaypointType.DRIVER_START || prev.type == WaypointType.DRIVER_END)
+                        && (curr.type == WaypointType.DRIVER_START || curr.type == WaypointType.DRIVER_END);
+                boolean samePassenger = prev.shareRideDetailId != null
+                        && prev.shareRideDetailId.equals(curr.shareRideDetailId);
+
+                if (bothDriver) {
+                    // Prefer driver waypoints when merging driver duplicates
+                    if (curr.type == WaypointType.DRIVER_START || curr.type == WaypointType.DRIVER_END) {
+                        result.set(result.size() - 1, curr);
+                    }
+                } else if (samePassenger) {
+                    // Intentionally skip: duplicate waypoint for the same passenger (no-op)
+                } else {
+                    // Different passengers at the same location — keep both so each is counted
+                    result.add(curr);
                 }
             } else {
                 result.add(curr);
