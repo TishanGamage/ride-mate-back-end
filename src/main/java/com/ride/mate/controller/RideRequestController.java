@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * Ride Request Controller
- * REST API endpoints for the ride request/accept/reject/cancel flow.
+ * REST API endpoints for the ride request/accept/reject/cancel.
  *
  * Ride discovery (browsing available rides) is handled by ShareRideDetailController
  * which uses the ML service via GET /shared-ride/available.
@@ -140,9 +140,7 @@ public class RideRequestController extends MessagePropertyBase {
      */
     @PutMapping("/{id}/reject")
     public ResponseEntity<RideRequestResponse> rejectRideRequest(@PathVariable Long id) {
-
         log.info("PUT /ride-requests/{}/reject", id);
-
         RideRequestResponse response = rideRequestService.rejectRideRequest(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
