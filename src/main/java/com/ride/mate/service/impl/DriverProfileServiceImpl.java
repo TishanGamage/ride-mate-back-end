@@ -18,6 +18,7 @@ import com.ride.mate.resources.DriverProfileRequestResource;
 import com.ride.mate.resources.DriverProfileResponse;
 import com.ride.mate.resources.DriverVehicleDetailsResponse;
 import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
+import com.ride.mate.resources.DriverVehicleListResponse;
 import com.ride.mate.service.DriverProfileService;
 import com.ride.mate.service.DriverWalletService;
 import com.ride.mate.util.DateUtil;
@@ -146,7 +147,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         // Handle vehicle details if provided
         boolean hasVehicleDetails = false;
         if (request.getVehicleDetails() != null) {
-            saveDriverVehicleDetails(savedDriverProfile, request.getVehicleDetails());
+            saveDriverVehicleDetails(savedDriverProfile, request.getVehicleDetails(), true);
             hasVehicleDetails = true;
         }
 
@@ -243,7 +244,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                 .build();
     }
 
-    private void saveDriverVehicleDetails(DriverProfile driverProfile, DriverVehicleDetailsRequestResource vehicleRequest) {
+    private DriverVehicleDetails saveDriverVehicleDetails(DriverProfile driverProfile, DriverVehicleDetailsRequestResource vehicleRequest, boolean isPrimary) {
 
         // Create new vehicle details entry
         DriverVehicleDetails vehicle = new DriverVehicleDetails();
@@ -323,7 +324,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
 
         // Set default status fields
         vehicle.setIsVerified(YesNo.NO);
-        vehicle.setIsPrimary(YesNo.YES);
+        vehicle.setIsPrimary(isPrimary ? YesNo.YES : YesNo.NO);
         vehicle.setStatus("PENDING");
 
         // Set audit fields
@@ -332,8 +333,137 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
         vehicle.setSyncTs(DateUtil.getDate());
 
         // Save the vehicle details
-        driverVehicleDetailsRepository.save(vehicle);
+        DriverVehicleDetails saved = driverVehicleDetailsRepository.save(vehicle);
         log.info("Driver vehicle details saved for driver profile ID: {}", driverProfile.getId());
+        return saved;
+    }
+
+    @Override
+    public DriverVehicleDetails addVehicle(Long driverProfileId, DriverVehicleDetailsRequestResource request) {
+
+        log.info("Processing add vehicle for driver profile ID: {}", driverProfileId);
+
+        DriverProfile driverProfile = driverProfileRepository.findById(driverProfileId)
+                .orElseThrow(() -> {
+                    log.warn("Add vehicle failed: Driver profile not found - {}", driverProfileId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        if (driverVehicleDetailsRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
+            log.warn("Add vehicle failed: Registration number already exists - {}", request.getRegistrationNumber());
+            throw new ValidateRecordException("Registration number already exists", "errorMessage");
+        }
+
+        // If driver already has a primary vehicle, new one is non-primary
+        boolean hasPrimary = driverVehicleDetailsRepository
+                .findFirstByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES).isPresent();
+
+        return saveDriverVehicleDetails(driverProfile, request, !hasPrimary);
+    }
+
+    @Override
+    public DriverVehicleDetails updateVehicle(Long vehicleId, DriverVehicleDetailsRequestResource request) {
+
+        log.info("Processing update vehicle for vehicle ID: {}", vehicleId);
+
+        DriverVehicleDetails vehicle = driverVehicleDetailsRepository.findById(vehicleId)
+                .orElseThrow(() -> {
+                    log.warn("Update vehicle failed: Vehicle not found - {}", vehicleId);
+                    return new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+                });
+
+        // Check registration number uniqueness only if it changed
+        if (!vehicle.getRegistrationNumber().equals(request.getRegistrationNumber()) &&
+                driverVehicleDetailsRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
+            log.warn("Update vehicle failed: Registration number already exists - {}", request.getRegistrationNumber());
+            throw new ValidateRecordException("Registration number already exists", "errorMessage");
+        }
+
+        // Resolve and set VehicleType
+        vehicleTypeRepository.findById(request.getVehicleTypeId())
+                .ifPresentOrElse(vehicle::setVehicleType, () -> {
+                    throw new ValidateRecordException(environment.getProperty(VEHICLE_TYPE_NOT_FOUND), "errorMessage");
+                });
+
+        // Resolve and set VehicleMake
+        vehicleMakeRepository.findById(request.getVehicleMakeId())
+                .ifPresentOrElse(vehicle::setVehicleMake, () -> {
+                    throw new ValidateRecordException(environment.getProperty(VEHICLE_MAKE_NOT_FOUND), "errorMessage");
+                });
+
+        // Resolve and set VehicleModel (optional)
+        if (request.getVehicleModelId() != null) {
+            vehicleModelRepository.findById(request.getVehicleModelId()).ifPresent(vehicle::setVehicleModel);
+        } else {
+            vehicle.setVehicleModel(null);
+        }
+
+        vehicle.setRegistrationNumber(request.getRegistrationNumber());
+        vehicle.setModel(request.getModel());
+        vehicle.setYear(request.getYear());
+        vehicle.setColor(request.getColor());
+        vehicle.setSeats(request.getSeats() != null ? request.getSeats() : 0);
+
+        // Update vehicle image documents
+        vehicle.setVehicleImageDocument1(request.getVehicleImageDocumentId1() != null ?
+                documentDetailsRepository.findById(request.getVehicleImageDocumentId1()).orElse(null) : null);
+        vehicle.setVehicleImageDocument2(request.getVehicleImageDocumentId2() != null ?
+                documentDetailsRepository.findById(request.getVehicleImageDocumentId2()).orElse(null) : null);
+        vehicle.setVehicleImageDocument3(request.getVehicleImageDocumentId3() != null ?
+                documentDetailsRepository.findById(request.getVehicleImageDocumentId3()).orElse(null) : null);
+        vehicle.setVehicleImageDocument4(request.getVehicleImageDocumentId4() != null ?
+                documentDetailsRepository.findById(request.getVehicleImageDocumentId4()).orElse(null) : null);
+
+        vehicle.setRegistrationCertificateDocument(request.getRegistrationCertificateDocumentId() != null ?
+                documentDetailsRepository.findById(request.getRegistrationCertificateDocumentId()).orElse(null) : null);
+
+        vehicle.setInsuranceNumber(request.getInsuranceNumber());
+        vehicle.setInsuranceProvider(request.getInsuranceProvider());
+        vehicle.setInsuranceExpiry(request.getInsuranceExpiry() != null ? DateUtil.stringToLocalDate(request.getInsuranceExpiry()) : null);
+
+        vehicle.setInsuranceDocument1(request.getInsuranceDocumentId1() != null ?
+                documentDetailsRepository.findById(request.getInsuranceDocumentId1()).orElse(null) : null);
+        vehicle.setInsuranceDocument2(request.getInsuranceDocumentId2() != null ?
+                documentDetailsRepository.findById(request.getInsuranceDocumentId2()).orElse(null) : null);
+
+        vehicle.setRevenueLicenseDocument1(request.getRevenueLicenseDocumentId1() != null ?
+                documentDetailsRepository.findById(request.getRevenueLicenseDocumentId1()).orElse(null) : null);
+        vehicle.setRevenueLicenseDocument2(request.getRevenueLicenseDocumentId2() != null ?
+                documentDetailsRepository.findById(request.getRevenueLicenseDocumentId2()).orElse(null) : null);
+
+        vehicle.setModifiedUser(LoginAuthentication.getUserName());
+        vehicle.setModifiedDate(DateUtil.getDate());
+        vehicle.setSyncTs(DateUtil.getDate());
+
+        DriverVehicleDetails updated = driverVehicleDetailsRepository.save(vehicle);
+        log.info("Vehicle updated successfully for vehicle ID: {}", vehicleId);
+        return updated;
+    }
+
+    @Override
+    public DriverVehicleListResponse getVehiclesByDriverProfileId(Long driverProfileId) {
+
+        log.info("Fetching vehicles for driver profile ID: {}", driverProfileId);
+
+        if (!driverProfileRepository.existsById(driverProfileId)) {
+            log.warn("Get vehicles failed: Driver profile not found - {}", driverProfileId);
+            throw new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message");
+        }
+
+        List<DriverVehicleDetailsResponse> vehicles = driverVehicleDetailsRepository
+                .findByDriverProfileId(driverProfileId)
+                .stream()
+                .map(this::mapVehicleToResponse)
+                .collect(Collectors.toList());
+
+        log.info("Found {} vehicle(s) for driver profile ID: {}", vehicles.size(), driverProfileId);
+
+        return DriverVehicleListResponse.builder()
+                .driverProfileId(driverProfileId)
+                .totalVehicles(vehicles.size())
+                .hasMultipleVehicles(vehicles.size() > 1)
+                .vehicles(vehicles)
+                .build();
     }
 
     private void evaluateDriverProfileCompletion(DriverProfile driverProfile, boolean hasVehicleDetails) {

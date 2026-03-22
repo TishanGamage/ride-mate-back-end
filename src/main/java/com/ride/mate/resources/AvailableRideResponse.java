@@ -26,6 +26,7 @@ public class AvailableRideResponse {
     private Long rideDetailId;
     private String driverFirstName;
     private String driverLastName;
+    private String driverGender;
     private String driverProfileImageUrl;
     private BigDecimal driverRating;
     private Long totalRidesAsDriver;

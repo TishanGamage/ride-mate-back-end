@@ -1,8 +1,14 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.DriverProfile;
+import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.resources.DriverProfileRequestResource;
 import com.ride.mate.resources.DriverProfileResponse;
+import com.ride.mate.resources.DriverVehicleDetailsRequestResource;
+import com.ride.mate.resources.DriverVehicleDetailsResponse;
+import com.ride.mate.resources.DriverVehicleListResponse;
+
+import java.util.List;
 
 /**
  * DriverProfileService
@@ -35,5 +41,31 @@ public interface DriverProfileService {
      * @return DriverProfileResponse containing full driver profile details
      */
     DriverProfileResponse getDriverProfileByUserId(Long userId);
+
+    /**
+     * Add a new vehicle to an existing driver profile
+     *
+     * @param driverProfileId the ID of the driver profile
+     * @param request         vehicle details request
+     * @return the saved DriverVehicleDetails entity
+     */
+    DriverVehicleDetails addVehicle(Long driverProfileId, DriverVehicleDetailsRequestResource request);
+
+    /**
+     * Update an existing vehicle's details
+     *
+     * @param vehicleId the ID of the driver vehicle details record
+     * @param request   updated vehicle details
+     * @return the updated DriverVehicleDetails entity
+     */
+    DriverVehicleDetails updateVehicle(Long vehicleId, DriverVehicleDetailsRequestResource request);
+
+    /**
+     * Get all vehicles for a driver profile with a hasMultipleVehicles flag
+     *
+     * @param driverProfileId the ID of the driver profile
+     * @return list of vehicles and whether the driver has multiple vehicles
+     */
+    DriverVehicleListResponse getVehiclesByDriverProfileId(Long driverProfileId);
 }
 

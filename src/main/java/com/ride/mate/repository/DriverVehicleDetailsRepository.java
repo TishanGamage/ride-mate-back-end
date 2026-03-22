@@ -31,6 +31,8 @@ public interface DriverVehicleDetailsRepository extends JpaRepository<DriverVehi
 
     Optional<DriverVehicleDetails> findByDriverProfileIdAndIsPrimary(Long driverProfileId, YesNo isPrimary);
 
+    Optional<DriverVehicleDetails> findFirstByDriverProfileIdAndIsPrimary(Long driverProfileId, YesNo isPrimary);
+
     Optional<DriverVehicleDetails> findByDriverProfileAndIsPrimary(DriverProfile driverProfile, YesNo isPrimary);
 
     Optional<DriverVehicleDetails> findByRegistrationNumber(String registrationNumber);

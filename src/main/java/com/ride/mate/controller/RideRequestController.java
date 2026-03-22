@@ -1,13 +1,13 @@
 package com.ride.mate.controller;
 
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.resources.AvailableRideResponse;
 import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.RideRequestService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,12 +39,9 @@ import java.util.List;
 public class RideRequestController extends MessagePropertyBase {
 
     private final RideRequestService rideRequestService;
-    private final Environment environment;
 
-    public RideRequestController(RideRequestService rideRequestService,
-                                  Environment environment) {
+    public RideRequestController(RideRequestService rideRequestService) {
         this.rideRequestService = rideRequestService;
-        this.environment = environment;
     }
 
     /**
@@ -54,7 +51,27 @@ public class RideRequestController extends MessagePropertyBase {
      * @param rideDetailId          The target ride ID
      * @param passengerRideDistance The passenger's route distance in km
      * @return Estimated cost with share percentage and pricing note
+     * @param startLat  Passenger pickup latitude (optional)
+     * @param startLng  Passenger pickup longitude (optional)
+     * @param endLat    Passenger destination latitude (optional)
+     * @param endLng    Passenger destination longitude (optional)
+     * @param radiusKm  Search radius in km (optional, default 15)
+     * @return List of available rides
      */
+    @GetMapping("/available-rides")
+    public ResponseEntity<List<AvailableRideResponse>> getAvailableRides(
+            @RequestParam(value = "startLat", required = false) BigDecimal startLat,
+            @RequestParam(value = "startLng", required = false) BigDecimal startLng,
+            @RequestParam(value = "endLat", required = false) BigDecimal endLat,
+            @RequestParam(value = "endLng", required = false) BigDecimal endLng,
+            @RequestParam(value = "radiusKm", required = false) BigDecimal radiusKm) {
+
+        log.info("GET /ride-requests/available-rides?startLat={}&startLng={}&endLat={}&endLng={}&radiusKm={}",
+                startLat, startLng, endLat, endLng, radiusKm);
+
+        List<AvailableRideResponse> rides = rideRequestService.getAvailableRides(startLat, startLng, endLat, endLng, radiusKm);
+        return new ResponseEntity<>(rides, HttpStatus.OK);
+    }
     @GetMapping("/{rideDetailId}/estimate-cost")
     public ResponseEntity<PassengerEstimatedCostResponse> estimatePassengerCost(
             @PathVariable Long rideDetailId,

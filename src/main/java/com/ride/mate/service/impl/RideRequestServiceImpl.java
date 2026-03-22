@@ -2,6 +2,8 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
+import com.ride.mate.domain.DriverProfile;
+import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.domain.RideDetail;
 import com.ride.mate.domain.RideRequest;
 import com.ride.mate.domain.ShareRideDetail;
@@ -15,12 +17,15 @@ import com.ride.mate.repository.ShareRideDetailRepository;
 import com.ride.mate.repository.UserProfileRepository;
 import com.ride.mate.repository.UserRepository;
 import com.ride.mate.repository.DriverProfileRepository;
+import com.ride.mate.repository.DriverVehicleDetailsRepository;
+import com.ride.mate.resources.AvailableRideResponse;
 import com.ride.mate.resources.PassengerEstimatedCostResponse;
 import com.ride.mate.resources.RideRequestResource;
 import com.ride.mate.resources.RideRequestResponse;
 import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideRequestService;
 import com.ride.mate.util.DateUtil;
+import com.ride.mate.util.RouteCorridorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -57,6 +62,8 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private static final String STATUS_PENDING = "PENDING";
     private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final String STATUS_REJECTED = "REJECTED";
+    private static final BigDecimal DEFAULT_RADIUS_KM = new BigDecimal("15");
+    private static final double DEFAULT_CORRIDOR_KM = 5.0;
 
     private final RideRequestRepository rideRequestRepository;
     private final RideDetailRepository rideDetailRepository;
@@ -64,6 +71,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final DriverProfileRepository driverProfileRepository;
+    private final DriverVehicleDetailsRepository driverVehicleDetailsRepository;
     private final CostSplitService costSplitService;
     private final Environment environment;
 
@@ -73,6 +81,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                                   UserRepository userRepository,
                                   UserProfileRepository userProfileRepository,
                                   DriverProfileRepository driverProfileRepository,
+                                  DriverVehicleDetailsRepository driverVehicleDetailsRepository,
                                   CostSplitService costSplitService,
                                   Environment environment) {
         this.rideRequestRepository = rideRequestRepository;
@@ -81,10 +90,61 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.driverProfileRepository = driverProfileRepository;
+        this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
         this.costSplitService = costSplitService;
         this.environment = environment;
     }
 
+    @Override
+    public List<AvailableRideResponse> getAvailableRides(BigDecimal startLat, BigDecimal startLng,
+                                                          BigDecimal endLat, BigDecimal endLng,
+                                                          BigDecimal radiusKm) {
+        log.info("Fetching available rides — pickup ({}, {}), destination ({}, {}), radius: {} km",
+                startLat, startLng, endLat, endLng, radiusKm);
+
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+
+        if (activeRides.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        BigDecimal effectiveRadius = radiusKm != null ? radiusKm : DEFAULT_RADIUS_KM;
+
+        return activeRides.stream()
+                .filter(ride -> {
+                    boolean destOk = isDestinationNearby(ride, endLat, endLng, effectiveRadius);
+                    log.info("Ride {} ({}->{}) destination check: {} (passenger end {},{} vs ride end {},{} radius {}km)",
+                            ride.getId(), ride.getStartCity(), ride.getEndCity(), destOk,
+                            endLat, endLng, ride.getEndLocationLatitude(), ride.getEndLocationLongitude(), effectiveRadius);
+                    return destOk;
+                })
+                .filter(ride -> {
+                    boolean corridorOk = isPickupInCorridor(ride, startLat, startLng);
+                    log.info("Ride {} corridor check: {} (passenger pickup {},{} tripRoute present: {})",
+                            ride.getId(), corridorOk, startLat, startLng, ride.getTripRoute() != null);
+                    return corridorOk;
+                })
+                .map(this::mapToAvailableRideResponse)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isDestinationNearby(RideDetail ride, BigDecimal endLat, BigDecimal endLng,
+                                         BigDecimal radiusKm) {
+        if (endLat == null || endLng == null) return true;
+        BigDecimal dist = haversineDistance(endLat, endLng,
+                ride.getEndLocationLatitude(), ride.getEndLocationLongitude());
+        return dist.compareTo(radiusKm) <= 0;
+    }
+
+    private boolean isPickupInCorridor(RideDetail ride, BigDecimal startLat, BigDecimal startLng) {
+        if (startLat == null || startLng == null) return true;
+        if (ride.getTripRoute() == null || ride.getTripRoute().isBlank()) return true;
+        boolean result = RouteCorridorUtil.isPointInCorridor(
+                ride.getTripRoute(), startLat, startLng, DEFAULT_CORRIDOR_KM);
+        // If tripRoute is not valid JSON array, fall back to showing the ride
+        if (!result && !ride.getTripRoute().trim().startsWith("[")) return true;
+        return result;
+    }
 
     @Override
     public RideRequestResponse createRideRequest(RideRequestResource resource) {
@@ -405,6 +465,88 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .status(rideRequest.getStatus())
                 .createdDate(rideRequest.getCreatedDate() != null ? rideRequest.getCreatedDate().toString() : null)
                 .build();
+    }
+
+    private AvailableRideResponse mapToAvailableRideResponse(RideDetail ride) {
+        DriverProfile driverProfile = ride.getDriverProfile();
+        User driverUser = driverProfile.getUser();
+
+        // Get driver profile image and gender
+        String driverProfileImageUrl = null;
+        String driverGender = null;
+        UserProfile driverUserProfile = userProfileRepository.findByUserId(driverUser.getId()).orElse(null);
+        if (driverUserProfile != null) {
+            if (driverUserProfile.getProfileImageDocument() != null) {
+                driverProfileImageUrl = driverUserProfile.getProfileImageDocument().getDocumentUrl();
+            }
+            driverGender = driverUserProfile.getGender();
+        }
+
+        // Get vehicle details
+        String vehicleTypeName = null;
+        String vehicleMakeName = null;
+        String vehicleModelName = null;
+        String vehicleColor = null;
+        String vehiclePlateNumber = null;
+        DriverVehicleDetails vehicle = driverVehicleDetailsRepository
+                .findFirstByDriverProfileIdAndIsPrimary(driverProfile.getId(), YesNo.YES)
+                .orElse(null);
+        if (vehicle != null) {
+            vehicleTypeName = vehicle.getVehicleType() != null ? vehicle.getVehicleType().getName() : null;
+            vehicleMakeName = vehicle.getVehicleMake() != null ? vehicle.getVehicleMake().getName() : null;
+            vehicleModelName = vehicle.getVehicleModel() != null ? vehicle.getVehicleModel().getName() : null;
+            vehicleColor = vehicle.getColor();
+            vehiclePlateNumber = vehicle.getRegistrationNumber();
+        }
+
+        long currentPassengers = shareRideDetailRepository.countByRideDetailIdAndStatus(ride.getId(), STATUS_ACTIVE);
+
+        return AvailableRideResponse.builder()
+                .rideDetailId(ride.getId())
+                .driverFirstName(driverUser.getFirstName())
+                .driverLastName(driverUser.getLastName())
+                .driverGender(driverGender)
+                .driverProfileImageUrl(driverProfileImageUrl)
+                .driverRating(driverProfile.getRatingAsDriver())
+                .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
+                .vehicleTypeName(vehicleTypeName)
+                .vehicleMakeName(vehicleMakeName)
+                .vehicleModelName(vehicleModelName)
+                .vehicleColor(vehicleColor)
+                .vehiclePlateNumber(vehiclePlateNumber)
+                .startCity(ride.getStartCity())
+                .endCity(ride.getEndCity())
+                .startLat(ride.getStartLocationLatitude())
+                .startLng(ride.getStartLocationLongitude())
+                .endLat(ride.getEndLocationLatitude())
+                .endLng(ride.getEndLocationLongitude())
+                .totalRideDistance(ride.getTotalRideDistance())
+                .totalRideCost(ride.getTotalRideCost())
+                .perKmRate(ride.getPerKmRate())
+                .availableSeats(ride.getAvailableSeats())
+                .currentPassengers(currentPassengers)
+                .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
+                .status(ride.getStatus())
+                .build();
+    }
+
+    /**
+     * Haversine formula to calculate distance between two lat/lng points in kilometers.
+     */
+    private BigDecimal haversineDistance(BigDecimal lat1, BigDecimal lng1, BigDecimal lat2, BigDecimal lng2) {
+        if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
+            return new BigDecimal("9999"); // large value so it's filtered out
+        }
+        double R = 6371.0; // Earth radius in km
+        double dLat = Math.toRadians(lat2.subtract(lat1).doubleValue());
+        double dLon = Math.toRadians(lng2.subtract(lng1).doubleValue());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1.doubleValue()))
+                * Math.cos(Math.toRadians(lat2.doubleValue()))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c;
+        return BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_UP);
     }
 }
 
