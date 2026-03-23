@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -97,6 +98,26 @@ public class PaymentController extends MessagePropertyBase {
 
         payHereService.processNotifyCallback(request);
         return ResponseEntity.ok("OK");
+    }
+
+    /**
+     * Generate the MD5 hash required by PayHere Preapproval API.
+     * The hash MUST be generated server-side to protect the merchant_secret.
+     *
+     * hash = UPPER(MD5(merchant_id + order_id + amount + currency + UPPER(MD5(merchant_secret))))
+     *
+     * @param orderId  the order ID for this preapproval
+     * @param currency the currency code (LKR/USD), defaults to LKR
+     * @return Map containing hash, merchantId, and amount
+     */
+    @GetMapping(value = "/preapproval-hash")
+    public ResponseEntity<Map<String, String>> getPreapprovalHash(
+            @RequestParam String orderId,
+            @RequestParam(defaultValue = "LKR") String currency) {
+        log.info("Generating preapproval hash for orderId: {}", orderId);
+
+        Map<String, String> result = payHereService.generatePreapprovalHash(orderId, currency);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     /**
