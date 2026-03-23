@@ -256,7 +256,7 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
 
         // Per PayHere docs: if amount is not passed in the form,
         // use 10.00 for LKR or 1.01 for all other currencies.
-        String amount = "LKR".equalsIgnoreCase(currency) ? "10.00" : "1.01";
+        String amount = "LKR".equalsIgnoreCase(currency) ? "30.00" : "1.01";
 
         try {
             // hash = UPPER(MD5(merchant_id + order_id + amount + currency + UPPER(MD5(merchant_secret))))
