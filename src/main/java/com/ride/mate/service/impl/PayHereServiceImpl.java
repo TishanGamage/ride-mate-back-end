@@ -248,6 +248,33 @@ public class PayHereServiceImpl extends MessagePropertyBase implements PayHereSe
         return paymentTransactionRepository.findByUserId(userId);
     }
 
+    // ─── Preapproval Hash ────────────────────────────────────────────────────────
+
+    @Override
+    public java.util.Map<String, String> generatePreapprovalHash(String orderId, String currency) {
+        log.info("Generating preapproval hash for orderId: {}, currency: {}", orderId, currency);
+
+        // Per PayHere docs: if amount is not passed in the form,
+        // use 10.00 for LKR or 1.01 for all other currencies.
+        String amount = "LKR".equalsIgnoreCase(currency) ? "10.00" : "1.01";
+
+        try {
+            // hash = UPPER(MD5(merchant_id + order_id + amount + currency + UPPER(MD5(merchant_secret))))
+            String merchantSecretHash = computeMd5(payhereMerchantSecret).toUpperCase();
+            String rawHash = payhereMerchantId + orderId + amount + currency + merchantSecretHash;
+            String hash = computeMd5(rawHash).toUpperCase();
+
+            java.util.Map<String, String> result = new java.util.HashMap<>();
+            result.put("hash", hash);
+            result.put("merchantId", payhereMerchantId);
+            result.put("amount", amount);
+            return result;
+        } catch (Exception e) {
+            log.error("Error generating preapproval hash: {}", e.getMessage());
+            throw new ValidateRecordException("Failed to generate payment hash", "message");
+        }
+    }
+
     // ─── Private Helpers ─────────────────────────────────────────────────────────
 
     /**

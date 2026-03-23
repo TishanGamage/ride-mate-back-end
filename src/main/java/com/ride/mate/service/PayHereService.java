@@ -28,5 +28,7 @@ public interface PayHereService {
     List<UserSavedCard> getSavedCards(Long userId);
 
     List<PaymentTransaction> getTransactions(Long userId);
+
+    java.util.Map<String, String> generatePreapprovalHash(String orderId, String currency);
 }
 
