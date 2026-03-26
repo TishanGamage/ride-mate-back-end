@@ -72,18 +72,15 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
     public VerificationCode sendVerificationCode(SendVerificationCodeRequest request) {
         String email = request.getEmail();
 
-        // Delete any existing verification code for this email
         verificationCodeRepository.deleteByEmail(email);
         entityManager.flush();
 
-        // Generate a 6-digit random code
         String code = generateSixDigitCode();
 
-        // Create and save verification code entity
         VerificationCode verificationCode = new VerificationCode();
         verificationCode.setEmail(email);
+        verificationCode.setTargetEmail(request.getTargetEmail());
         verificationCode.setCode(code);
-
         verificationCode.setExpiryTime(LocalDateTime.now().plusMinutes(CODE_EXPIRY_MINUTES));
         verificationCode.setVerified(YesNo.NO);
         verificationCode.setAttemptCount(0L);
@@ -92,8 +89,6 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
         verificationCode.setSyncTs(DateUtil.getDate());
 
         verificationCodeRepository.save(verificationCode);
-
-        // Send email with verification code
         sendEmail(email, code);
 
         return verificationCode;
@@ -103,42 +98,68 @@ public class VerificationCodeServiceImpl extends MessagePropertyBase implements 
     public SuccessAndErrorDetailsResource verifyCode(VerifyCodeRequest request) {
         String email = request.getEmail();
         String code = request.getCode();
+
         Optional<VerificationCode> optionalVerificationCode = verificationCodeRepository.findByEmail(email);
         if (optionalVerificationCode.isEmpty()) {
+            log.warn("No verification code found for email: {}", email);
             return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_NOT_FOUND), Boolean.FALSE);
         }
         VerificationCode verificationCode = optionalVerificationCode.get();
-        // Check if already verified
+
         if (verificationCode.getVerified().equals(YesNo.YES)) {
+            log.warn("Email already verified: {}", email);
             return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_ALREADY_VERIFIED), Boolean.FALSE);
         }
-        // Check if code has expired
         if (LocalDateTime.now().isAfter(verificationCode.getExpiryTime())) {
+            log.warn("Verification code expired for email: {}, expiry: {}", email, verificationCode.getExpiryTime());
             return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_CODE_EXPIRED), Boolean.FALSE);
         }
-        // Check if max attempts exceeded
         if (verificationCode.getAttemptCount() >= MAX_ATTEMPTS) {
+            log.warn("Max attempts exceeded for email: {}, attempts: {}", email, verificationCode.getAttemptCount());
             return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_MAX_ATTEMPTS_EXCEEDED), Boolean.FALSE);
         }
-        // Increment attempt count
+
         verificationCode.setAttemptCount(verificationCode.getAttemptCount() + 1);
         verificationCode.setModifiedDate(DateUtil.getDate());
         verificationCode.setModifiedUser(SYSTEM);
         verificationCode.setSyncTs(DateUtil.getDate());
 
-        // Verify code
         if (!verificationCode.getCode().equals(code)) {
             verificationCodeRepository.saveAndFlush(verificationCode);
             return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_INVALID_CODE), false);
         }
-        // Code is valid - mark as verified
+
         verificationCode.setVerified(YesNo.YES);
         verificationCodeRepository.saveAndFlush(verificationCode);
 
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "errorMessage"));
-        user.setEmailVerified(YesNo.YES);
+        // Resolve the target user:
+        // - Step 2 (inbox verify): userId is provided in the request → activate that user
+        // - Step 1 (own email verify): no userId → find user by email → mark emailVerified
+        boolean isStep2 = request.getUserId() != null;
+        Optional<User> optionalUser = isStep2
+                ? userRepository.findById(request.getUserId())
+                : userRepository.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            log.warn("User not found during verification. isStep2={}, email={}, userId={}", isStep2, email, request.getUserId());
+            return new SuccessAndErrorDetailsResource(environment.getProperty(RECORD_NOT_FOUND), Boolean.FALSE);
+        }
+        User user = optionalUser.get();
+
+        if (isStep2) {
+            // Step 2: inbox verified → activate the user
+            user.setStatus(com.ride.mate.enums.UserStatus.ACTIVE);
+            log.info("Step 2 verified: User {} set to ACTIVE", user.getId());
+        } else {
+            // Step 1: own email verified
+            user.setEmailVerified(YesNo.YES);
+            log.info("Step 1 verified: emailVerified set for user {}", user.getId());
+        }
+        user.setModifiedDate(DateUtil.getDate());
+        user.setModifiedUser(SYSTEM);
         userRepository.saveAndFlush(user);
-        return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_SUCCESS),true);
+
+        return new SuccessAndErrorDetailsResource(environment.getProperty(VERIFICATION_SUCCESS), true);
     }
 
     /**

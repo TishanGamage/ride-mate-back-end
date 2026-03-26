@@ -94,8 +94,8 @@ public class AuthServiceImpl extends MessagePropertyBase implements AuthService 
         }
 
         // Validate account status
-        if (user.getStatus().equals(UserStatus.INACTIVE)) {
-            log.warn("Login failed: Account suspended for email - {}", request.getEmail());
+        if (!user.getStatus().equals(UserStatus.ACTIVE)) {
+            log.warn("Login failed: Account not active for email - {}", request.getEmail());
             throw new ValidateRecordException(environment.getProperty(LOGIN_ACCOUNT_SUSPENDED), "errorMessage");
         }
 

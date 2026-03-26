@@ -4,6 +4,7 @@ import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.User;
 import com.ride.mate.enums.UserStatus;
+import com.ride.mate.enums.UserRole;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
@@ -63,6 +64,7 @@ public class UserServiceImpl extends MessagePropertyBase implements UserService 
     public LoginResponse registerUser(UserRegistrationAddResource request) {
 
         log.info("Processing user registration request for email: {}", request.getEmail());
+
         // Validate if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("Registration failed: Email already exists - {}", request.getEmail());

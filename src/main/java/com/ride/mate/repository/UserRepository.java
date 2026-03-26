@@ -29,5 +29,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    List<User> findAllByOrderByCreatedDateDesc();
+
+    List<User> findByUserRoleOrderByCreatedDateDesc(UserRole userRole);
 }
 

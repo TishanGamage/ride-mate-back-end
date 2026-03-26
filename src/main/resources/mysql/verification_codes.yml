@@ -1,5 +1,17 @@
 databaseChangeLog:
   - changeSet:
+      id: 2
+      author: Tishan
+      changes:
+        - addColumn:
+            tableName: verification_codes
+            columns:
+              - column:
+                  name: target_email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+  - changeSet:
       id: 1
       author: Tishan
       changes:

@@ -6,4 +6,5 @@ import java.util.List;
 @Repository
 public interface UserFeedbackRepository extends JpaRepository<UserFeedback, Long> {
     List<UserFeedback> findByUserIdOrderByCreatedDateDesc(Long userId);
+    List<UserFeedback> findAllByOrderByCreatedDateDesc();
 }

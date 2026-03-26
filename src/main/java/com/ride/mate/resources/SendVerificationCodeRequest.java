@@ -26,5 +26,8 @@ public class SendVerificationCodeRequest {
     @NotBlank(message = "{email.required}")
     @Email(message = "{email.invalid}")
     private String email;
+
+    // Optional: used in step 2 (inbox verification) to link back to the target user's email
+    private String targetEmail;
 }
 
