@@ -31,6 +31,9 @@ public class VerificationCode extends BaseEntity implements Serializable {
     @Column(name = "email", nullable = false, length = 255)
     private String email;
 
+    @Column(name = "target_email", length = 255)
+    private String targetEmail;
+
     @Column(name = "code", nullable = false, length = 6)
     private String code;
 

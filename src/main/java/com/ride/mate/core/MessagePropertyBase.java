@@ -166,4 +166,7 @@ public abstract class MessagePropertyBase {
     // User Feedback message property keys
     protected static final String USER_FEEDBACK_NOT_FOUND = "user.feedback.not.found";
     protected static final String USER_FEEDBACK_SUBMITTED = "user.feedback.submitted";
+
+    // Admin registration message property keys
+    protected static final String ADMIN_REGISTRATION_NOT_ALLOWED = "admin.registration.not.allowed";
 }

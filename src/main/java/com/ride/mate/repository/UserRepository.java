@@ -30,5 +30,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    List<User> findAllByOrderByCreatedDateDesc();
+
+    List<User> findByUserRoleOrderByCreatedDateDesc(UserRole userRole);
+
     long countByStatus(com.ride.mate.enums.UserStatus status);
 }
