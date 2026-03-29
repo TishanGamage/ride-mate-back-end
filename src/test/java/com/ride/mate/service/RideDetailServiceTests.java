@@ -1,6 +1,7 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
 import com.ride.mate.resources.RideDetailRequestResource;
@@ -74,7 +75,6 @@ public class RideDetailServiceTests {
         rideDetailRequest.setEndCity("Moratuwa");
         rideDetailRequest.setTotalRideDistance(new BigDecimal("15.5"));
         rideDetailRequest.setAvailableSeats(3L);
-        rideDetailRequest.setStatus("ACTIVE");
         rideDetailRequest.setPerKmRate(new BigDecimal("50.00"));
         rideDetailRequest.setTotalRideCost(new BigDecimal("775.00"));
 
@@ -108,14 +108,14 @@ public class RideDetailServiceTests {
         mockRideDetail.setEndCity("Moratuwa");
         mockRideDetail.setTotalRideDistance(new BigDecimal("15.5"));
         mockRideDetail.setAvailableSeats(3L);
-        mockRideDetail.setStatus("ACTIVE");
+        mockRideDetail.setStatus(RideStatus.ACTIVE);
     }
 
     @Test
     public void testCreateRideDetail_Success() {
         // Arrange
         when(driverProfileRepository.findById(1L)).thenReturn(Optional.of(mockDriverProfile));
-        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, "ACTIVE")).thenReturn(false);
+        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, RideStatus.ACTIVE)).thenReturn(false);
         when(rideDetailRepository.save(any(RideDetail.class))).thenReturn(mockRideDetail);
 
         // Act
@@ -144,7 +144,7 @@ public class RideDetailServiceTests {
     public void testCreateRideDetail_ActiveRideExists() {
         // Arrange
         when(driverProfileRepository.findById(1L)).thenReturn(Optional.of(mockDriverProfile));
-        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, "ACTIVE")).thenReturn(true);
+        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, RideStatus.ACTIVE)).thenReturn(true);
         when(environment.getProperty(anyString())).thenReturn("Active ride already exists");
 
         // Act & Assert

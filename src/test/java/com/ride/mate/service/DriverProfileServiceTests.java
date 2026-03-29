@@ -1,6 +1,7 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.DriverStatus;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
 import com.ride.mate.resources.DriverProfileRequestResource;
@@ -106,7 +107,7 @@ public class DriverProfileServiceTests {
         mockDriverProfile.setUser(mockUser);
         mockDriverProfile.setDriverLicenseNumber("DL123456789");
         mockDriverProfile.setDriverLicenseExpiry(LocalDate.parse("2030-12-31"));
-        mockDriverProfile.setAccountStatus("PENDING");
+        mockDriverProfile.setAccountStatus(DriverStatus.PENDING);
 
         // Setup mock vehicle type
         mockVehicleType = new VehicleType();

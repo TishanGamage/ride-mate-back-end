@@ -1,6 +1,7 @@
 package com.ride.mate.repository;
 
 import com.ride.mate.domain.RideSegment;
+import com.ride.mate.enums.RideSegmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -27,7 +28,7 @@ public interface RideSegmentRepository extends JpaRepository<RideSegment, Long> 
      * @param rideDetailId Ride detail ID
      * @return Ordered list of ride segments
      */
-    List<RideSegment> findByRideDetailIdOrderBySegmentOrder(Long rideDetailId);
+    List<RideSegment> findByRideDetailIdAndStatusOrderBySegmentOrder(Long rideDetailId, RideSegmentStatus status);
 
     /**
      * Delete all segments for a ride (used during recalculation)

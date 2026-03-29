@@ -1,6 +1,7 @@
 package com.ride.mate.domain;
 
 import com.ride.mate.core.BaseEntity;
+import com.ride.mate.enums.RideSegmentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -98,5 +99,8 @@ public class RideSegment extends BaseEntity implements Serializable {
 
     @Column(name = "modified_user", length = 100)
     private String modifiedUser;
-}
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private RideSegmentStatus status = RideSegmentStatus.ACTIVE;
+}
