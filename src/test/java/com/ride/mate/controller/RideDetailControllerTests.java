@@ -81,7 +81,6 @@ public class RideDetailControllerTests {
         rideDetailRequest.setTotalRideCost(new BigDecimal("775.00"));
         rideDetailRequest.setAvailableSeats(3L);
         rideDetailRequest.setStartTime("2026-03-21T10:00:00");
-        rideDetailRequest.setStatus("ACTIVE");
 
         // Setup mock ride detail
         mockRideDetail = new RideDetail();

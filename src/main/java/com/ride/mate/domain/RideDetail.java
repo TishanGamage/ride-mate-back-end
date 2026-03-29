@@ -1,6 +1,7 @@
 package com.ride.mate.domain;
 
 import com.ride.mate.core.BaseEntity;
+import com.ride.mate.enums.RideStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -71,8 +72,9 @@ public class RideDetail extends BaseEntity implements Serializable {
     @Column(name = "alert_time")
     private Timestamp alertTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 100)
-    private String status;
+    private RideStatus status;
 
     @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;

@@ -21,7 +21,6 @@ import com.ride.mate.repository.UserRepository;
 import com.ride.mate.resources.MarketingSiteStatsResponse;
 import com.ride.mate.service.MarketingSiteService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +35,7 @@ public class MarketingSiteServiceImpl extends MessagePropertyBase implements Mar
 
     public MarketingSiteServiceImpl(RideDetailRepository rideDetailRepository,
                                     UserRepository userRepository,
-                                    DriverProfileRepository driverProfileRepository,
-                                    Environment environment) {
+                                    DriverProfileRepository driverProfileRepository) {
         this.rideDetailRepository = rideDetailRepository;
         this.userRepository = userRepository;
         this.driverProfileRepository = driverProfileRepository;
