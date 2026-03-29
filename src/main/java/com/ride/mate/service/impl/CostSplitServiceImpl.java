@@ -5,6 +5,7 @@ import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.RideDetail;
 import com.ride.mate.domain.RideSegment;
 import com.ride.mate.domain.ShareRideDetail;
+import com.ride.mate.enums.RideSegmentStatus;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.RideDetailRepository;
 import com.ride.mate.repository.RideSegmentRepository;
@@ -233,6 +234,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
             segment.setCreatedDate(DateUtil.getDate());
             segment.setCreatedUser(LoginAuthentication.getUserName());
             segment.setSyncTs(DateUtil.getDate());
+            segment.setStatus(RideSegmentStatus.ACTIVE);
             persistedSegments.add(segment);
 
             segmentDetails.add(CostSplitResponse.SegmentDetail.builder()

@@ -3,6 +3,7 @@ package com.ride.mate.service.impl;
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.RideSegmentStatus;
 import com.ride.mate.enums.RideStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
@@ -36,6 +37,7 @@ import java.util.List;
  * 1 15-03-2026    N/A          N/A          Iruni           Initial Development
  * 2 19-03-2026    N/A          N/A          Iruni           Added calculateRidePrice method
  * 3 20-03-2026    N/A          N/A          Tishan           Added confirmPassengerRide method
+ * 4 29-03-2026    N/A          N/A          Tishan          Set all shared ride details and ride segments to INACTIVE when ride ends
  */
 @Slf4j
 @Service
@@ -49,6 +51,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     private final UserRepository userRepository;
     private final CostSplitService costSplitService;
     private final Environment environment;
+    private final RideSegmentRepository rideSegmentRepository;
 
     public RideDetailServiceImpl(RideDetailRepository rideDetailRepository,
                                  DriverProfileRepository driverProfileRepository,
@@ -56,7 +59,8 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                                  ShareRideDetailRepository shareRideDetailRepository,
                                  UserRepository userRepository,
                                  CostSplitService costSplitService,
-                                 Environment environment) {
+                                 Environment environment,
+                                 RideSegmentRepository rideSegmentRepository) {
         this.rideDetailRepository = rideDetailRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
@@ -64,6 +68,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         this.userRepository = userRepository;
         this.costSplitService = costSplitService;
         this.environment = environment;
+        this.rideSegmentRepository = rideSegmentRepository;
     }
 
     @Override
@@ -259,6 +264,28 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setModifiedDate(DateUtil.getDate());
         rideDetail.setModifiedUser(LoginAuthentication.getUserName());
         rideDetail.setSyncTs(DateUtil.getDate());
+
+        // Set all related ShareRideDetail records to INACTIVE
+        List<ShareRideDetail> shareRideDetails = shareRideDetailRepository.findByRideDetailIdAndStatus(rideDetailId, "ACTIVE");
+        for (ShareRideDetail shareRideDetail : shareRideDetails) {
+            shareRideDetail.setStatus("INACTIVE");
+            shareRideDetail.setModifiedDate(DateUtil.getDate());
+            shareRideDetail.setModifiedUser(LoginAuthentication.getUserName());
+            shareRideDetail.setSyncTs(DateUtil.getDate());
+        }
+        shareRideDetailRepository.saveAll(shareRideDetails);
+        log.info("Set {} shared ride details to INACTIVE for ride detail ID: {}", shareRideDetails.size(), rideDetailId);
+
+        // Set all related RideSegment records to INACTIVE
+        List<RideSegment> rideSegments = rideSegmentRepository.findByRideDetailIdOrderBySegmentOrder(rideDetailId);
+        for (RideSegment rideSegment : rideSegments) {
+            rideSegment.setStatus(RideSegmentStatus.INACTIVE);
+            rideSegment.setModifiedDate(DateUtil.getDate());
+            rideSegment.setModifiedUser(LoginAuthentication.getUserName());
+            rideSegment.setSyncTs(DateUtil.getDate());
+        }
+        rideSegmentRepository.saveAll(rideSegments);
+        log.info("Set {} ride segments to INACTIVE for ride detail ID: {}", rideSegments.size(), rideDetailId);
 
         RideDetail updatedRide = rideDetailRepository.save(rideDetail);
         log.info("Ride ended successfully for ride detail ID: {}", rideDetailId);
