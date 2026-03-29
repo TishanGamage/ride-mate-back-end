@@ -384,17 +384,22 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
             htmlContent = htmlContent.replace("{{TOTAL_COST}}", costSplit.getTotalRideCost().toString());
             
             StringBuilder passengerRows = new StringBuilder();
-            for (CostSplitResponse.PassengerCostDetail p : costSplit.getPassengerCosts()) {
+            if(costSplit.getPassengerCosts() == null || costSplit.getPassengerCosts().isEmpty()){
                 passengerRows.append("<tr style='border-bottom:1px solid #374151;'>")
-                    .append("<td style='color:#e5e7eb !important; font-size:12px; padding:10px 8px;'>").append(p.getUserId()).append("</td>")
-                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getStartCity()).append("</td>")
-                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getEndCity()).append("</td>")
-                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px; text-align:right;'>").append(p.getPassengerRideDistance()).append(" km</td>")
-                    .append("<td style='color:#10b981 !important; font-size:12px; padding:10px 8px; text-align:right;'><strong>Rs. ").append(p.getTotalPassengerCost()).append("</strong></td>")
+                    .append("<td colspan='5' style='color:#d1d5db !important; font-size:12px; padding:10px 8px; text-align:center;'>No passengers shared this ride.</td>")
                     .append("</tr>");
+            } else {
+                for (CostSplitResponse.PassengerCostDetail p : costSplit.getPassengerCosts()) {
+                    passengerRows.append("<tr style='border-bottom:1px solid #374151;'>")
+                            .append("<td style='color:#e5e7eb !important; font-size:12px; padding:10px 8px;'>").append(p.getUserId()).append("</td>")
+                            .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getStartCity()).append("</td>")
+                            .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getEndCity()).append("</td>")
+                            .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px; text-align:right;'>").append(p.getPassengerRideDistance()).append(" km</td>")
+                            .append("<td style='color:#10b981 !important; font-size:12px; padding:10px 8px; text-align:right;'><strong>Rs. ").append(p.getTotalPassengerCost()).append("</strong></td>")
+                            .append("</tr>");
+                }
+                htmlContent = htmlContent.replace("{{PASSENGER_ROWS}}", passengerRows.toString());
             }
-            htmlContent = htmlContent.replace("{{PASSENGER_ROWS}}", passengerRows.toString());
-            
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setTo(to);
