@@ -79,7 +79,7 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
                             environment.getProperty(RIDE_NOT_FOUND), "message");
                 });
 
-        if (!"ACTIVE".equalsIgnoreCase(rideDetail.getStatus())) {
+        if (!"ACTIVE".equalsIgnoreCase(rideDetail.getStatus().toString())) {
             log.warn("Validation failed: Ride is not active - ID: {} Status: {}",
                     request.getRideDetailId(), rideDetail.getStatus());
             throw new ValidateRecordException(

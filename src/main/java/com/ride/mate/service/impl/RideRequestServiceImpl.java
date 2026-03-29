@@ -549,7 +549,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .availableSeats(ride.getAvailableSeats())
                 .currentPassengers(currentPassengers)
                 .startTime(ride.getStartTime() != null ? ride.getStartTime().toString() : null)
-                .status(ride.getStatus())
+                .status(ride.getStatus().toString())
                 .build();
     }
 

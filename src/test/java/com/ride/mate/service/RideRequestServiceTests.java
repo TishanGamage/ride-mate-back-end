@@ -1,6 +1,7 @@
 package com.ride.mate.service;
 
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.enums.UserRole;
 import com.ride.mate.enums.UserStatus;
 import com.ride.mate.exception.ValidateRecordException;
@@ -102,7 +103,7 @@ public class RideRequestServiceTests {
         mockRideDetail.setTotalRideDistance(new BigDecimal("15.5"));
         mockRideDetail.setTotalRideCost(new BigDecimal("500.00"));
         mockRideDetail.setAvailableSeats(3L);
-        mockRideDetail.setStatus("ACTIVE");
+        mockRideDetail.setStatus(RideStatus.ACTIVE);
 
         // Setup mock user
         mockUser = new User();
@@ -170,7 +171,7 @@ public class RideRequestServiceTests {
     @Test
     public void testCreateRideRequest_RideNotActive() {
         // Arrange
-        mockRideDetail.setStatus("COMPLETED");
+        mockRideDetail.setStatus(RideStatus.COMPLETED);
         when(rideDetailRepository.findById(1L)).thenReturn(Optional.of(mockRideDetail));
         when(environment.getProperty(anyString())).thenReturn("Ride not available");
 
