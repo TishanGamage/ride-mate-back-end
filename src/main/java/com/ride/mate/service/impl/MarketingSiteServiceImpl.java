@@ -2,7 +2,7 @@
  * MarketingSiteServiceImpl
  * Service implementation for marketing site statistics
  *
- * @author Copilot
+ * @author Tishan
  * @version 1.0.0
  * @since 1.0.0
  *
