@@ -403,7 +403,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setTo(to);
-            helper.setSubject("Your Ride Summary - RideMate");
+            helper.setSubject("Find Your Ride Summary - RideMate");
             helper.setText(htmlContent, true);
             
             ClassPathResource logoResource = new ClassPathResource("assets/ride-mate-logo-dark.png");
