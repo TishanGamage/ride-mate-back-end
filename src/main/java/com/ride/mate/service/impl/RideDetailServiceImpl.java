@@ -316,7 +316,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         log.info("Fetching active ride for driver profile ID: {}", driverProfileId);
 
         List<RideDetail> activeRides = rideDetailRepository
-                .findByDriverProfileIdAndStatus(driverProfileId, "ACTIVE");
+                .findByDriverProfileIdAndStatus(driverProfileId, RideStatus.ACTIVE);
 
         if (activeRides.isEmpty()) {
             log.warn("No active ride found for driver profile ID: {}", driverProfileId);
@@ -332,7 +332,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         log.info("Fetching rides for driver profile ID: {}, status: {}", driverProfileId, status);
 
         List<RideDetail> rides = (status != null && !status.isEmpty())
-                ? rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, status)
+                ? rideDetailRepository.findByDriverProfileIdAndStatus(driverProfileId, RideStatus.valueOf(status))
                 : rideDetailRepository.findByDriverProfileId(driverProfileId);
 
         return rides.stream().map(this::mapToResponse).toList();

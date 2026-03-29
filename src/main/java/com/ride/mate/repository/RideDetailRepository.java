@@ -1,6 +1,7 @@
 package com.ride.mate.repository;
 
 import com.ride.mate.domain.RideDetail;
+import com.ride.mate.enums.RideStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -39,7 +40,7 @@ public interface RideDetailRepository extends JpaRepository<RideDetail, Long> {
 
     boolean existsRideDetailByDriverProfileIdAndStatus(Long driverProfileId , String status);
 
-    List<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, String status);
+    List<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, RideStatus status);
 
     long countByStatus(String status);
 }
