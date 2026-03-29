@@ -16,12 +16,20 @@ import com.ride.mate.resources.RidePriceCalculationResponse;
 import com.ride.mate.service.CostSplitService;
 import com.ride.mate.service.RideDetailService;
 import com.ride.mate.util.DateUtil;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileCopyUtils;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -52,6 +60,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
     private final CostSplitService costSplitService;
     private final Environment environment;
     private final RideSegmentRepository rideSegmentRepository;
+    private final JavaMailSender mailSender;
 
     public RideDetailServiceImpl(RideDetailRepository rideDetailRepository,
                                  DriverProfileRepository driverProfileRepository,
@@ -60,7 +69,8 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                                  UserRepository userRepository,
                                  CostSplitService costSplitService,
                                  Environment environment,
-                                 RideSegmentRepository rideSegmentRepository) {
+                                 RideSegmentRepository rideSegmentRepository,
+                                 JavaMailSender mailSender) {
         this.rideDetailRepository = rideDetailRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.driverVehicleDetailsRepository = driverVehicleDetailsRepository;
@@ -69,6 +79,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         this.costSplitService = costSplitService;
         this.environment = environment;
         this.rideSegmentRepository = rideSegmentRepository;
+        this.mailSender = mailSender;
     }
 
     @Override
@@ -277,7 +288,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         log.info("Set {} shared ride details to INACTIVE for ride detail ID: {}", shareRideDetails.size(), rideDetailId);
 
         // Set all related RideSegment records to INACTIVE
-        List<RideSegment> rideSegments = rideSegmentRepository.findByRideDetailIdOrderBySegmentOrder(rideDetailId);
+        List<RideSegment> rideSegments = rideSegmentRepository.findByRideDetailIdAndStatusOrderBySegmentOrder(rideDetailId, RideSegmentStatus.ACTIVE);
         for (RideSegment rideSegment : rideSegments) {
             rideSegment.setStatus(RideSegmentStatus.INACTIVE);
             rideSegment.setModifiedDate(DateUtil.getDate());
@@ -289,6 +300,13 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
 
         RideDetail updatedRide = rideDetailRepository.save(rideDetail);
         log.info("Ride ended successfully for ride detail ID: {}", rideDetailId);
+
+        // ── Send ride summary email to driver ──
+        try {
+            sendRideSummaryEmailToDriver(updatedRide);
+        } catch (Exception e) {
+            log.error("Failed to send ride summary email to driver: {}", e.getMessage());
+        }
 
         return updatedRide;
     }
@@ -340,5 +358,63 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                 .createdDate(ride.getCreatedDate() != null ? ride.getCreatedDate().toString() : null)
                 .build();
     }
-}
 
+    /**
+     * Send a detailed ride summary email to the driver after ride ends
+     * @param rideDetail RideDetail entity
+     */
+    private void sendRideSummaryEmailToDriver(RideDetail rideDetail) {
+        try {
+            User driver = rideDetail.getDriverProfile().getUser();
+            String to = driver.getEmail();
+            String driverName = driver.getFirstName() + " " + driver.getLastName();
+            
+            CostSplitResponse costSplit = costSplitService.getCostSplit(rideDetail.getId());
+            
+            String htmlContent = loadRideSummaryTemplate();
+            
+            htmlContent = htmlContent.replace("{{DRIVER_NAME}}", driverName);
+            htmlContent = htmlContent.replace("{{START_CITY}}", rideDetail.getStartCity());
+            htmlContent = htmlContent.replace("{{END_CITY}}", rideDetail.getEndCity());
+            htmlContent = htmlContent.replace("{{RIDE_ID}}", String.valueOf(rideDetail.getId()));
+            htmlContent = htmlContent.replace("{{START_TIME}}", rideDetail.getStartTime() != null ? rideDetail.getStartTime().toString() : "N/A");
+            htmlContent = htmlContent.replace("{{END_TIME}}", DateUtil.getDate().toString());
+            htmlContent = htmlContent.replace("{{TOTAL_DISTANCE}}", rideDetail.getTotalRideDistance().toString());
+            htmlContent = htmlContent.replace("{{PASSENGER_COUNT}}", String.valueOf(costSplit.getTotalPassengers()));
+            htmlContent = htmlContent.replace("{{TOTAL_COST}}", costSplit.getTotalRideCost().toString());
+            
+            StringBuilder passengerRows = new StringBuilder();
+            for (CostSplitResponse.PassengerCostDetail p : costSplit.getPassengerCosts()) {
+                passengerRows.append("<tr style='border-bottom:1px solid #374151;'>")
+                    .append("<td style='color:#e5e7eb !important; font-size:12px; padding:10px 8px;'>").append(p.getUserId()).append("</td>")
+                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getStartCity()).append("</td>")
+                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px;'>").append(p.getEndCity()).append("</td>")
+                    .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px; text-align:right;'>").append(p.getPassengerRideDistance()).append(" km</td>")
+                    .append("<td style='color:#10b981 !important; font-size:12px; padding:10px 8px; text-align:right;'><strong>Rs. ").append(p.getTotalPassengerCost()).append("</strong></td>")
+                    .append("</tr>");
+            }
+            htmlContent = htmlContent.replace("{{PASSENGER_ROWS}}", passengerRows.toString());
+            
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Your Ride Summary - RideMate");
+            helper.setText(htmlContent, true);
+            
+            ClassPathResource logoResource = new ClassPathResource("assets/ride-mate-logo-dark.png");
+            helper.addInline("logo", logoResource);
+            
+            mailSender.send(mimeMessage);
+            log.info("Ride summary email sent to driver {} for ride {}", to, rideDetail.getId());
+        } catch (Exception e) {
+            log.error("Failed to send ride summary email: {}", e.getMessage());
+        }
+    }
+    
+    private String loadRideSummaryTemplate() throws IOException {
+        ClassPathResource resource = new ClassPathResource("templates/ride-summary-email.html");
+        try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+            return FileCopyUtils.copyToString(reader);
+        }
+    }
+}

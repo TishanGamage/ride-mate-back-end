@@ -320,7 +320,7 @@ public class CostSplitServiceImpl extends MessagePropertyBase implements CostSpl
     public CostSplitResponse getCostSplit(Long rideDetailId) {
         // If no segments persisted yet, calculate fresh
         List<RideSegment> existingSegments = rideSegmentRepository
-                .findByRideDetailIdOrderBySegmentOrder(rideDetailId);
+                .findByRideDetailIdAndStatusOrderBySegmentOrder(rideDetailId,RideSegmentStatus.ACTIVE);
 
         if (existingSegments.isEmpty()) {
             return calculateCostSplit(rideDetailId);

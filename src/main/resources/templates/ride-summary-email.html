@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="color-scheme" content="light only">
+    <meta name="supported-color-schemes" content="light only">
+    <style>
+        @media (prefers-color-scheme: dark) {
+            .dark-bg { background-color: #1a1d29 !important; }
+            .dark-card { background-color: #2a2d3a !important; }
+            .dark-table { background-color: #1e293b !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#1a1d29 !important; font-family:Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1a1d29" class="dark-bg" style="background-color:#1a1d29 !important; padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="650" cellpadding="0" cellspacing="0" border="0" bgcolor="#2a2d3a" class="dark-card" style="max-width:650px; background-color:#2a2d3a !important; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+                    <tr>
+                        <td style="padding:40px 30px; background-color:#2a2d3a !important;" bgcolor="#2a2d3a">
+                            <!-- Header with Logo -->
+                            <div style="text-align:center; margin-bottom:25px;">
+                                <img src="cid:logo" alt="RideMate Logo" style="max-width:150px; height:auto; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
+                                <p style="color:#9ca3af !important; font-size:13px; margin-top:5px; margin-bottom:0;">
+                                    Ride Summary
+                                </p>
+                            </div>
+
+                            <p style="color:#e5e7eb !important; font-size:15px; margin:0 0 15px 0;">
+                                Dear {{DRIVER_NAME}},
+                            </p>
+
+                            <p style="color:#d1d5db !important; font-size:14px; line-height:1.6; margin:0 0 25px 0;">
+                                Your ride from <strong style="color:#60a5fa !important;">{{START_CITY}}</strong> to <strong style="color:#60a5fa !important;">{{END_CITY}}</strong> has ended successfully.
+                            </p>
+
+                            <!-- Ride Details Box -->
+                            <div style="background-color:#1e293b !important; border-radius:8px; padding:20px; margin:25px 0; border-left:4px solid #3b82f6;">
+                                <h3 style="color:#60a5fa !important; margin:0 0 15px 0; font-size:16px;">Ride Details</h3>
+                                <table width="100%" cellpadding="5" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="color:#9ca3af !important; font-size:13px; padding:5px 0;">Ride ID:</td>
+                                        <td style="color:#e5e7eb !important; font-size:13px; padding:5px 0; text-align:right;"><strong>{{RIDE_ID}}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#9ca3af !important; font-size:13px; padding:5px 0;">Start Time:</td>
+                                        <td style="color:#e5e7eb !important; font-size:13px; padding:5px 0; text-align:right;">{{START_TIME}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#9ca3af !important; font-size:13px; padding:5px 0;">End Time:</td>
+                                        <td style="color:#e5e7eb !important; font-size:13px; padding:5px 0; text-align:right;">{{END_TIME}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#9ca3af !important; font-size:13px; padding:5px 0;">Total Distance:</td>
+                                        <td style="color:#e5e7eb !important; font-size:13px; padding:5px 0; text-align:right;"><strong>{{TOTAL_DISTANCE}} km</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#9ca3af !important; font-size:13px; padding:5px 0;">Total Passengers:</td>
+                                        <td style="color:#10b981 !important; font-size:13px; padding:5px 0; text-align:right;"><strong>{{PASSENGER_COUNT}}</strong></td>
+                                    </tr>
+                                    <tr style="border-top:1px solid #374151;">
+                                        <td style="color:#9ca3af !important; font-size:14px; padding:10px 0 5px 0;">Total Cost:</td>
+                                        <td style="color:#60a5fa !important; font-size:16px; padding:10px 0 5px 0; text-align:right;"><strong>Rs. {{TOTAL_COST}}</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Passenger Breakdown -->
+                            <h3 style="color:#60a5fa !important; margin:30px 0 15px 0; font-size:16px;">Passenger Cost Breakdown</h3>
+                            <table width="100%" cellpadding="8" cellspacing="0" border="0" style="background-color:#1e293b !important; border-radius:8px; overflow:hidden;">
+                                <thead>
+                                    <tr style="background-color:#1e3a5f !important;">
+                                        <th style="color:#60a5fa !important; font-size:12px; text-align:left; padding:12px 8px; border-bottom:2px solid #3b82f6;">Passenger</th>
+                                        <th style="color:#60a5fa !important; font-size:12px; text-align:left; padding:12px 8px; border-bottom:2px solid #3b82f6;">From</th>
+                                        <th style="color:#60a5fa !important; font-size:12px; text-align:left; padding:12px 8px; border-bottom:2px solid #3b82f6;">To</th>
+                                        <th style="color:#60a5fa !important; font-size:12px; text-align:right; padding:12px 8px; border-bottom:2px solid #3b82f6;">Distance</th>
+                                        <th style="color:#60a5fa !important; font-size:12px; text-align:right; padding:12px 8px; border-bottom:2px solid #3b82f6;">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{PASSENGER_ROWS}}
+                                </tbody>
+                            </table>
+
+                            <p style="color:#9ca3af !important; font-size:12px; margin:25px 0; line-height:1.5;">
+                                Thank you for using RideMate. This ride has been marked as completed and the earnings will be reflected in your wallet.
+                            </p>
+
+                            <p style="margin-top:30px; font-size:14px; color:#e5e7eb !important; margin-bottom:0;">
+                                Safe travels,<br>
+                                <strong style="color:#60a5fa !important;">RideMate Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
