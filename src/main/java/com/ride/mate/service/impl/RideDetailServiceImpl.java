@@ -94,7 +94,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                             environment.getProperty(DRIVER_PROFILE_NOT_FOUND), "message");
                 });
 
-        if(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(request.getDriverProfileId(),"ACTIVE")){
+        if(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(request.getDriverProfileId(),RideStatus.ACTIVE)){
             log.warn("Validation failed: Active ride already exists for driver profile ID: {}",
                     request.getDriverProfileId());
             throw new ValidateRecordException(

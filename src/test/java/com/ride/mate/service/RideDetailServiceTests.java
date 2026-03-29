@@ -115,7 +115,7 @@ public class RideDetailServiceTests {
     public void testCreateRideDetail_Success() {
         // Arrange
         when(driverProfileRepository.findById(1L)).thenReturn(Optional.of(mockDriverProfile));
-        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, "ACTIVE")).thenReturn(false);
+        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, RideStatus.ACTIVE)).thenReturn(false);
         when(rideDetailRepository.save(any(RideDetail.class))).thenReturn(mockRideDetail);
 
         // Act
@@ -144,7 +144,7 @@ public class RideDetailServiceTests {
     public void testCreateRideDetail_ActiveRideExists() {
         // Arrange
         when(driverProfileRepository.findById(1L)).thenReturn(Optional.of(mockDriverProfile));
-        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, "ACTIVE")).thenReturn(true);
+        when(rideDetailRepository.existsRideDetailByDriverProfileIdAndStatus(1L, RideStatus.ACTIVE)).thenReturn(true);
         when(environment.getProperty(anyString())).thenReturn("Active ride already exists");
 
         // Act & Assert

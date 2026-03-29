@@ -9,6 +9,7 @@ import com.ride.mate.domain.RideRequest;
 import com.ride.mate.domain.ShareRideDetail;
 import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserProfile;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.RideDetailRepository;
@@ -103,7 +104,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         log.info("Fetching available rides — pickup ({}, {}), destination ({}, {}), radius: {} km",
                 startLat, startLng, endLat, endLng, radiusKm);
 
-        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(RideStatus.ACTIVE);
 
         if (activeRides.isEmpty()) {
             return new ArrayList<>();

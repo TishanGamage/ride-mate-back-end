@@ -3,6 +3,7 @@ package com.ride.mate.service.impl;
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
 import com.ride.mate.resources.*;
@@ -140,7 +141,7 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
             BigDecimal radiusKm) {
         log.info("Searching for available ride pools within {} km radius", radiusKm);
 
-        List<RideDetail> activeRides = rideDetailRepository.findByStatus(STATUS_ACTIVE);
+        List<RideDetail> activeRides = rideDetailRepository.findByStatus(RideStatus.ACTIVE);
 
         if (activeRides.isEmpty()) {
             log.info("No active rides found");
@@ -295,7 +296,7 @@ public class ShareRideDetailServiceImpl extends MessagePropertyBase implements S
     private int estimateZoneDensity(BigDecimal startLat, BigDecimal startLng) {
         try {
             BigDecimal searchRadius = new BigDecimal("2"); // 2km zone
-            long nearbyRides = rideDetailRepository.findByStatus("ACTIVE").stream()
+            long nearbyRides = rideDetailRepository.findByStatus(RideStatus.ACTIVE).stream()
                     .filter(ride -> isWithinRadius(startLat, startLng,
                             ride.getStartLocationLatitude(), ride.getStartLocationLongitude(),
                             searchRadius))

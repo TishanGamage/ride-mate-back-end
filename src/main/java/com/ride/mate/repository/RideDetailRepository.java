@@ -36,11 +36,11 @@ public interface RideDetailRepository extends JpaRepository<RideDetail, Long> {
      * @param status Status
      * @return List of ride details
      */
-    List<RideDetail> findByStatus(String status);
+    List<RideDetail> findByStatus(RideStatus status);
 
-    boolean existsRideDetailByDriverProfileIdAndStatus(Long driverProfileId , String status);
+    boolean existsRideDetailByDriverProfileIdAndStatus(Long driverProfileId , RideStatus status);
 
     List<RideDetail> findByDriverProfileIdAndStatus(Long driverProfileId, RideStatus status);
 
-    long countByStatus(String status);
+    long countByStatus(RideStatus status);
 }

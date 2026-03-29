@@ -14,6 +14,7 @@ package com.ride.mate.service.impl;
 
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.enums.DriverStatus;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.enums.UserStatus;
 import com.ride.mate.repository.DriverProfileRepository;
 import com.ride.mate.repository.RideDetailRepository;
@@ -44,7 +45,7 @@ public class MarketingSiteServiceImpl extends MessagePropertyBase implements Mar
     @Override
     public MarketingSiteStatsResponse getMarketingSiteStats() {
         log.info("Processing marketing site statistics fetch");
-        long ridesCompleted = rideDetailRepository.countByStatus("COMPLETED");
+        long ridesCompleted = rideDetailRepository.countByStatus(RideStatus.COMPLETED);
         long activeUsers = userRepository.countByStatus(UserStatus.ACTIVE);
         long verifiedDrivers = driverProfileRepository.countByAccountStatus(DriverStatus.ACTIVE);
         MarketingSiteStatsResponse response = new MarketingSiteStatsResponse();
