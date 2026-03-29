@@ -392,9 +392,11 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                             .append("<td style='color:#d1d5db !important; font-size:12px; padding:10px 8px; text-align:right;'>").append(p.getPassengerRideDistance()).append(" km</td>")
                             .append("<td style='color:#10b981 !important; font-size:12px; padding:10px 8px; text-align:right;'><strong>Rs. ").append(p.getTotalPassengerCost()).append("</strong></td>")
                             .append("</tr>");
-                    htmlContent = htmlContent.replace("{{PASSENGER_ROWS}}", passengerRows.toString());
                 }
+            } else {
+                passengerRows.append("<tr><td colspan='5' style='color:#9ca3af !important; font-size:12px; padding:15px 8px; text-align:center;'>No passengers joined this ride</td></tr>");
             }
+            htmlContent = htmlContent.replace("{{PASSENGER_ROWS}}", passengerRows.toString());
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setTo(to);
