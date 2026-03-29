@@ -101,6 +101,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         boolean shouldSkip = path.startsWith("/auth") ||
                path.equals("/payment/notify") ||
+               path.equals("/marketing-site/stats") ||
                path.startsWith("/swagger-ui") ||
                path.startsWith("/api-docs") ||
                path.startsWith("/v3/api-docs") ||
