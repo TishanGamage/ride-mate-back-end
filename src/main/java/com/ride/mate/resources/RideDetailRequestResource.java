@@ -54,9 +54,6 @@ public class RideDetailRequestResource {
 
     private String tripRoute;
 
-    @NotBlank(message = "{can.not.be.blank}")
-    private String status;
-
     private BigDecimal perKmRate;
 
     private BigDecimal totalRideCost;

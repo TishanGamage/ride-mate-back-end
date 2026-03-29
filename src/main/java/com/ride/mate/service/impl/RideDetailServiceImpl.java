@@ -3,6 +3,7 @@ package com.ride.mate.service.impl;
 import com.ride.mate.core.LoginAuthentication;
 import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.*;
+import com.ride.mate.enums.RideStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.*;
@@ -96,7 +97,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
         rideDetail.setAvailableSeats(request.getAvailableSeats());
         rideDetail.setTotalRideDistance(request.getTotalRideDistance());
         rideDetail.setTripRoute(request.getTripRoute());
-        rideDetail.setStatus(request.getStatus());
+        rideDetail.setStatus(RideStatus.ACTIVE);
 
         // Parse and set timestamps
         if (request.getStartTime() != null && !request.getStartTime().isEmpty()) {
@@ -254,7 +255,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                             environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message");
                 });
 
-        rideDetail.setStatus("COMPLETED");
+        rideDetail.setStatus(RideStatus.COMPLETED);
         rideDetail.setModifiedDate(DateUtil.getDate());
         rideDetail.setModifiedUser(LoginAuthentication.getUserName());
         rideDetail.setSyncTs(DateUtil.getDate());
@@ -308,7 +309,7 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
                 .totalRideCost(ride.getTotalRideCost())
                 .perKmRate(ride.getPerKmRate())
                 .tripRoute(ride.getTripRoute())
-                .status(ride.getStatus())
+                .status(ride.getStatus().toString())
                 .createdDate(ride.getCreatedDate() != null ? ride.getCreatedDate().toString() : null)
                 .build();
     }
