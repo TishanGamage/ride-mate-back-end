@@ -33,7 +33,6 @@ public class MarketingSiteServiceImpl extends MessagePropertyBase implements Mar
     private final RideDetailRepository rideDetailRepository;
     private final UserRepository userRepository;
     private final DriverProfileRepository driverProfileRepository;
-    private final Environment environment;
 
     public MarketingSiteServiceImpl(RideDetailRepository rideDetailRepository,
                                     UserRepository userRepository,
@@ -42,7 +41,6 @@ public class MarketingSiteServiceImpl extends MessagePropertyBase implements Mar
         this.rideDetailRepository = rideDetailRepository;
         this.userRepository = userRepository;
         this.driverProfileRepository = driverProfileRepository;
-        this.environment = environment;
     }
 
     @Override
