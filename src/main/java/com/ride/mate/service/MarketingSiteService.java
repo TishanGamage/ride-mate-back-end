@@ -8,7 +8,7 @@
  *
  * # Date       Story Point    Task No      Author           Description
  * ---------------------------------------------------------------------------
- * 1 29-03-2026    N/A          N/A          Copilot          Initial Development
+ * 1 29-03-2026    N/A          N/A          Tishan          Initial Development
  */
 package com.ride.mate.service;
 
