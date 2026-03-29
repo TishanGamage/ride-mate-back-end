@@ -1,6 +1,7 @@
 package com.ride.mate.domain;
 
 import com.ride.mate.core.BaseEntity;
+import com.ride.mate.enums.DriverStatus;
 import com.ride.mate.enums.YesNo;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -63,8 +64,9 @@ public class DriverProfile extends BaseEntity implements Serializable {
     @Column(name = "total_earnings", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalEarnings = BigDecimal.ZERO;
 
+    @Enumerated(value = EnumType.STRING)
     @Column(name = "account_status", nullable = false, length = 20)
-    private String accountStatus;
+    private DriverStatus accountStatus;
 
     @Column(name = "driver_profile_completed", nullable = false, length = 3)
     private String driverProfileCompleted = "NO";

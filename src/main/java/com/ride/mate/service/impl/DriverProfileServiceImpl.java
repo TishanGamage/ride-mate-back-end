@@ -5,6 +5,7 @@ import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.DriverProfile;
 import com.ride.mate.domain.DriverVehicleDetails;
 import com.ride.mate.domain.User;
+import com.ride.mate.enums.DriverStatus;
 import com.ride.mate.enums.YesNo;
 import com.ride.mate.exception.ValidateRecordException;
 import com.ride.mate.repository.DocumentDetailsRepository;
@@ -124,7 +125,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
 
         // Set default fields for new profiles
         if (isNew) {
-            driverProfile.setAccountStatus("PENDING");
+            driverProfile.setAccountStatus(DriverStatus.PENDING);
             driverProfile.setApprovedBy(SYSTEM);
             driverProfile.setCreatedUser(LoginAuthentication.getUserName());
             driverProfile.setCreatedDate(DateUtil.getDate());
@@ -193,7 +194,7 @@ public class DriverProfileServiceImpl extends MessagePropertyBase implements Dri
                 .ratingAsDriver(driverProfile.getRatingAsDriver() != null ? driverProfile.getRatingAsDriver().toPlainString() : null)
                 .totalRidesAsDriver(driverProfile.getTotalRidesAsDriver())
                 .totalEarnings(driverProfile.getTotalEarnings() != null ? driverProfile.getTotalEarnings().toPlainString() : null)
-                .accountStatus(driverProfile.getAccountStatus())
+                .accountStatus(driverProfile.getAccountStatus().toString())
                 .driverProfileCompleted(driverProfile.getDriverProfileCompleted())
                 .vehicles(vehicleResponses)
                 .createdDate(driverProfile.getCreatedDate() != null ? driverProfile.getCreatedDate().toString() : null)

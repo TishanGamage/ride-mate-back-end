@@ -2,6 +2,7 @@ package com.ride.mate.repository;
 
 import com.ride.mate.domain.DriverProfile;
 import com.ride.mate.domain.User;
+import com.ride.mate.enums.DriverStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -35,5 +36,6 @@ public interface DriverProfileRepository extends JpaRepository<DriverProfile, Lo
     boolean existsByUserId(Long userId);
 
     boolean existsByDriverLicenseNumber(String driverLicenseNumber);
-}
 
+    long countByAccountStatus(DriverStatus accountStatus);
+}
