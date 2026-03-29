@@ -382,7 +382,6 @@ public class RideDetailServiceImpl extends MessagePropertyBase implements RideDe
             htmlContent = htmlContent.replace("{{TOTAL_DISTANCE}}", rideDetail.getTotalRideDistance().toString());
             htmlContent = htmlContent.replace("{{PASSENGER_COUNT}}", String.valueOf(costSplit.getTotalPassengers()));
             htmlContent = htmlContent.replace("{{TOTAL_COST}}", costSplit.getTotalRideCost().toString());
-            
             StringBuilder passengerRows = new StringBuilder();
             if(costSplit.getPassengerCosts() != null && !costSplit.getPassengerCosts().isEmpty()){
                 for (CostSplitResponse.PassengerCostDetail p : costSplit.getPassengerCosts()) {
