@@ -5,6 +5,7 @@ import com.ride.mate.core.MessagePropertyBase;
 import com.ride.mate.domain.DriverProfile;
 import com.ride.mate.domain.User;
 import com.ride.mate.domain.UserReport;
+import com.ride.mate.enums.DriverStatus;
 import com.ride.mate.enums.UserRole;
 import com.ride.mate.enums.UserStatus;
 import com.ride.mate.exception.ValidateRecordException;
@@ -149,7 +150,7 @@ public class AdminServiceImpl extends MessagePropertyBase implements AdminServic
         DriverProfile driverProfile = driverProfileRepository.findById(driverProfileId)
                 .orElseThrow(() -> new ValidateRecordException(environment.getProperty(RECORD_NOT_FOUND), "message"));
 
-        driverProfile.setAccountStatus(request.getAccountStatus().toUpperCase());
+        driverProfile.setAccountStatus(DriverStatus.valueOf(request.getAccountStatus().toUpperCase()));
         driverProfile.setApprovedBy(LoginAuthentication.getUserName());
         driverProfile.setApprovedDate(DateUtil.getDate());
         driverProfile.setModifiedDate(DateUtil.getDate());
