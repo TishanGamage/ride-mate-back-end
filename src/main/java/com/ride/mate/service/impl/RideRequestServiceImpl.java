@@ -157,7 +157,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .orElseThrow(() -> new ValidateRecordException(
                         environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message"));
 
-        if (!STATUS_ACTIVE.equals(rideDetail.getStatus())) {
+        if (!RideStatus.ACTIVE.equals(rideDetail.getStatus())) {
             throw new ValidateRecordException(
                     environment.getProperty(RIDE_NOT_AVAILABLE), "message");
         }
@@ -395,7 +395,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                 .orElseThrow(() -> new ValidateRecordException(
                         environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message"));
 
-        if (!STATUS_ACTIVE.equals(rideDetail.getStatus())) {
+        if (!RideStatus.ACTIVE.equals(rideDetail.getStatus())) {
             throw new ValidateRecordException(
                     environment.getProperty(RIDE_NOT_AVAILABLE), "message");
         }
