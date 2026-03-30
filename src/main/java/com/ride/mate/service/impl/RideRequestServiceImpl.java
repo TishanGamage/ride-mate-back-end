@@ -158,6 +158,7 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
                         environment.getProperty(RIDE_DETAIL_NOT_FOUND), "message"));
 
         if (!RideStatus.ACTIVE.equals(rideDetail.getStatus())) {
+            log.info("Ride ID {} is not active (status: {})", resource.getRideDetailId(), rideDetail.getStatus());
             throw new ValidateRecordException(
                     environment.getProperty(RIDE_NOT_AVAILABLE), "message");
         }
@@ -166,6 +167,8 @@ public class RideRequestServiceImpl extends MessagePropertyBase implements RideR
         long currentPassengers = shareRideDetailRepository
                 .countByRideDetailIdAndStatus(resource.getRideDetailId(), STATUS_ACTIVE);
         if (rideDetail.getAvailableSeats() != null && currentPassengers >= rideDetail.getAvailableSeats()) {
+            log.info("Ride ID {} has no available seats (current passengers: {}, available seats: {})",
+                    resource.getRideDetailId(), currentPassengers, rideDetail.getAvailableSeats());
             throw new ValidateRecordException(
                     environment.getProperty(NO_AVAILABLE_SEATS), "message");
         }
